@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { BookOpen, Pencil, Plus, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { BookOpen, FolderPlus, Pencil, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/panel/empty-state";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { formatBRL, type Category, type Product } from "@/lib/mock/types";
+import { uploadImage } from "@/lib/upload";
 
 type FormState = {
   name: string;
@@ -53,6 +54,13 @@ export default function CardapioPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [categoryName, setCategoryName] = useState("");
+  const [savingCategory, setSavingCategory] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/vendedor/products").catch(() => null);
@@ -131,6 +139,62 @@ export default function CardapioPage() {
     }
   };
 
+  const handleImageUpload = async (file: File | undefined) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadImage(file);
+      setForm((f) => ({ ...f, image: url }));
+      toast.success("Imagem enviada!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha no upload.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const openCategoryDialog = (category: Category | null) => {
+    setEditingCategory(category);
+    setCategoryName(category?.name ?? "");
+    setCategoryDialogOpen(true);
+  };
+
+  const saveCategory = async () => {
+    setSavingCategory(true);
+    const res = await fetch(
+      editingCategory
+        ? `/api/vendedor/categories/${editingCategory.id}`
+        : "/api/vendedor/categories",
+      {
+        method: editingCategory ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: categoryName.trim() }),
+      }
+    ).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    setSavingCategory(false);
+    if (!res?.ok) {
+      toast.error(data?.message ?? "Não foi possível salvar a categoria.");
+      return;
+    }
+    setCategoryDialogOpen(false);
+    toast.success(editingCategory ? "Categoria renomeada!" : "Categoria criada!");
+    load();
+  };
+
+  const removeCategory = async (id: string) => {
+    const res = await fetch(`/api/vendedor/categories/${id}`, {
+      method: "DELETE",
+    }).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    if (!res?.ok) {
+      toast.error(data?.message ?? "Não foi possível remover a categoria.");
+      return;
+    }
+    toast.success("Categoria removida.");
+    load();
+  };
+
   const removeProduct = async (id: string) => {
     const res = await fetch(`/api/vendedor/products/${id}`, {
       method: "DELETE",
@@ -152,6 +216,11 @@ export default function CardapioPage() {
             Gerencie categorias e produtos do seu cardápio.
           </p>
         </div>
+        <div className="flex gap-2">
+        <Button variant="outline" onClick={() => openCategoryDialog(null)}>
+          <FolderPlus className="size-4" />
+          Nova categoria
+        </Button>
         <Dialog
           open={dialogOpen}
           onOpenChange={(o: boolean) => {
@@ -231,20 +300,71 @@ export default function CardapioPage() {
                 </div>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="pimg">URL da imagem</Label>
-                <Input
-                  id="pimg"
-                  value={form.image}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, image: e.target.value }))
-                  }
-                  placeholder="https://..."
-                />
+                <Label htmlFor="pimg">Imagem</Label>
+                <div className="flex items-center gap-2">
+                  {form.image && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={form.image}
+                      alt="Imagem do produto"
+                      className="size-10 rounded-lg border object-cover"
+                    />
+                  )}
+                  <Input
+                    id="pimg"
+                    value={form.image}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, image: e.target.value }))
+                    }
+                    placeholder="https://... ou envie um arquivo"
+                  />
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(e) => handleImageUpload(e.target.files?.[0])}
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    disabled={uploading}
+                    onClick={() => imageInputRef.current?.click()}
+                    aria-label="Enviar imagem"
+                  >
+                    <Upload className="size-4" />
+                  </Button>
+                </div>
               </div>
             </div>
             <DialogFooter>
               <Button onClick={save} disabled={saving}>
                 {saving ? "Salvando..." : "Salvar"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        </div>
+
+        <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>
+                {editingCategory ? "Renomear categoria" : "Nova categoria"}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-2">
+              <Label htmlFor="cnome">Nome</Label>
+              <Input
+                id="cnome"
+                value={categoryName}
+                onChange={(e) => setCategoryName(e.target.value)}
+                placeholder="Ex.: Bebidas"
+              />
+            </div>
+            <DialogFooter>
+              <Button onClick={saveCategory} disabled={savingCategory}>
+                {savingCategory ? "Salvando..." : "Salvar"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -273,13 +393,34 @@ export default function CardapioPage() {
         const catItems = items.filter((p) => p.categoryId === cat.id);
         return (
           <Card key={cat.id}>
-            <CardHeader className="flex-row items-center justify-between">
+            <CardHeader>
+              <div className="flex items-center justify-between">
               <CardTitle className="text-base">
                 {cat.name}{" "}
                 <span className="text-sm font-normal text-muted-foreground">
                   · {catItems.length} produto{catItems.length === 1 ? "" : "s"}
                 </span>
               </CardTitle>
+              <div className="flex gap-1">
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  onClick={() => openCategoryDialog(cat)}
+                  aria-label="Renomear categoria"
+                >
+                  <Pencil className="size-4" />
+                </Button>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  className="text-destructive"
+                  onClick={() => removeCategory(cat.id)}
+                  aria-label="Remover categoria"
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-2">
               {catItems.length === 0 && (

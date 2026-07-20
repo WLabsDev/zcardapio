@@ -11,7 +11,9 @@ const putSchema = z.object({
   description: z.string().max(500).default(""),
   price: z.number().positive("Informe um preço válido."),
   categoryId: z.coerce.number().int().positive(),
-  image: z.union([z.url(), z.literal("")]).default(""),
+  image: z
+    .union([z.url(), z.string().regex(/^\/uploads\/[\w.-]+$/), z.literal("")])
+    .default(""),
   popular: z.boolean().optional(),
 });
 

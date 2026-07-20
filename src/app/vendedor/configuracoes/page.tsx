@@ -60,6 +60,7 @@ export default function ConfiguracoesPage() {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        slug: form.slug.trim(),
         name: form.name.trim(),
         phone: form.phone.trim(),
         address: form.address.trim(),
@@ -128,12 +129,22 @@ export default function ConfiguracoesPage() {
           <div className="grid gap-2">
             <Label htmlFor="slug">Endereço do cardápio</Label>
             <div className="flex items-center gap-2">
-              <Input id="slug" value={form.slug} disabled className="max-w-56" />
+              <Input
+                id="slug"
+                value={form.slug}
+                onChange={(e) =>
+                  set(
+                    "slug",
+                    e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")
+                  )
+                }
+                className="max-w-56"
+              />
               <span className="text-sm text-muted-foreground">.zcardapio.com.br</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              O endereço não pode ser alterado para não quebrar QR codes já
-              impressos.
+              Atenção: mudar o endereço quebra QR codes já impressos — gere e
+              imprima novos depois de salvar.
             </p>
           </div>
         </CardContent>

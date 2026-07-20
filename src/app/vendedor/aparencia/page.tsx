@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { uploadImage } from "@/lib/upload";
 import {
   Card,
   CardContent,
@@ -34,6 +35,23 @@ type Appearance = {
 export default function AparenciaPage() {
   const [form, setForm] = useState<Appearance | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState<"logo" | "cover" | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (field: "logo" | "cover", file: File | undefined) => {
+    if (!file) return;
+    setUploading(field);
+    try {
+      const url = await uploadImage(file);
+      setForm((f) => (f ? { ...f, [field]: url } : f));
+      toast.success("Imagem enviada! Salve para aplicar.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha no upload.");
+    } finally {
+      setUploading(null);
+    }
+  };
 
   useEffect(() => {
     fetch("/api/vendedor/restaurant")
@@ -103,34 +121,53 @@ export default function AparenciaPage() {
             </CardHeader>
             <CardContent className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="logo">URL do logo</Label>
+                <Label>Logo</Label>
                 <div className="flex items-center gap-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={form.logo}
                     alt="Logo"
-                    className="size-16 rounded-xl border"
+                    className="size-16 rounded-xl border object-cover"
                   />
-                  <Input
-                    id="logo"
-                    value={form.logo}
-                    onChange={(e) => set("logo", e.target.value)}
-                    placeholder="https://..."
+                  <input
+                    ref={logoInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(e) => handleUpload("logo", e.target.files?.[0])}
                   />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={uploading === "logo"}
+                    onClick={() => logoInputRef.current?.click()}
+                  >
+                    {uploading === "logo" ? "Enviando..." : "Trocar logo"}
+                  </Button>
                 </div>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="capa">URL da imagem de capa</Label>
+                <Label>Imagem de capa</Label>
                 <div
                   className="h-28 rounded-xl border bg-cover bg-center"
                   style={{ backgroundImage: `url(${form.cover})` }}
                 />
-                <Input
-                  id="capa"
-                  value={form.cover}
-                  onChange={(e) => set("cover", e.target.value)}
-                  placeholder="https://..."
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => handleUpload("cover", e.target.files?.[0])}
                 />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-fit"
+                  disabled={uploading === "cover"}
+                  onClick={() => coverInputRef.current?.click()}
+                >
+                  {uploading === "cover" ? "Enviando..." : "Trocar capa"}
+                </Button>
               </div>
             </CardContent>
           </Card>
