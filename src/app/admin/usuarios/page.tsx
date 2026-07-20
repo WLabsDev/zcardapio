@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, SearchX } from "lucide-react";
 import { EmptyState } from "@/components/panel/empty-state";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +15,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { users } from "@/lib/mock/data";
+import { toast } from "sonner";
+
+type AdminUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: "admin" | "restaurante" | "cliente";
+  createdAt: string;
+};
 
 const roleLabel = {
   admin: "Admin",
@@ -25,6 +33,14 @@ const roleLabel = {
 
 export default function AdminUsuariosPage() {
   const [search, setSearch] = useState("");
+  const [users, setUsers] = useState<AdminUser[]>([]);
+
+  useEffect(() => {
+    fetch("/api/admin/users")
+      .then((res) => res.json())
+      .then((data) => setUsers(data?.users ?? []))
+      .catch(() => toast.error("Não foi possível carregar os usuários."));
+  }, []);
 
   const filtered = users.filter(
     (u) =>

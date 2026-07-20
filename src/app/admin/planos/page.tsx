@@ -1,21 +1,85 @@
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { plans } from "@/lib/mock/data";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { formatBRL } from "@/lib/mock/types";
 import { cn } from "@/lib/utils";
 
-const subscribers: Record<string, number> = {
-  gratis: 642,
-  pro: 447,
-  premium: 115,
+type AdminPlan = {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  features: string[];
+  highlighted: boolean;
+  subscribers: number;
 };
 
 export default function AdminPlanosPage() {
+  const [plans, setPlans] = useState<AdminPlan[]>([]);
+  const [editing, setEditing] = useState<AdminPlan | null>(null);
+  const [form, setForm] = useState({ price: "", description: "", features: "" });
+  const [saving, setSaving] = useState(false);
+
+  const load = useCallback(async () => {
+    const res = await fetch("/api/admin/plans").catch(() => null);
+    const data = await res?.json().catch(() => null);
+    if (res?.ok && data) setPlans(data.plans);
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const openEdit = (plan: AdminPlan) => {
+    setEditing(plan);
+    setForm({
+      price: String(plan.price),
+      description: plan.description,
+      features: plan.features.join("\n"),
+    });
+  };
+
+  const save = async () => {
+    if (!editing) return;
+    setSaving(true);
+    const res = await fetch(`/api/admin/plans/${editing.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        price: Number(form.price.replace(",", ".")) || 0,
+        description: form.description.trim(),
+        features: form.features
+          .split("\n")
+          .map((f) => f.trim())
+          .filter(Boolean),
+      }),
+    }).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    setSaving(false);
+    if (!res?.ok) {
+      toast.error(data?.message ?? "Não foi possível salvar o plano.");
+      return;
+    }
+    setEditing(null);
+    toast.success("Plano atualizado!");
+    load();
+  };
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
@@ -40,7 +104,7 @@ export default function AdminPlanosPage() {
               <div className="flex items-center justify-between">
                 <h3 className="font-display text-lg font-bold">{plan.name}</h3>
                 <Badge variant="secondary">
-                  {subscribers[plan.id]} assinantes
+                  {plan.subscribers} assinante{plan.subscribers === 1 ? "" : "s"}
                 </Badge>
               </div>
               <div>
@@ -51,8 +115,7 @@ export default function AdminPlanosPage() {
                   </span>
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  ≈ {formatBRL(subscribers[plan.id] * plan.price)} de receita
-                  mensal
+                  ≈ {formatBRL(plan.subscribers * plan.price)} de receita mensal
                 </p>
               </div>
               <ul className="flex-1 space-y-2 text-sm">
@@ -63,20 +126,59 @@ export default function AdminPlanosPage() {
                   </li>
                 ))}
               </ul>
-              <Button
-                variant="outline"
-                onClick={() =>
-                  toast.info(
-                    `Edição do plano ${plan.name} chega junto com o backend.`
-                  )
-                }
-              >
+              <Button variant="outline" onClick={() => openEdit(plan)}>
                 Editar plano
               </Button>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(o: boolean) => !o && setEditing(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar plano {editing?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="pprice">Preço mensal (R$)</Label>
+              <Input
+                id="pprice"
+                type="number"
+                step="0.01"
+                value={form.price}
+                onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="pdesc">Descrição</Label>
+              <Input
+                id="pdesc"
+                value={form.description}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, description: e.target.value }))
+                }
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="pfeat">Recursos (um por linha)</Label>
+              <Textarea
+                id="pfeat"
+                rows={5}
+                value={form.features}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, features: e.target.value }))
+                }
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={save} disabled={saving}>
+              {saving ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

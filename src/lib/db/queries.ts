@@ -97,6 +97,20 @@ export async function getProductsByRestaurantDb(
   }));
 }
 
+export async function listPlans() {
+  const rows = await db.query.plans.findMany({
+    orderBy: (p, { asc }) => [asc(p.priceCents)],
+  });
+  return rows.map((p) => ({
+    id: String(p.id),
+    name: p.name,
+    price: p.priceCents / 100,
+    description: p.description,
+    features: p.features,
+    highlighted: p.highlighted,
+  }));
+}
+
 export function orderCode(id: number) {
   return `#${String(id).padStart(4, "0")}`;
 }

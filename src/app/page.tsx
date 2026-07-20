@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
-import { plans } from "@/lib/mock/data";
+import { listPlans } from "@/lib/db/queries";
 import { formatBRL } from "@/lib/mock/types";
 import { cn } from "@/lib/utils";
 
@@ -67,7 +67,8 @@ const features = [
   },
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const plans = await listPlans();
   return (
     <div className="flex min-h-screen flex-col">
       {/* Header */}

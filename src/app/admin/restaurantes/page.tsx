@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ExternalLink, Search, SearchX } from "lucide-react";
 import { toast } from "sonner";
@@ -23,9 +23,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { restaurants as mockRestaurants } from "@/lib/mock/data";
-import type { Restaurant } from "@/lib/mock/types";
 import { cn } from "@/lib/utils";
+
+type AdminRestaurant = {
+  id: string;
+  slug: string;
+  name: string;
+  segment: string;
+  logo: string;
+  plan: string;
+  status: "ativo" | "pendente" | "bloqueado";
+  createdAt: string;
+};
 
 const statusVariant = {
   ativo: "default",
@@ -34,14 +43,30 @@ const statusVariant = {
 } as const;
 
 export default function AdminRestaurantesPage() {
-  const [restaurants, setRestaurants] = useState<Restaurant[]>(mockRestaurants);
+  const [restaurants, setRestaurants] = useState<AdminRestaurant[]>([]);
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/restaurants")
+      .then((res) => res.json())
+      .then((data) => setRestaurants(data?.restaurants ?? []))
+      .catch(() => toast.error("Não foi possível carregar os restaurantes."));
+  }, []);
 
   const filtered = restaurants.filter((r) =>
     r.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const setStatus = (id: string, status: Restaurant["status"]) => {
+  const setStatus = async (id: string, status: AdminRestaurant["status"]) => {
+    const res = await fetch(`/api/admin/restaurants/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    }).catch(() => null);
+    if (!res?.ok) {
+      toast.error("Não foi possível atualizar o status.");
+      return;
+    }
     setRestaurants((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status } : r))
     );
