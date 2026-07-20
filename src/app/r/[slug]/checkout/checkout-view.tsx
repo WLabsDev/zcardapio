@@ -25,8 +25,53 @@ export function CheckoutView({ restaurant }: { restaurant: Restaurant }) {
     "entrega"
   );
   const [done, setDone] = useState(false);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [street, setStreet] = useState("");
+  const [district, setDistrict] = useState("");
+  const [complement, setComplement] = useState("");
+  const [payment, setPayment] = useState("pix");
+  const [sending, setSending] = useState(false);
 
   const deliveryFee = deliveryType === "entrega" ? restaurant.deliveryFee : 0;
+
+  async function submitOrder() {
+    setSending(true);
+    const address = [street, district, complement]
+      .filter(Boolean)
+      .join(" — ");
+    const res = await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        restaurantId: restaurant.id,
+        customerName: name.trim(),
+        customerPhone: phone.trim(),
+        deliveryType,
+        address,
+        paymentMethod: payment,
+        items: cart.items.map((i) => ({
+          productId: i.product.id,
+          quantity: i.quantity,
+          notes: i.notes,
+          options: i.options.map((o) => ({
+            groupName: o.groupName,
+            name: o.name,
+          })),
+        })),
+      }),
+    }).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    setSending(false);
+
+    if (!res?.ok || !data?.order) {
+      toast.error(data?.message ?? "Não foi possível enviar o pedido.");
+      return;
+    }
+    cart.clear();
+    setDone(true);
+    toast.success(`Pedido ${data.order.code} enviado ao restaurante!`);
+  }
 
   if (done) {
     return (
@@ -113,33 +158,58 @@ export function CheckoutView({ restaurant }: { restaurant: Restaurant }) {
             <CardContent className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="nome">Nome</Label>
-                <Input id="nome" placeholder="Seu nome completo" />
+                <Input
+                  id="nome"
+                  placeholder="Seu nome completo"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="telefone">Telefone / WhatsApp</Label>
-                <Input id="telefone" placeholder="(11) 99999-9999" />
+                <Input
+                  id="telefone"
+                  placeholder="(11) 99999-9999"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
               </div>
               {deliveryType === "entrega" && (
                 <>
                   <div className="grid gap-2">
                     <Label htmlFor="endereco">Endereço</Label>
-                    <Input id="endereco" placeholder="Rua, número" />
+                    <Input
+                      id="endereco"
+                      placeholder="Rua, número"
+                      value={street}
+                      onChange={(e) => setStreet(e.target.value)}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="bairro">Bairro</Label>
-                      <Input id="bairro" placeholder="Bairro" />
+                      <Input
+                        id="bairro"
+                        placeholder="Bairro"
+                        value={district}
+                        onChange={(e) => setDistrict(e.target.value)}
+                      />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="complemento">Complemento</Label>
-                      <Input id="complemento" placeholder="Apto, bloco..." />
+                      <Input
+                        id="complemento"
+                        placeholder="Apto, bloco..."
+                        value={complement}
+                        onChange={(e) => setComplement(e.target.value)}
+                      />
                     </div>
                   </div>
                 </>
               )}
               <div className="grid gap-2">
                 <Label>Forma de pagamento</Label>
-                <Select defaultValue="pix">
+                <Select value={payment} onValueChange={setPayment}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -204,14 +274,10 @@ export function CheckoutView({ restaurant }: { restaurant: Restaurant }) {
             <Button
               className="w-full rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
               size="lg"
-              disabled={cart.items.length === 0}
-              onClick={() => {
-                cart.clear();
-                setDone(true);
-                toast.success("Pedido enviado ao restaurante!");
-              }}
+              disabled={cart.items.length === 0 || sending}
+              onClick={submitOrder}
             >
-              Enviar pedido
+              {sending ? "Enviando..." : "Enviar pedido"}
             </Button>
           </CardContent>
         </Card>

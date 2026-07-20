@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { getProductsByRestaurant, getRestaurantBySlug } from "@/lib/mock/data";
+import {
+  getProductsByRestaurantDb,
+  getRestaurantBySlugDb,
+} from "@/lib/db/queries";
 import { MenuView } from "./menu-view";
 
 export default async function RestaurantMenuPage({
@@ -9,9 +12,9 @@ export default async function RestaurantMenuPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const restaurant = getRestaurantBySlug(slug);
+  const restaurant = await getRestaurantBySlugDb(slug);
   if (!restaurant) notFound();
-  const products = getProductsByRestaurant(restaurant.id);
+  const products = await getProductsByRestaurantDb(Number(restaurant.id));
   const session = await getSession();
 
   return (

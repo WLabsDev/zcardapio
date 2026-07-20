@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getRestaurantBySlug } from "@/lib/mock/data";
+import { getRestaurantBySlugDb } from "@/lib/db/queries";
 import { CheckoutView } from "./checkout-view";
 
 export default async function CheckoutPage({
@@ -8,7 +8,7 @@ export default async function CheckoutPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const restaurant = getRestaurantBySlug(slug);
+  const restaurant = await getRestaurantBySlugDb(slug);
   if (!restaurant) notFound();
 
   return <CheckoutView restaurant={restaurant} />;

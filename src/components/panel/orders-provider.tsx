@@ -6,12 +6,14 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { orders as mockOrders } from "@/lib/mock/data";
 import { formatBRL, type Order, type OrderStatus } from "@/lib/mock/types";
+
+const POLL_INTERVAL_MS = 15000;
 
 type OrdersContextValue = {
   orders: Order[];
@@ -21,50 +23,58 @@ type OrdersContextValue = {
 
 const OrdersContext = createContext<OrdersContextValue | null>(null);
 
-/** Simula a chegada de um pedido novo (antes do backend existir). */
-let hasSimulatedIncomingOrder = false;
-
-function buildIncomingOrder(): Order {
-  return {
-    id: `o-${Date.now()}`,
-    code: "#1043",
-    restaurantId: "r1",
-    customerName: "Rafael Nunes",
-    items: [
-      { productId: "p1", name: "Zé Clássico", quantity: 1, unitPrice: 29.9 },
-      { productId: "p15", name: "Açaí na Tigela (500ml, Nutella)", quantity: 1, unitPrice: 29.9 },
-    ],
-    total: 59.8,
-    status: "pendente",
-    paymentMethod: "Pix",
-    deliveryType: "entrega",
-    createdAt: new Date().toISOString(),
-  };
-}
-
 export function OrdersProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const knownIds = useRef<Set<string> | null>(null);
 
   useEffect(() => {
-    if (hasSimulatedIncomingOrder) return;
-    const timer = setTimeout(() => {
-      hasSimulatedIncomingOrder = true;
-      const incoming = buildIncomingOrder();
-      setOrders((prev) => [incoming, ...prev]);
-      toast("🔔 Pedido novo!", {
-        description: `${incoming.code} · ${incoming.customerName} · ${formatBRL(incoming.total)}`,
-        action: {
-          label: "Ver pedido",
-          onClick: () => router.push("/vendedor/pedidos"),
-        },
-      });
-    }, 12000);
-    return () => clearTimeout(timer);
+    let cancelled = false;
+
+    const load = async () => {
+      const res = await fetch("/api/orders?scope=restaurant").catch(() => null);
+      const data = await res?.json().catch(() => null);
+      if (cancelled || !res?.ok || !Array.isArray(data?.orders)) return;
+      const incoming: Order[] = data.orders;
+
+      if (knownIds.current) {
+        const fresh = incoming.filter((o) => !knownIds.current!.has(o.id));
+        for (const o of fresh) {
+          toast("🔔 Pedido novo!", {
+            description: `${o.code} · ${o.customerName} · ${formatBRL(o.total)}`,
+            action: {
+              label: "Ver pedido",
+              onClick: () => router.push("/vendedor/pedidos"),
+            },
+          });
+        }
+      }
+      knownIds.current = new Set(incoming.map((o) => o.id));
+      setOrders(incoming);
+    };
+
+    load();
+    const timer = setInterval(load, POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
   }, [router]);
 
   const updateStatus = useCallback((id: string, status: OrderStatus) => {
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+    fetch(`/api/orders/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          const data = await res.json().catch(() => null);
+          toast.error(data?.message ?? "Não foi possível atualizar o pedido.");
+        }
+      })
+      .catch(() => toast.error("Não foi possível atualizar o pedido."));
   }, []);
 
   const value = useMemo<OrdersContextValue>(() => {

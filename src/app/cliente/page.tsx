@@ -1,18 +1,23 @@
-"use client";
-
 import Link from "next/link";
 import { ArrowRight, Clock, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OrderStatusBadge } from "@/components/panel/order-status-badge";
-import { usePanelUser } from "@/components/panel/panel-shell";
-import { orders, restaurants } from "@/lib/mock/data";
+import { getSession } from "@/lib/auth";
+import { getOrdersByCustomer, listActiveRestaurants } from "@/lib/db/queries";
 import { formatBRL } from "@/lib/mock/types";
 
-export default function ClienteHome() {
-  const activeOrder = orders.find((o) => o.status === "preparando");
-  const { name } = usePanelUser();
+export default async function ClienteHome() {
+  const session = await getSession();
+  const [orders, restaurants] = await Promise.all([
+    session ? getOrdersByCustomer(Number(session.sub)) : Promise.resolve([]),
+    listActiveRestaurants(),
+  ]);
+  const activeOrder = orders.find(
+    (o) => o.status !== "entregue" && o.status !== "cancelado"
+  );
+  const name = session?.name ?? "Visitante";
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -33,7 +38,8 @@ export default function ClienteHome() {
                 Pedido {activeOrder.code} em andamento
               </p>
               <p className="text-sm text-muted-foreground">
-                Burguer do Zé · {formatBRL(activeOrder.total)}
+                {activeOrder.restaurantName ?? "Restaurante"} ·{" "}
+                {formatBRL(activeOrder.total)}
               </p>
             </div>
             <div className="flex items-center gap-3">

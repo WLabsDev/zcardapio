@@ -83,6 +83,9 @@ export type Order = {
   id: string;
   code: string;
   restaurantId: string;
+  /** presentes quando o pedido vem da API */
+  restaurantName?: string;
+  restaurantSlug?: string;
   customerName: string;
   items: OrderItem[];
   total: number;

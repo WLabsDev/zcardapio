@@ -6,14 +6,17 @@ import { Separator } from "@/components/ui/separator";
 import { EmptyState } from "@/components/panel/empty-state";
 import { OrderStatusBadge } from "@/components/panel/order-status-badge";
 import { OrderStatusTimeline } from "@/components/panel/order-status-timeline";
-import { orders } from "@/lib/mock/data";
+import { getSession } from "@/lib/auth";
+import { getOrdersByCustomer } from "@/lib/db/queries";
 import { formatBRL, type OrderStatus } from "@/lib/mock/types";
 import { cn } from "@/lib/utils";
 
 const isActive = (status: OrderStatus) =>
   status !== "entregue" && status !== "cancelado";
 
-export default function ClientePedidosPage() {
+export default async function ClientePedidosPage() {
+  const session = await getSession();
+  const orders = session ? await getOrdersByCustomer(Number(session.sub)) : [];
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
@@ -50,7 +53,7 @@ export default function ClientePedidosPage() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="font-semibold">
-                      Burguer do Zé · Pedido {o.code}
+                      {o.restaurantName ?? "Restaurante"} · Pedido {o.code}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {new Date(o.createdAt).toLocaleString("pt-BR", {
@@ -68,8 +71,8 @@ export default function ClientePedidosPage() {
 
                 <Separator />
                 <div className="space-y-1 text-sm">
-                  {o.items.map((i) => (
-                    <div key={i.productId} className="flex justify-between">
+                  {o.items.map((i, idx) => (
+                    <div key={idx} className="flex justify-between">
                       <span className="text-muted-foreground">
                         {i.quantity}x {i.name}
                       </span>
@@ -79,9 +82,11 @@ export default function ClientePedidosPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <p className="font-bold">Total: {formatBRL(o.total)}</p>
-                  <Button size="sm" variant="outline" asChild>
-                    <Link href="/r/burguer-do-ze">Pedir de novo</Link>
-                  </Button>
+                  {o.restaurantSlug && (
+                    <Button size="sm" variant="outline" asChild>
+                      <Link href={`/r/${o.restaurantSlug}`}>Pedir de novo</Link>
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
