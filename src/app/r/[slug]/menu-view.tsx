@@ -2,16 +2,21 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
+  CircleUserRound,
   Clock,
+  LogOut,
   MapPin,
   Minus,
   Plus,
+  ReceiptText,
   Search,
   SearchX,
   ShoppingBag,
   Star,
   Trash2,
+  UserRound,
 } from "lucide-react";
 import { EmptyState } from "@/components/panel/empty-state";
 import { Badge } from "@/components/ui/badge";
@@ -35,19 +40,101 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   itemUnitPrice,
   useCart,
   type SelectedOption,
 } from "@/components/cart/cart-context";
 import { formatBRL, type Product, type Restaurant } from "@/lib/mock/types";
+import type { SessionRole } from "@/lib/session";
 import { cn } from "@/lib/utils";
+
+type MenuUser = { name: string; role: SessionRole } | null;
+
+const roleHome: Record<SessionRole, string> = {
+  admin: "/admin",
+  restaurante: "/vendedor",
+  cliente: "/cliente",
+};
+
+function AccountButton({ user, slug }: { user: MenuUser; slug: string }) {
+  const router = useRouter();
+
+  if (!user) {
+    return (
+      <Button
+        size="sm"
+        variant="secondary"
+        className="rounded-full border-2 border-foreground font-semibold shadow-offset-sm"
+        asChild
+      >
+        <Link href={`/login?next=/r/${slug}`}>
+          <CircleUserRound className="size-4" />
+          Entrar
+        </Link>
+      </Button>
+    );
+  }
+
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.refresh();
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="rounded-full border-2 border-foreground font-semibold shadow-offset-sm"
+        >
+          <CircleUserRound className="size-4" />
+          {user.name.split(" ")[0]}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuLabel>{user.name}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href={roleHome[user.role]}>
+            <UserRound className="size-4" />
+            Minha conta
+          </Link>
+        </DropdownMenuItem>
+        {user.role === "cliente" && (
+          <DropdownMenuItem asChild>
+            <Link href="/cliente/pedidos">
+              <ReceiptText className="size-4" />
+              Meus pedidos
+            </Link>
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onClick={logout}>
+          <LogOut className="size-4" />
+          Sair
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 export function MenuView({
   restaurant,
   products,
+  user,
 }: {
   restaurant: Restaurant;
   products: Product[];
+  user: MenuUser;
 }) {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState(
@@ -106,9 +193,13 @@ export function MenuView({
     <div className="min-h-screen bg-muted/30 pb-24">
       {/* Cover */}
       <div
-        className="h-40 bg-cover bg-center md:h-56"
+        className="relative h-40 bg-cover bg-center md:h-56"
         style={{ backgroundImage: `url(${restaurant.cover})` }}
-      />
+      >
+        <div className="absolute right-4 top-4">
+          <AccountButton user={user} slug={restaurant.slug} />
+        </div>
+      </div>
 
       {/* Restaurant header */}
       <div className="mx-auto -mt-10 max-w-3xl px-4">

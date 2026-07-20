@@ -62,7 +62,10 @@ export default function LoginPage() {
     }
 
     toast.success(`Bem-vindo(a), ${data.user.name.split(" ")[0]}!`);
-    router.push(roleHome[data.user.role as string] ?? "/");
+    const next = new URLSearchParams(window.location.search).get("next");
+    router.push(
+      next?.startsWith("/") ? next : roleHome[data.user.role as string] ?? "/"
+    );
   }
 
   return (
