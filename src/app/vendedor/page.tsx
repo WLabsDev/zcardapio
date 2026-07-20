@@ -1,11 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   DollarSign,
   ReceiptText,
   ShoppingBag,
-  TrendingUp,
+  XCircle,
   ExternalLink,
   QrCode,
 } from "lucide-react";
@@ -23,17 +24,35 @@ import { StatCard, usePanelUser } from "@/components/panel/panel-shell";
 import { OrderStatusBadge } from "@/components/panel/order-status-badge";
 import { OnboardingChecklist } from "@/components/panel/onboarding-checklist";
 import { useOrders } from "@/components/panel/orders-provider";
-import { products } from "@/lib/mock/data";
 import { formatBRL } from "@/lib/mock/types";
 import { cn } from "@/lib/utils";
+
+type TopProduct = { name: string; image: string; value: number };
 
 export default function VendedorDashboard() {
   const { orders, pendingCount } = useOrders();
   const { name } = usePanelUser();
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [slug, setSlug] = useState<string | null>(null);
 
-  const topProducts = products
-    .filter((p) => p.restaurantId === "r1" && p.popular)
-    .slice(0, 3);
+  useEffect(() => {
+    fetch("/api/vendedor/reports?period=7d")
+      .then((res) => res.json())
+      .then((data) => setTopProducts(data?.report?.topProducts?.slice(0, 3) ?? []))
+      .catch(() => {});
+    fetch("/api/vendedor/restaurant")
+      .then((res) => res.json())
+      .then((data) => setSlug(data?.restaurant?.slug ?? null))
+      .catch(() => {});
+  }, []);
+
+  const today = new Date().toDateString();
+  const todayOrders = orders.filter(
+    (o) => new Date(o.createdAt).toDateString() === today
+  );
+  const todayValid = todayOrders.filter((o) => o.status !== "cancelado");
+  const todayRevenue = todayValid.reduce((a, o) => a + o.total, 0);
+  const cancelledToday = todayOrders.length - todayValid.length;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -53,8 +72,8 @@ export default function VendedorDashboard() {
               QR code
             </Link>
           </Button>
-          <Button size="sm" asChild>
-            <Link href="/r/burguer-do-ze" target="_blank">
+          <Button size="sm" asChild disabled={!slug}>
+            <Link href={slug ? `/r/${slug}` : "#"} target="_blank">
               <ExternalLink className="size-4" />
               Ver cardápio
             </Link>
@@ -67,13 +86,13 @@ export default function VendedorDashboard() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Faturamento hoje"
-          value={formatBRL(236.2)}
-          hint="+18% vs ontem"
+          value={formatBRL(todayRevenue)}
+          hint={`${todayValid.length} pedido${todayValid.length === 1 ? "" : "s"} válido${todayValid.length === 1 ? "" : "s"}`}
           icon={DollarSign}
         />
         <StatCard
           label="Pedidos hoje"
-          value={String(orders.length)}
+          value={String(todayOrders.length)}
           hint={
             pendingCount > 0
               ? `${pendingCount} aguardando confirmação`
@@ -82,16 +101,16 @@ export default function VendedorDashboard() {
           icon={ReceiptText}
         />
         <StatCard
-          label="Ticket médio"
-          value={formatBRL(47.24)}
-          hint="Últimos 7 dias"
+          label="Ticket médio hoje"
+          value={formatBRL(todayValid.length > 0 ? todayRevenue / todayValid.length : 0)}
+          hint="Valor médio por pedido"
           icon={ShoppingBag}
         />
         <StatCard
-          label="Visitas ao cardápio"
-          value="184"
-          hint="+32% esta semana"
-          icon={TrendingUp}
+          label="Cancelados hoje"
+          value={String(cancelledToday)}
+          hint="Pedidos cancelados"
+          icon={XCircle}
         />
       </div>
 
@@ -140,8 +159,13 @@ export default function VendedorDashboard() {
             <CardTitle className="text-base">Mais vendidos</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            {topProducts.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Sem vendas nos últimos 7 dias.
+              </p>
+            )}
             {topProducts.map((p, i) => (
-              <div key={p.id} className="flex items-center gap-3">
+              <div key={p.name} className="flex items-center gap-3">
                 <span className="text-sm font-bold text-muted-foreground">
                   {i + 1}º
                 </span>
@@ -154,7 +178,7 @@ export default function VendedorDashboard() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{p.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {formatBRL(p.price)}
+                    {p.value} vendido{p.value === 1 ? "" : "s"} na semana
                   </p>
                 </div>
               </div>

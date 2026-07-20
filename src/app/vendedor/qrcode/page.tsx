@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import QRCode from "react-qr-code";
 import {
@@ -20,9 +20,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { restaurants } from "@/lib/mock/data";
-
-const restaurant = restaurants[0];
 
 const steps = [
   {
@@ -46,8 +43,26 @@ const fallbackOrigin = "https://zcardapio.com.br";
 export default function QrcodePage() {
   const qrWrapRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [restaurant, setRestaurant] = useState<{ name: string; slug: string }>({
+    name: "",
+    slug: "",
+  });
   const liveOrigin = useSyncExternalStore(subscribeNoop, origin, () => fallbackOrigin);
   const menuUrl = `${liveOrigin}/r/${restaurant.slug}`;
+
+  useEffect(() => {
+    fetch("/api/vendedor/restaurant")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.restaurant) {
+          setRestaurant({
+            name: data.restaurant.name,
+            slug: data.restaurant.slug,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   async function copyLink() {
     try {

@@ -169,3 +169,16 @@ export async function getRestaurantByOwner(ownerId: number) {
     where: eq(restaurants.ownerId, ownerId),
   });
 }
+
+export async function getRestaurantByOwnerMapped(
+  ownerId: number
+): Promise<(Restaurant & { primaryColor: string }) | null> {
+  const row = await db.query.restaurants.findFirst({
+    where: eq(restaurants.ownerId, ownerId),
+    with: {
+      categories: { orderBy: (c, { asc }) => [asc(c.position)] },
+      plan: { columns: { name: true } },
+    },
+  });
+  return row ? { ...mapRestaurant(row), primaryColor: row.primaryColor } : null;
+}

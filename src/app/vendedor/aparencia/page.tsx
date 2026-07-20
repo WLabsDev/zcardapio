@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,10 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { restaurants } from "@/lib/mock/data";
 import { cn } from "@/lib/utils";
-
-const restaurant = restaurants[0];
 
 const colors = [
   { id: "laranja", value: "#ea580c" },
@@ -26,8 +23,65 @@ const colors = [
   { id: "rosa", value: "#db2777" },
 ];
 
+type Appearance = {
+  name: string;
+  description: string;
+  logo: string;
+  cover: string;
+  primaryColor: string;
+};
+
 export default function AparenciaPage() {
-  const [color, setColor] = useState(colors[0]);
+  const [form, setForm] = useState<Appearance | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/vendedor/restaurant")
+      .then((res) => res.json())
+      .then((data) => {
+        const r = data.restaurant;
+        setForm({
+          name: r.name,
+          description: r.description,
+          logo: r.logo,
+          cover: r.cover,
+          primaryColor: r.primaryColor ?? colors[0].value,
+        });
+      })
+      .catch(() => toast.error("Não foi possível carregar a aparência."));
+  }, []);
+
+  const set = <K extends keyof Appearance>(key: K, value: Appearance[K]) =>
+    setForm((f) => (f ? { ...f, [key]: value } : f));
+
+  const save = async () => {
+    if (!form) return;
+    setSaving(true);
+    const res = await fetch("/api/vendedor/restaurant", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: form.name.trim(),
+        description: form.description.trim(),
+        logo: form.logo.trim(),
+        cover: form.cover.trim(),
+        primaryColor: form.primaryColor,
+      }),
+    }).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    setSaving(false);
+    if (!res?.ok) {
+      toast.error(data?.message ?? "Não foi possível salvar.");
+      return;
+    }
+    toast.success("Aparência salva!");
+  };
+
+  if (!form) {
+    return <p className="text-sm text-muted-foreground">Carregando aparência...</p>;
+  }
+
+  const color = form.primaryColor;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -49,28 +103,34 @@ export default function AparenciaPage() {
             </CardHeader>
             <CardContent className="grid gap-4">
               <div className="grid gap-2">
-                <Label>Logo</Label>
+                <Label htmlFor="logo">URL do logo</Label>
                 <div className="flex items-center gap-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={restaurant.logo}
+                    src={form.logo}
                     alt="Logo"
                     className="size-16 rounded-xl border"
                   />
-                  <Button variant="outline" size="sm">
-                    Trocar logo
-                  </Button>
+                  <Input
+                    id="logo"
+                    value={form.logo}
+                    onChange={(e) => set("logo", e.target.value)}
+                    placeholder="https://..."
+                  />
                 </div>
               </div>
               <div className="grid gap-2">
-                <Label>Imagem de capa</Label>
+                <Label htmlFor="capa">URL da imagem de capa</Label>
                 <div
                   className="h-28 rounded-xl border bg-cover bg-center"
-                  style={{ backgroundImage: `url(${restaurant.cover})` }}
+                  style={{ backgroundImage: `url(${form.cover})` }}
                 />
-                <Button variant="outline" size="sm" className="w-fit">
-                  Trocar capa
-                </Button>
+                <Input
+                  id="capa"
+                  value={form.cover}
+                  onChange={(e) => set("cover", e.target.value)}
+                  placeholder="https://..."
+                />
               </div>
             </CardContent>
           </Card>
@@ -86,10 +146,10 @@ export default function AparenciaPage() {
               {colors.map((c) => (
                 <button
                   key={c.id}
-                  onClick={() => setColor(c)}
+                  onClick={() => set("primaryColor", c.value)}
                   className={cn(
                     "size-10 rounded-full border-2 transition-transform",
-                    color.id === c.id
+                    color === c.value
                       ? "scale-110 border-foreground"
                       : "border-transparent"
                   )}
@@ -107,17 +167,25 @@ export default function AparenciaPage() {
             <CardContent className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="nome">Nome exibido</Label>
-                <Input id="nome" defaultValue={restaurant.name} />
+                <Input
+                  id="nome"
+                  value={form.name}
+                  onChange={(e) => set("name", e.target.value)}
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="desc">Descrição curta</Label>
-                <Input id="desc" defaultValue={restaurant.description} />
+                <Input
+                  id="desc"
+                  value={form.description}
+                  onChange={(e) => set("description", e.target.value)}
+                />
               </div>
             </CardContent>
           </Card>
 
-          <Button onClick={() => toast.success("Aparência salva!")}>
-            Salvar alterações
+          <Button onClick={save} disabled={saving}>
+            {saving ? "Salvando..." : "Salvar alterações"}
           </Button>
         </div>
 
@@ -129,35 +197,35 @@ export default function AparenciaPage() {
           <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
             <div
               className="h-20 bg-cover bg-center"
-              style={{ backgroundImage: `url(${restaurant.cover})` }}
+              style={{ backgroundImage: `url(${form.cover})` }}
             />
             <div className="-mt-5 px-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={restaurant.logo}
+                src={form.logo}
                 alt="Logo"
                 className="size-10 rounded-lg border shadow"
               />
             </div>
             <div className="space-y-2.5 p-4">
-              <p className="font-bold">{restaurant.name}</p>
+              <p className="font-bold">{form.name}</p>
               <div className="flex items-center justify-between rounded-lg border p-2">
                 <div>
                   <p className="text-sm font-medium">Zé Clássico</p>
-                  <p className="text-xs font-semibold" style={{ color: color.value }}>
+                  <p className="text-xs font-semibold" style={{ color }}>
                     R$ 29,90
                   </p>
                 </div>
                 <span
                   className="flex size-6 items-center justify-center rounded-md text-sm text-white"
-                  style={{ backgroundColor: color.value }}
+                  style={{ backgroundColor: color }}
                 >
                   +
                 </span>
               </div>
               <div
                 className="rounded-lg p-2 text-center text-sm font-semibold text-white"
-                style={{ backgroundColor: color.value }}
+                style={{ backgroundColor: color }}
               >
                 Ver carrinho
               </div>

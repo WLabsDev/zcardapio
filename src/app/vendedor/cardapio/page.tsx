@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BookOpen, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/panel/empty-state";
@@ -27,24 +27,118 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { products as allProducts, restaurants } from "@/lib/mock/data";
-import { formatBRL, type Product } from "@/lib/mock/types";
+import { formatBRL, type Category, type Product } from "@/lib/mock/types";
 
-const restaurant = restaurants[0];
+type FormState = {
+  name: string;
+  description: string;
+  price: string;
+  categoryId: string;
+  image: string;
+};
+
+const emptyForm: FormState = {
+  name: "",
+  description: "",
+  price: "",
+  categoryId: "",
+  image: "",
+};
 
 export default function CardapioPage() {
-  const [items, setItems] = useState<Product[]>(
-    allProducts.filter((p) => p.restaurantId === restaurant.id)
-  );
+  const [items, setItems] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Product | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [form, setForm] = useState<FormState>(emptyForm);
+  const [saving, setSaving] = useState(false);
 
-  const toggleAvailable = (id: string) =>
-    setItems((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, available: !p.available } : p))
+  const load = useCallback(async () => {
+    const res = await fetch("/api/vendedor/products").catch(() => null);
+    const data = await res?.json().catch(() => null);
+    if (res?.ok && data) {
+      setItems(data.products);
+      setCategories(data.categories);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const openDialog = (product: Product | null) => {
+    setEditing(product);
+    setForm(
+      product
+        ? {
+            name: product.name,
+            description: product.description,
+            price: String(product.price),
+            categoryId: product.categoryId,
+            image: product.image,
+          }
+        : { ...emptyForm, categoryId: categories[0]?.id ?? "" }
     );
+    setDialogOpen(true);
+  };
 
-  const removeProduct = (id: string) => {
+  const save = async () => {
+    const price = Number(form.price.replace(",", "."));
+    setSaving(true);
+    const res = await fetch(
+      editing ? `/api/vendedor/products/${editing.id}` : "/api/vendedor/products",
+      {
+        method: editing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          description: form.description.trim(),
+          price,
+          categoryId: form.categoryId,
+          image: form.image.trim(),
+        }),
+      }
+    ).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    setSaving(false);
+
+    if (!res?.ok) {
+      toast.error(data?.message ?? "Não foi possível salvar o produto.");
+      return;
+    }
+    setDialogOpen(false);
+    setEditing(null);
+    toast.success(editing ? "Produto atualizado!" : "Produto criado!");
+    load();
+  };
+
+  const toggleAvailable = async (product: Product) => {
+    setItems((prev) =>
+      prev.map((p) =>
+        p.id === product.id ? { ...p, available: !p.available } : p
+      )
+    );
+    const res = await fetch(`/api/vendedor/products/${product.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ available: !product.available }),
+    }).catch(() => null);
+    if (!res?.ok) {
+      toast.error("Não foi possível atualizar a disponibilidade.");
+      load();
+    }
+  };
+
+  const removeProduct = async (id: string) => {
+    const res = await fetch(`/api/vendedor/products/${id}`, {
+      method: "DELETE",
+    }).catch(() => null);
+    if (!res?.ok) {
+      toast.error("Não foi possível remover o produto.");
+      return;
+    }
     setItems((prev) => prev.filter((p) => p.id !== id));
     toast.success("Produto removido.");
   };
@@ -66,7 +160,7 @@ export default function CardapioPage() {
           }}
         >
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => openDialog(null)}>
               <Plus className="size-4" />
               Novo produto
             </Button>
@@ -85,7 +179,8 @@ export default function CardapioPage() {
                 <Label htmlFor="pnome">Nome</Label>
                 <Input
                   id="pnome"
-                  defaultValue={editing?.name}
+                  value={form.name}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                   placeholder="Ex.: Zé Clássico"
                 />
               </div>
@@ -93,7 +188,10 @@ export default function CardapioPage() {
                 <Label htmlFor="pdesc">Descrição</Label>
                 <Textarea
                   id="pdesc"
-                  defaultValue={editing?.description}
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, description: e.target.value }))
+                  }
                   placeholder="Ingredientes e detalhes do produto"
                 />
               </div>
@@ -104,18 +202,26 @@ export default function CardapioPage() {
                     id="ppreco"
                     type="number"
                     step="0.01"
-                    defaultValue={editing?.price}
+                    value={form.price}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, price: e.target.value }))
+                    }
                     placeholder="29,90"
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label>Categoria</Label>
-                  <Select defaultValue={editing?.categoryId ?? "c1"}>
+                  <Select
+                    value={form.categoryId}
+                    onValueChange={(v: string) =>
+                      setForm((f) => ({ ...f, categoryId: v }))
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {restaurant.categories.map((c) => (
+                      {categories.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.name}
                         </SelectItem>
@@ -128,29 +234,26 @@ export default function CardapioPage() {
                 <Label htmlFor="pimg">URL da imagem</Label>
                 <Input
                   id="pimg"
-                  defaultValue={editing?.image}
+                  value={form.image}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, image: e.target.value }))
+                  }
                   placeholder="https://..."
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button
-                onClick={() => {
-                  setDialogOpen(false);
-                  setEditing(null);
-                  toast.success(
-                    editing ? "Produto atualizado!" : "Produto criado!"
-                  );
-                }}
-              >
-                Salvar
+              <Button onClick={save} disabled={saving}>
+                {saving ? "Salvando..." : "Salvar"}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      {items.length === 0 ? (
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Carregando cardápio...</p>
+      ) : items.length === 0 ? (
         <EmptyState
           icon={BookOpen}
           title="Seu cardápio está vazio"
@@ -158,7 +261,7 @@ export default function CardapioPage() {
           action={
             <Button
               className="rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
-              onClick={() => setDialogOpen(true)}
+              onClick={() => openDialog(null)}
             >
               <Plus className="size-4" />
               Adicionar produto
@@ -166,7 +269,7 @@ export default function CardapioPage() {
           }
         />
       ) : (
-        restaurant.categories.map((cat) => {
+        categories.map((cat) => {
         const catItems = items.filter((p) => p.categoryId === cat.id);
         return (
           <Card key={cat.id}>
@@ -212,7 +315,7 @@ export default function CardapioPage() {
                     <div className="flex items-center gap-1.5">
                       <Switch
                         checked={p.available}
-                        onCheckedChange={() => toggleAvailable(p.id)}
+                        onCheckedChange={() => toggleAvailable(p)}
                       />
                       <span className="hidden text-xs text-muted-foreground sm:inline">
                         {p.available ? "Disponível" : "Pausado"}
@@ -221,10 +324,7 @@ export default function CardapioPage() {
                     <Button
                       size="icon-sm"
                       variant="ghost"
-                      onClick={() => {
-                        setEditing(p);
-                        setDialogOpen(true);
-                      }}
+                      onClick={() => openDialog(p)}
                     >
                       <Pencil className="size-4" />
                     </Button>
