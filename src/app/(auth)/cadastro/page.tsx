@@ -41,7 +41,19 @@ export default function CadastroClientePage() {
     defaultValues: { nome: "", email: "", telefone: "", senha: "" },
   });
 
-  function onSubmit() {
+  async function onSubmit(values: CadastroValues) {
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(values),
+    });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      toast.error(data?.message ?? "Não foi possível criar a conta.");
+      return;
+    }
+
     toast.success("Conta criada com sucesso!");
     router.push("/cliente");
   }

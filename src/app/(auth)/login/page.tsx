@@ -33,6 +33,12 @@ const loginSchema = z.object({
 
 type LoginValues = z.infer<typeof loginSchema>;
 
+const roleHome: Record<string, string> = {
+  admin: "/admin",
+  restaurante: "/vendedor",
+  cliente: "/cliente",
+};
+
 export default function LoginPage() {
   const router = useRouter();
   const [profile, setProfile] = useState("cliente");
@@ -42,27 +48,40 @@ export default function LoginPage() {
     defaultValues: { email: "", senha: "" },
   });
 
-  const destination =
-    profile === "restaurante"
-      ? "/vendedor"
-      : profile === "admin"
-        ? "/admin"
-        : "/cliente";
+  async function onSubmit(values: LoginValues) {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...values, profile }),
+    });
+    const data = await res.json().catch(() => null);
 
-  function onSubmit() {
-    toast.success("Login realizado!");
-    router.push(destination);
+    if (!res.ok || !data?.user) {
+      toast.error(data?.message ?? "Não foi possível entrar.");
+      return;
+    }
+
+    toast.success(`Bem-vindo(a), ${data.user.name.split(" ")[0]}!`);
+    router.push(roleHome[data.user.role as string] ?? "/");
   }
 
   return (
     <Card className="w-full max-w-md border-2 border-foreground shadow-offset">
       <CardHeader>
         <CardTitle className="text-2xl">Bem-vindo de volta 👋</CardTitle>
-        <CardDescription>
-          Acesse sua conta do zCardapio. (Demonstração — qualquer dado válido
-          entra.)
-        </CardDescription>
+        <CardDescription>Acesse sua conta do zCardapio.</CardDescription>
       </CardHeader>
+      <div className="mx-6 mb-2 rounded-lg border-2 border-dashed border-foreground/20 bg-muted/40 p-3 text-xs text-muted-foreground">
+        <p className="mb-1 font-semibold text-foreground">Contas de demonstração</p>
+        <p>
+          <strong>Cliente:</strong> mari.souza@gmail.com ·{" "}
+          <strong>Restaurante:</strong> ze@burguerdoze.com.br ·{" "}
+          <strong>Admin:</strong> admin@zcardapio.com.br
+        </p>
+        <p className="mt-1">
+          Senha: <code className="font-bold text-primary">12345678</code>
+        </p>
+      </div>
       <CardContent>
         <Tabs value={profile} onValueChange={setProfile} className="mb-4">
           <TabsList className="w-full">

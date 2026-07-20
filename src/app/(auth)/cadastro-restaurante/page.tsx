@@ -89,7 +89,19 @@ export default function CadastroRestaurantePage() {
     if (valid) setStep((s) => s + 1);
   }
 
-  function onSubmit() {
+  async function onSubmit(values: CadastroRestauranteValues) {
+    const res = await fetch("/api/auth/register-restaurant", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...values, plano: selectedPlan }),
+    });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      toast.error(data?.message ?? "Não foi possível concluir o cadastro.");
+      return;
+    }
+
     toast.success("Restaurante cadastrado! Bem-vindo ao zCardapio 🎉");
     router.push("/vendedor");
   }

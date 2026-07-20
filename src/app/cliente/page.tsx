@@ -4,16 +4,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OrderStatusBadge } from "@/components/panel/order-status-badge";
+import { usePanelUser } from "@/components/panel/panel-shell";
 import { orders, restaurants } from "@/lib/mock/data";
 import { formatBRL } from "@/lib/mock/types";
 
 export default function ClienteHome() {
   const activeOrder = orders.find((o) => o.status === "preparando");
+  const { name } = usePanelUser();
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <h2 className="font-display text-xl font-bold">Olá, Mariana 👋</h2>
+        <h2 className="font-display text-xl font-bold">
+          Olá, {name.split(" ")[0]} 👋
+        </h2>
         <p className="text-sm text-muted-foreground">
           Com fome? Seus restaurantes favoritos estão aqui.
         </p>

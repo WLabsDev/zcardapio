@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { StatCard } from "@/components/panel/panel-shell";
+import { StatCard, usePanelUser } from "@/components/panel/panel-shell";
 import { OrderStatusBadge } from "@/components/panel/order-status-badge";
 import { OnboardingChecklist } from "@/components/panel/onboarding-checklist";
 import { useOrders } from "@/components/panel/orders-provider";
@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 
 export default function VendedorDashboard() {
   const { orders, pendingCount } = useOrders();
+  const { name } = usePanelUser();
 
   const topProducts = products
     .filter((p) => p.restaurantId === "r1" && p.popular)
@@ -38,7 +39,9 @@ export default function VendedorDashboard() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-bold">Bom dia, José 👋</h2>
+          <h2 className="font-display text-xl font-bold">
+            Olá, {name.split(" ")[0]} 👋
+          </h2>
           <p className="text-sm text-muted-foreground">
             Aqui está o resumo do seu restaurante hoje.
           </p>

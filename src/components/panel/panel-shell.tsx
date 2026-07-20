@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Menu, type LucideIcon } from "lucide-react";
@@ -24,6 +24,17 @@ export type NavItem = {
   icon: LucideIcon;
   badge?: React.ReactNode;
 };
+
+const PanelUserContext = createContext<{ name: string } | null>(null);
+
+/** Nome do usuário logado (vindo da sessão no layout server). */
+export function usePanelUser() {
+  const ctx = useContext(PanelUserContext);
+  if (!ctx) {
+    throw new Error("usePanelUser deve ser usado dentro de PanelShell");
+  }
+  return ctx;
+}
 
 export function PanelShell({
   title,
@@ -125,7 +136,13 @@ export function PanelShell({
                 </p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push("/")}>
+              <DropdownMenuItem
+                onClick={async () => {
+                  await fetch("/api/auth/logout", { method: "POST" });
+                  router.push("/");
+                  router.refresh();
+                }}
+              >
                 <LogOut className="size-4" />
                 Sair
               </DropdownMenuItem>
@@ -133,7 +150,11 @@ export function PanelShell({
           </DropdownMenu>
         </header>
 
-        <main className="flex-1 bg-muted/30 p-4 md:p-6">{children}</main>
+        <main className="flex-1 bg-muted/30 p-4 md:p-6">
+          <PanelUserContext.Provider value={{ name: userName }}>
+            {children}
+          </PanelUserContext.Provider>
+        </main>
       </div>
     </div>
   );

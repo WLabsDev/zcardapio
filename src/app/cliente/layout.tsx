@@ -1,27 +1,14 @@
-"use client";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/auth";
+import { ClienteShell } from "@/components/panel/cliente-shell";
 
-import { Home, ReceiptText, UserRound } from "lucide-react";
-import { PanelShell } from "@/components/panel/panel-shell";
-
-const nav = [
-  { href: "/cliente", label: "Início", icon: Home },
-  { href: "/cliente/pedidos", label: "Meus pedidos", icon: ReceiptText },
-  { href: "/cliente/perfil", label: "Perfil", icon: UserRound },
-];
-
-export default function ClienteLayout({
+export default async function ClienteLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <PanelShell
-      title="Minha conta"
-      nav={nav}
-      userName="Mariana Souza"
-      userRole="Cliente"
-    >
-      {children}
-    </PanelShell>
-  );
+  const session = await getSession();
+  if (!session || session.role !== "cliente") redirect("/login");
+
+  return <ClienteShell userName={session.name}>{children}</ClienteShell>;
 }
