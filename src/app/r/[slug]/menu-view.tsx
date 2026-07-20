@@ -202,7 +202,7 @@ export function MenuView({
       </div>
 
       {/* Restaurant header */}
-      <div className="mx-auto -mt-10 max-w-3xl px-4">
+      <div className="relative mx-auto -mt-10 max-w-3xl px-4">
         <div className="rounded-2xl border-2 border-foreground bg-card p-4 shadow-offset">
           <div className="flex items-start gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
