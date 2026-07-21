@@ -176,3 +176,26 @@
 @utility animate-marquee {
   animation: marquee 28s linear infinite;
 }
+
+/* Impressão do ticket de cozinha: o ticket é montado via portal como filho
+   direto do <body>; na impressão, ocultamos todos os outros filhos (painel,
+   modal, toasts) para que só o cupom saia na folha, sem páginas em branco. */
+@media print {
+  @page {
+    margin: 4mm;
+  }
+  /* Desfaz o scroll-lock que o Radix Dialog aplica ao abrir o modal,
+     garantindo que o ticket imprima inteiro, mesmo com ele aberto. */
+  html,
+  body {
+    position: static !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+  body > *:not(#print-ticket) {
+    display: none !important;
+  }
+  #print-ticket {
+    display: block !important;
+  }
+}

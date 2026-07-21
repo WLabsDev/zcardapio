@@ -7,6 +7,7 @@ import {
   CreditCard,
   MapPin,
   MessageCircle,
+  Printer,
   ReceiptText,
   Store,
 } from "lucide-react";
@@ -40,6 +41,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/panel/empty-state";
+import { OrderPrintTicket } from "@/components/panel/order-print-ticket";
 import { OrderStatusBadge } from "@/components/panel/order-status-badge";
 import { OrderStatusTimeline } from "@/components/panel/order-status-timeline";
 import { useOrders } from "@/components/panel/orders-provider";
@@ -208,30 +210,40 @@ export default function PedidosPage() {
                 </DialogDescription>
               </DialogHeader>
 
-              {/* Alterar status — no topo para acesso rápido */}
-              <div className="flex items-center gap-3 rounded-xl border-2 border-foreground bg-accent p-3 shadow-offset-sm">
-                <span className="shrink-0 text-xs font-bold uppercase tracking-wide text-accent-foreground/70">
-                  Status
-                </span>
-                <Select
-                  value={selected.status}
-                  onValueChange={(v: string) =>
-                    handleChangeStatus(selected, v as OrderStatus)
-                  }
+              {/* Ações rápidas — status e impressão no topo, sem rolar */}
+              <div className="space-y-2 rounded-xl border-2 border-foreground bg-accent p-3 shadow-offset-sm">
+                <div className="flex items-center gap-3">
+                  <span className="shrink-0 text-xs font-bold uppercase tracking-wide text-accent-foreground/70">
+                    Status
+                  </span>
+                  <Select
+                    value={selected.status}
+                    onValueChange={(v: string) =>
+                      handleChangeStatus(selected, v as OrderStatus)
+                    }
+                  >
+                    <SelectTrigger className="h-10 flex-1 border-2 border-foreground bg-background font-semibold shadow-none">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(ORDER_STATUS_LABEL) as OrderStatus[]).map(
+                        (s) => (
+                          <SelectItem key={s} value={s}>
+                            {ORDER_STATUS_LABEL[s]}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  size="lg"
+                  className="w-full rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
+                  onClick={() => window.print()}
                 >
-                  <SelectTrigger className="h-10 flex-1 border-2 border-foreground bg-background font-semibold shadow-none">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(ORDER_STATUS_LABEL) as OrderStatus[]).map(
-                      (s) => (
-                        <SelectItem key={s} value={s}>
-                          {ORDER_STATUS_LABEL[s]}
-                        </SelectItem>
-                      )
-                    )}
-                  </SelectContent>
-                </Select>
+                  <Printer className="size-4" />
+                  Imprimir p/ cozinha
+                </Button>
               </div>
 
               <OrderStatusTimeline status={selected.status} />
@@ -395,6 +407,8 @@ export default function PedidosPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {selected && <OrderPrintTicket order={selected} />}
     </div>
   );
 }
