@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useBackToClose } from "@/hooks/use-back-to-close";
 import { formatBRL } from "@/lib/mock/types";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,9 @@ export default function AdminPlanosPage() {
   const [editing, setEditing] = useState<AdminPlan | null>(null);
   const [form, setForm] = useState({ price: "", description: "", features: "" });
   const [saving, setSaving] = useState(false);
+
+  // No mobile, o botão "voltar" fecha o modal em vez de sair da página.
+  useBackToClose(!!editing, () => setEditing(null));
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/plans").catch(() => null);

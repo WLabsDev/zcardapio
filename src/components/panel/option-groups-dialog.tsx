@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { useBackToClose } from "@/hooks/use-back-to-close";
 import { formatBRL, type OptionGroup, type Product } from "@/lib/mock/types";
 
 type OptionFormState = {
@@ -64,6 +65,9 @@ export function OptionGroupsDialog({
     }
     onOpenChange(o);
   };
+
+  // No mobile, o botão "voltar" fecha o modal em vez de sair da página.
+  useBackToClose(open, () => handleOpenChange(false));
 
   const openGroupForm = (group: OptionGroup | null) => {
     setEditingGroup(group);

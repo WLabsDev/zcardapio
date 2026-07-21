@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useBackToClose } from "@/hooks/use-back-to-close";
 import { formatBRL, type Category, type Product } from "@/lib/mock/types";
 import { uploadImage } from "@/lib/upload";
 import { cn } from "@/lib/utils";
@@ -67,6 +68,11 @@ export default function CardapioPage() {
   const [optionGroupsProductId, setOptionGroupsProductId] = useState<string | null>(null);
   const optionGroupsProduct =
     items.find((p) => p.id === optionGroupsProductId) ?? null;
+
+  // No mobile, o botão "voltar" fecha o modal aberto em vez de sair da página.
+  // (O modal de complementos cuida do próprio "voltar" dentro do componente.)
+  useBackToClose(dialogOpen, () => setDialogOpen(false));
+  useBackToClose(categoryDialogOpen, () => setCategoryDialogOpen(false));
 
   const load = useCallback(async () => {
     const res = await fetch("/api/vendedor/products").catch(() => null);

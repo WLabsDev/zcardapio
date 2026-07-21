@@ -52,6 +52,7 @@ import {
   useCart,
   type SelectedOption,
 } from "@/components/cart/cart-context";
+import { useBackToClose } from "@/hooks/use-back-to-close";
 import { formatBRL, type Product, type Restaurant } from "@/lib/mock/types";
 import type { SessionRole } from "@/lib/session";
 import { isDarkTheme, restaurantThemeVars } from "@/lib/theme";
@@ -150,7 +151,13 @@ export function MenuView({
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState("");
   const [choices, setChoices] = useState<Record<string, string[]>>({});
+  const [cartOpen, setCartOpen] = useState(false);
   const cart = useCart();
+
+  // No mobile, o botão "voltar" fecha o modal do produto em vez de sair da página.
+  useBackToClose(!!selected, () => setSelected(null));
+  // Idem para a gaveta do carrinho.
+  useBackToClose(cartOpen, () => setCartOpen(false));
 
   const toggleChoice = (groupId: string, optionId: string, max: number) => {
     setChoices((prev) => {
@@ -496,7 +503,7 @@ export function MenuView({
       {cart.count > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t-2 border-foreground/10 bg-background/95 p-3 backdrop-blur">
           <div className="mx-auto max-w-3xl">
-            <Sheet>
+            <Sheet open={cartOpen} onOpenChange={setCartOpen}>
               <SheetTrigger asChild>
                 <Button
                   className="w-full justify-between rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"

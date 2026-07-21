@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Menu, type LucideIcon } from "lucide-react";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Logo } from "@/components/logo";
+import { useBackToClose } from "@/hooks/use-back-to-close";
 import { cn } from "@/lib/utils";
 
 export type NavItem = {
@@ -53,6 +54,42 @@ export function PanelShell({
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
+  // No mobile, o botão "voltar" fecha o menu em vez de sair da página.
+  useBackToClose(open, () => setOpen(false));
+
+  // Fecha o menu ao navegar. Roda depois que a rota já mudou, então o cleanup
+  // do useBackToClose não chama history.back() (a entrada atual já é a nova
+  // página), evitando brigar com a navegação.
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  // Abrir o menu arrastando da borda esquerda para a direita (só no mobile).
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (window.innerWidth >= 1024 || open) {
+      swipeStart.current = null;
+      return;
+    }
+    const t = e.touches[0];
+    swipeStart.current =
+      t.clientX <= 24 ? { x: t.clientX, y: t.clientY } : null;
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!swipeStart.current) return;
+    const t = e.touches[0];
+    const dx = t.clientX - swipeStart.current.x;
+    const dy = t.clientY - swipeStart.current.y;
+    // Arrasto para a direita, predominantemente horizontal.
+    if (dx > 56 && dx > Math.abs(dy) * 1.5) {
+      swipeStart.current = null;
+      setOpen(true);
+    }
+  };
+  const onTouchEnd = () => {
+    swipeStart.current = null;
+  };
+
   const initials = userName
     .split(" ")
     .map((n) => n[0])
@@ -71,7 +108,20 @@ export function PanelShell({
           <Link
             key={item.href}
             href={item.href}
-            onClick={() => setOpen(false)}
+            onClick={(e) => {
+              if (!open) return; // desktop/menu fechado: navegação normal do Link
+              e.preventDefault();
+              if (active) {
+                // Já está nesta página: só fecha o menu (o cleanup remove o
+                // marcador via history.back(), sem navegação concorrente).
+                setOpen(false);
+              } else {
+                // Replace substitui o marcador de histórico pela nova rota (sem
+                // entrada duplicada); o efeito de pathname fecha o menu depois
+                // que a rota muda, evitando brigar com a navegação.
+                router.replace(item.href);
+              }
+            }}
             className={cn(
               "flex items-center gap-3 rounded-xl border-2 px-3 py-2 text-sm font-semibold transition-all",
               active
@@ -89,7 +139,12 @@ export function PanelShell({
   );
 
   return (
-    <div className="flex min-h-screen">
+    <div
+      className="flex min-h-screen"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       {/* Sidebar desktop */}
       <aside className="hidden w-60 shrink-0 flex-col border-r bg-sidebar lg:flex">
         <div className="flex h-16 items-center border-b px-5">

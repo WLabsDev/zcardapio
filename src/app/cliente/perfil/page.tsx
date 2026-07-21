@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { useBackToClose } from "@/hooks/use-back-to-close";
 
 type Address = { id: string; label: string; address: string; isMain: boolean };
 
@@ -34,6 +35,9 @@ export default function ClientePerfilPage() {
   const [editing, setEditing] = useState<Address | null>(null);
   const [form, setForm] = useState({ label: "", address: "" });
   const [savingAddress, setSavingAddress] = useState(false);
+
+  // No mobile, o botão "voltar" fecha o modal em vez de sair da página.
+  useBackToClose(dialogOpen, () => setDialogOpen(false));
 
   const loadAddresses = useCallback(async () => {
     const res = await fetch("/api/me/addresses").catch(() => null);

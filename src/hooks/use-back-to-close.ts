@@ -33,10 +33,15 @@ export function useBackToClose(open: boolean, onClose: () => void) {
     return () => {
       window.removeEventListener("popstate", onPopState);
       // Fechou por outro meio (botão/ESC/overlay) sem consumir a entrada →
-      // remove-a para o próximo "voltar" não ficar "preso" aqui.
+      // remove-a para o próximo "voltar" não ficar "preso" aqui. A guarda evita
+      // brigar com uma navegação em andamento (ex.: clicar em "Finalizar pedido"
+      // dentro do modal): se a entrada atual já não é o nosso marcador, não
+      // chamamos back().
       if (pushedRef.current) {
         pushedRef.current = false;
-        window.history.back();
+        if (window.history.state?.backToClose) {
+          window.history.back();
+        }
       }
     };
   }, [open]);

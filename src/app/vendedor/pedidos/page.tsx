@@ -62,6 +62,26 @@ const tabs: { value: string; label: string }[] = [
   { value: "entregue", label: "Concluídos" },
 ];
 
+/** Barra lateral de cor por status, para bater o olho e saber a situação. */
+const statusAccent: Record<OrderStatus, string> = {
+  pendente: "border-l-amber-400 dark:border-l-amber-500",
+  confirmado: "border-l-blue-400 dark:border-l-blue-500",
+  preparando: "border-l-violet-400 dark:border-l-violet-500",
+  saiu_para_entrega: "border-l-cyan-400 dark:border-l-cyan-500",
+  entregue: "border-l-green-400 dark:border-l-green-500",
+  cancelado: "border-l-red-400 dark:border-l-red-500",
+};
+
+function timeAgo(iso: string): string {
+  const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (min < 1) return "agora";
+  if (min < 60) return `há ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `há ${h} h`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? "ontem" : `há ${d} dias`;
+}
+
 export default function PedidosPage() {
   const { orders, updateStatus } = useOrders();
   const [tab, setTab] = useState("todos");
@@ -109,70 +129,133 @@ export default function PedidosPage() {
         </TabsList>
       </Tabs>
 
-      <Card>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Pedido</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead className="hidden sm:table-cell">Itens</TableHead>
-                <TableHead className="hidden sm:table-cell">Pagamento</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((o) => (
-                <TableRow
+      {filtered.length === 0 ? (
+        <Card>
+          <CardContent>
+            <EmptyState
+              compact
+              icon={ReceiptText}
+              title="Nenhum pedido aqui"
+              description="Quando chegarem pedidos com esse status, eles aparecem nesta lista."
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Mobile: cards-ticket com alvo de toque generoso e status em cor */}
+          <div className="space-y-3 md:hidden">
+            {filtered.map((o) => {
+              const itemCount = o.items.reduce((a, i) => a + i.quantity, 0);
+              return (
+                <button
                   key={o.id}
-                  className={cn(
-                    "cursor-pointer",
-                    o.status === "pendente" &&
-                      "bg-amber-50/70 hover:bg-amber-50 dark:bg-amber-950/20 dark:hover:bg-amber-950/30"
-                  )}
                   onClick={() => setSelectedId(o.id)}
+                  className={cn(
+                    "w-full rounded-xl border-2 border-l-[6px] border-foreground/10 bg-card p-3.5 text-left shadow-offset-sm transition-all hover:-translate-y-0.5 hover:border-foreground/30 active:translate-y-0 active:scale-[0.99]",
+                    statusAccent[o.status],
+                    o.status === "pendente" &&
+                      "bg-amber-50/70 dark:bg-amber-950/20"
+                  )}
                 >
-                  <TableCell className="font-medium">
-                    <span className="flex items-center gap-2">
-                      {o.code}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="font-display text-base font-bold">
+                        {o.code}
+                      </span>
                       {o.status === "pendente" && (
-                        <span className="flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
+                        <span className="flex shrink-0 items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
                           <span className="size-1.5 animate-pulse rounded-full bg-primary-foreground" />
                           novo
                         </span>
                       )}
                     </span>
-                  </TableCell>
-                  <TableCell>{o.customerName}</TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    {o.items.reduce((a, i) => a + i.quantity, 0)}
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    {o.paymentMethod}
-                  </TableCell>
-                  <TableCell>{formatBRL(o.total)}</TableCell>
-                  <TableCell>
+                    <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                      {timeAgo(o.createdAt)}
+                    </span>
+                  </div>
+
+                  <div className="mt-1.5 flex items-baseline justify-between gap-3">
+                    <p className="min-w-0 truncate text-sm font-semibold">
+                      {o.customerName}
+                    </p>
+                    <p className="shrink-0 font-display text-base font-bold">
+                      {formatBRL(o.total)}
+                    </p>
+                  </div>
+
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                      {o.deliveryType === "entrega" ? (
+                        <Bike className="size-3.5 shrink-0" />
+                      ) : (
+                        <Store className="size-3.5 shrink-0" />
+                      )}
+                      <span className="truncate">
+                        {o.deliveryType === "entrega" ? "Entrega" : "Retirada"} ·{" "}
+                        {o.paymentMethod} · {itemCount}{" "}
+                        {itemCount === 1 ? "item" : "itens"}
+                      </span>
+                    </p>
                     <OrderStatusBadge status={o.status} />
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6}>
-                    <EmptyState
-                      compact
-                      icon={ReceiptText}
-                      title="Nenhum pedido aqui"
-                      description="Quando chegarem pedidos com esse status, eles aparecem nesta lista."
-                    />
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Desktop: tabela para escanear muitos pedidos de uma vez */}
+          <Card className="hidden md:block">
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Pedido</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Itens</TableHead>
+                    <TableHead>Pagamento</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((o) => (
+                    <TableRow
+                      key={o.id}
+                      className={cn(
+                        "cursor-pointer",
+                        o.status === "pendente" &&
+                          "bg-amber-50/70 hover:bg-amber-50 dark:bg-amber-950/20 dark:hover:bg-amber-950/30"
+                      )}
+                      onClick={() => setSelectedId(o.id)}
+                    >
+                      <TableCell className="font-medium">
+                        <span className="flex items-center gap-2">
+                          {o.code}
+                          {o.status === "pendente" && (
+                            <span className="flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
+                              <span className="size-1.5 animate-pulse rounded-full bg-primary-foreground" />
+                              novo
+                            </span>
+                          )}
+                        </span>
+                      </TableCell>
+                      <TableCell>{o.customerName}</TableCell>
+                      <TableCell>
+                        {o.items.reduce((a, i) => a + i.quantity, 0)}
+                      </TableCell>
+                      <TableCell>{o.paymentMethod}</TableCell>
+                      <TableCell>{formatBRL(o.total)}</TableCell>
+                      <TableCell>
+                        <OrderStatusBadge status={o.status} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       <Dialog
         open={!!selected}
