@@ -115,7 +115,7 @@ export default function VendedorDashboard() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-        <Card>
+        <Card className="min-w-0">
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle className="text-base">Pedidos recentes</CardTitle>
             <Button variant="ghost" size="sm" asChild>

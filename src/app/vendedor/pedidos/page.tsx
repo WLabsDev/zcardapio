@@ -172,7 +172,7 @@ export default function PedidosPage() {
         open={!!selected}
         onOpenChange={(o: boolean) => !o && setSelectedId(null)}
       >
-        <DialogContent className="sm:max-w-xl">
+        <DialogContent className="sm:max-w-xl overflow-x-hidden">
           {selected && (
             <>
               <DialogHeader>
@@ -183,8 +183,8 @@ export default function PedidosPage() {
                   <OrderStatusBadge status={selected.status} />
                 </div>
                 <DialogDescription asChild>
-                  <div className="space-y-1.5">
-                    <p>
+                  <div className="min-w-0 space-y-1.5">
+                    <p className="break-words">
                       {selected.customerName} ·{" "}
                       {new Date(selected.createdAt).toLocaleString("pt-BR", {
                         dateStyle: "short",
@@ -237,7 +237,7 @@ export default function PedidosPage() {
               <OrderStatusTimeline status={selected.status} />
 
               {/* Cliente e entrega */}
-              <div className="space-y-2.5 rounded-xl border-2 border-foreground/15 bg-muted/40 p-3.5">
+              <div className="min-w-0 space-y-2.5 rounded-xl border-2 border-foreground/15 bg-muted/40 p-3.5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2.5">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-accent font-display text-sm font-bold">
@@ -317,7 +317,7 @@ export default function PedidosPage() {
                       className="rounded-xl border border-foreground/10 bg-card p-3"
                     >
                       <div className="flex justify-between gap-2 text-sm">
-                        <span className="font-semibold">
+                        <span className="min-w-0 break-words font-semibold">
                           {i.quantity}x {i.name}
                         </span>
                         <span className="shrink-0 font-medium">
