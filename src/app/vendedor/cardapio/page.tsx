@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BookOpen, FolderPlus, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import { BookOpen, FolderPlus, ListPlus, Pencil, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/panel/empty-state";
+import { OptionGroupsDialog } from "@/components/panel/option-groups-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,6 +62,10 @@ export default function CardapioPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryName, setCategoryName] = useState("");
   const [savingCategory, setSavingCategory] = useState(false);
+
+  const [optionGroupsProductId, setOptionGroupsProductId] = useState<string | null>(null);
+  const optionGroupsProduct =
+    items.find((p) => p.id === optionGroupsProductId) ?? null;
 
   const load = useCallback(async () => {
     const res = await fetch("/api/vendedor/products").catch(() => null);
@@ -465,6 +470,21 @@ export default function CardapioPage() {
                     <Button
                       size="icon-sm"
                       variant="ghost"
+                      className="relative"
+                      onClick={() => setOptionGroupsProductId(p.id)}
+                      aria-label="Complementos do produto"
+                      title="Complementos"
+                    >
+                      <ListPlus className="size-4" />
+                      {(p.optionGroups?.length ?? 0) > 0 && (
+                        <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                          {p.optionGroups!.length}
+                        </span>
+                      )}
+                    </Button>
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
                       onClick={() => openDialog(p)}
                     >
                       <Pencil className="size-4" />
@@ -485,6 +505,14 @@ export default function CardapioPage() {
         );
         })
       )}
+
+      <OptionGroupsDialog
+        product={optionGroupsProduct}
+        onOpenChange={(o) => {
+          if (!o) setOptionGroupsProductId(null);
+        }}
+        onChanged={load}
+      />
     </div>
   );
 }

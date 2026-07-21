@@ -11,6 +11,15 @@ const reaisToCents = (v: number) => Math.round(v * 100);
 // Aceita URL completa ou caminho local gerado pelo upload (/uploads/...)
 const imageUrl = z.union([z.url(), z.string().regex(/^\/uploads\/[\w.-]+$/)]);
 
+const timeStr = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Horário inválido.");
+
+const dayHoursSchema = z.object({
+  day: z.number().int().min(0).max(6),
+  open: timeStr,
+  close: timeStr,
+  closed: z.boolean(),
+});
+
 const putSchema = z.object({
   slug: z
     .string()
@@ -36,6 +45,30 @@ const putSchema = z.object({
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/, "Cor inválida.")
     .optional(),
+  // Paleta de cores personalizada (hex ou vazio para usar o padrão do tema)
+  headingColor: z.string().regex(/^(#[0-9a-fA-F]{6})?$/, "Cor inválida.").optional(),
+  productTitleColor: z.string().regex(/^(#[0-9a-fA-F]{6})?$/, "Cor inválida.").optional(),
+  bodyColor: z.string().regex(/^(#[0-9a-fA-F]{6})?$/, "Cor inválida.").optional(),
+  mutedColor: z.string().regex(/^(#[0-9a-fA-F]{6})?$/, "Cor inválida.").optional(),
+  bgColor: z.string().regex(/^(#[0-9a-fA-F]{6})?$/, "Cor inválida.").optional(),
+  cardColor: z.string().regex(/^(#[0-9a-fA-F]{6})?$/, "Cor inválida.").optional(),
+  badgeColor: z.string().regex(/^(#[0-9a-fA-F]{6})?$/, "Cor inválida.").optional(),
+  badgeTextColor: z.string().regex(/^(#[0-9a-fA-F]{6})?$/, "Cor inválida.").optional(),
+  // Horário inteligente
+  hours: z.array(dayHoursSchema).max(7).optional(),
+  pauseMessage: z.string().max(140).optional(),
+  // Banner + comunicação
+  bannerText: z.string().max(200).optional(),
+  whatsapp: z.string().max(20).optional(),
+  confirmMessage: z.string().max(300).optional(),
+  // Pagamentos
+  paymentMethods: z.array(z.enum(["pix", "cartao", "dinheiro"])).min(1).optional(),
+  // Aparência avançada
+  theme: z.enum(["claro", "escuro"]).optional(),
+  font: z.enum(["bricolage", "jakarta", "mono"]).optional(),
+  buttonStyle: z.enum(["arredondado", "reto"]).optional(),
+  // Pedidos
+  acceptsScheduled: z.boolean().optional(),
 });
 
 export async function GET() {
@@ -97,6 +130,28 @@ export async function PUT(request: Request) {
       ...(d.logo !== undefined && { logoUrl: d.logo }),
       ...(d.cover !== undefined && { coverUrl: d.cover }),
       ...(d.primaryColor !== undefined && { primaryColor: d.primaryColor }),
+      ...(d.hours !== undefined && { hours: d.hours }),
+      ...(d.pauseMessage !== undefined && { pauseMessage: d.pauseMessage }),
+      ...(d.bannerText !== undefined && { bannerText: d.bannerText }),
+      ...(d.whatsapp !== undefined && { whatsapp: d.whatsapp }),
+      ...(d.confirmMessage !== undefined && { confirmMessage: d.confirmMessage }),
+      ...(d.paymentMethods !== undefined && { paymentMethods: d.paymentMethods }),
+      ...(d.theme !== undefined && { theme: d.theme }),
+      ...(d.font !== undefined && { font: d.font }),
+      ...(d.buttonStyle !== undefined && { buttonStyle: d.buttonStyle }),
+      ...(d.headingColor !== undefined && { headingColor: d.headingColor }),
+      ...(d.productTitleColor !== undefined && {
+        productTitleColor: d.productTitleColor,
+      }),
+      ...(d.bodyColor !== undefined && { bodyColor: d.bodyColor }),
+      ...(d.mutedColor !== undefined && { mutedColor: d.mutedColor }),
+      ...(d.bgColor !== undefined && { bgColor: d.bgColor }),
+      ...(d.cardColor !== undefined && { cardColor: d.cardColor }),
+      ...(d.badgeColor !== undefined && { badgeColor: d.badgeColor }),
+      ...(d.badgeTextColor !== undefined && { badgeTextColor: d.badgeTextColor }),
+      ...(d.acceptsScheduled !== undefined && {
+        acceptsScheduled: d.acceptsScheduled,
+      }),
     })
     .where(eq(restaurants.id, restaurant.id));
 

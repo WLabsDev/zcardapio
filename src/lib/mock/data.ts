@@ -432,8 +432,8 @@ export const users: User[] = [
   { id: "u2", name: "José Ferreira", email: "ze@burguerdoze.com.br", role: "restaurante", createdAt: "2026-03-12" },
   { id: "u3", name: "Giovanna Rossi", email: "gio@bellanapoli.com.br", role: "restaurante", createdAt: "2026-01-20" },
   { id: "u4", name: "Kenji Tanaka", email: "kenji@sushikai.com.br", role: "restaurante", createdAt: "2026-07-02" },
-  { id: "u5", name: "Mariana Souza", email: "mari.souza@gmail.com", role: "cliente", createdAt: "2026-04-18" },
-  { id: "u6", name: "Carlos Lima", email: "carlos.lima@gmail.com", role: "cliente", createdAt: "2026-05-30" },
+  { id: "u5", name: "Mariana Souza", email: "mari.souza@gmail.com", phone: "11999991234", role: "cliente", createdAt: "2026-04-18" },
+  { id: "u6", name: "Carlos Lima", email: "carlos.lima@gmail.com", phone: "11988885678", role: "cliente", createdAt: "2026-05-30" },
 ];
 
 export const reportData: Record<ReportPeriod, ReportSnapshot> = {

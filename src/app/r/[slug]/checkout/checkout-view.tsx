@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Bike, CheckCircle2, Store } from "lucide-react";
+import { ArrowLeft, Bike, CheckCircle2, MessageCircle, Store } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,9 +17,29 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { itemUnitPrice, useCart } from "@/components/cart/cart-context";
-import { formatBRL, type Restaurant } from "@/lib/mock/types";
+import { formatBRL, type DeliveryZone, type PaymentMethod, type Restaurant } from "@/lib/mock/types";
+import { isDarkTheme, restaurantThemeVars } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 
-export function CheckoutView({ restaurant }: { restaurant: Restaurant }) {
+const PAYMENT_LABELS: Record<PaymentMethod, string> = {
+  pix: "Pix",
+  cartao: "Cartão na entrega",
+  dinheiro: "Dinheiro",
+};
+
+export function CheckoutView({
+  restaurant,
+  initiallyOpen,
+  zones,
+}: {
+  restaurant: Restaurant;
+  initiallyOpen: boolean;
+  zones: DeliveryZone[];
+}) {
+  const closed = !initiallyOpen;
+  const acceptedPayments: PaymentMethod[] = restaurant.paymentMethods?.length
+    ? restaurant.paymentMethods
+    : ["pix", "cartao", "dinheiro"];
   const cart = useCart();
   const [deliveryType, setDeliveryType] = useState<"entrega" | "retirada">(
     "entrega"
@@ -30,10 +50,51 @@ export function CheckoutView({ restaurant }: { restaurant: Restaurant }) {
   const [street, setStreet] = useState("");
   const [district, setDistrict] = useState("");
   const [complement, setComplement] = useState("");
-  const [payment, setPayment] = useState("pix");
+  const [payment, setPayment] = useState<PaymentMethod>(acceptedPayments[0]);
   const [sending, setSending] = useState(false);
+  // Região de entrega
+  const [zoneId, setZoneId] = useState<string>(zones[0]?.id ?? "");
+  // Cupom
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState<{ code: string; type: "percent" | "fixed"; value: number } | null>(null);
+  const [checkingCoupon, setCheckingCoupon] = useState(false);
+  // Agendamento
+  const [scheduledFor, setScheduledFor] = useState("");
 
-  const deliveryFee = deliveryType === "entrega" ? restaurant.deliveryFee : 0;
+  const selectedZone = zones.find((z) => z.id === zoneId);
+  const deliveryFee =
+    deliveryType === "entrega"
+      ? selectedZone
+        ? selectedZone.fee
+        : restaurant.deliveryFee
+      : 0;
+  const discount = coupon
+    ? coupon.type === "percent"
+      ? (cart.total * coupon.value) / 100
+      : Math.min(coupon.value, cart.total)
+    : 0;
+  const themeStyle = restaurantThemeVars(restaurant);
+  const dark = isDarkTheme(restaurant);
+
+  async function applyCoupon() {
+    const code = couponInput.trim();
+    if (!code) return;
+    setCheckingCoupon(true);
+    const res = await fetch("/api/coupons/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ restaurantId: restaurant.id, code }),
+    }).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    setCheckingCoupon(false);
+    if (!res?.ok || !data?.valid) {
+      setCoupon(null);
+      toast.error("Cupom inválido ou inativo.");
+      return;
+    }
+    setCoupon({ code: code.toUpperCase(), type: data.type, value: data.value });
+    toast.success("Cupom aplicado!");
+  }
 
   async function submitOrder() {
     setSending(true);
@@ -50,6 +111,9 @@ export function CheckoutView({ restaurant }: { restaurant: Restaurant }) {
         deliveryType,
         address,
         paymentMethod: payment,
+        zoneId: deliveryType === "entrega" && zoneId ? zoneId : undefined,
+        couponCode: coupon?.code,
+        scheduledFor: scheduledFor || undefined,
         items: cart.items.map((i) => ({
           productId: i.product.id,
           quantity: i.quantity,
@@ -75,38 +139,58 @@ export function CheckoutView({ restaurant }: { restaurant: Restaurant }) {
 
   if (done) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4 text-center">
-        <span className="flex size-20 -rotate-6 items-center justify-center rounded-2xl border-2 border-foreground bg-accent shadow-offset-sm">
-          <CheckCircle2 className="size-10 text-primary" />
-        </span>
-        <h1 className="font-display text-3xl font-bold">Pedido enviado! 🎉</h1>
-        <p className="max-w-sm text-muted-foreground">
-          O {restaurant.name} recebeu seu pedido e vai confirmar em instantes.
-          Você pode acompanhar o status no seu painel.
-        </p>
-        <div className="flex gap-3">
-          <Button variant="outline" className="rounded-full border-2 border-foreground font-semibold" asChild>
-            <Link href={`/r/${restaurant.slug}`}>Voltar ao cardápio</Link>
-          </Button>
-          <Button className="rounded-full font-semibold shadow-offset-sm" asChild>
-            <Link href="/cliente/pedidos">Acompanhar pedido</Link>
-          </Button>
+      <div className={cn(dark && "dark")} style={themeStyle}>
+        <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-muted/30 px-4 text-center">
+          <span className="flex size-20 -rotate-6 items-center justify-center rounded-2xl border-2 border-foreground bg-accent shadow-offset-sm">
+            <CheckCircle2 className="size-10 text-primary" />
+          </span>
+          <h1 className="font-display text-3xl font-bold">Pedido enviado! 🎉</h1>
+          <p className="max-w-sm text-muted-foreground">
+            {restaurant.confirmMessage?.trim() ||
+              `O ${restaurant.name} recebeu seu pedido e vai confirmar em instantes. Você pode acompanhar o status no seu painel.`}
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            {restaurant.whatsapp?.trim() && (
+              <Button className="rounded-full font-semibold shadow-offset-sm" asChild>
+                <a
+                  href={`https://wa.me/55${restaurant.whatsapp.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <MessageCircle className="size-4" />
+                  Falar no WhatsApp
+                </a>
+              </Button>
+            )}
+            <Button variant="outline" className="rounded-full border-2 border-foreground font-semibold" asChild>
+              <Link href={`/r/${restaurant.slug}`}>Voltar ao cardápio</Link>
+            </Button>
+            <Button variant="outline" className="rounded-full border-2 border-foreground font-semibold" asChild>
+              <Link href="/cliente/pedidos">Acompanhar pedido</Link>
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <header className="border-b bg-background">
-        <div className="mx-auto flex h-14 max-w-3xl items-center gap-3 px-4">
-          <Button size="icon-sm" variant="ghost" asChild>
-            <Link href={`/r/${restaurant.slug}`}>
-              <ArrowLeft className="size-4" />
-            </Link>
-          </Button>
-          <h1 className="font-display font-bold">
-            Finalizar pedido · {restaurant.name}
+    <div className={cn(dark && "dark")} style={themeStyle}>
+      <div className="min-h-screen bg-muted/30">
+        {closed && (
+          <div className="bg-destructive/10 px-4 py-2 text-center text-sm font-medium text-destructive">
+            O restaurante está fechado no momento e não pode receber pedidos.
+          </div>
+        )}
+        <header className="border-b bg-background">
+          <div className="mx-auto flex h-14 max-w-3xl items-center gap-3 px-4">
+            <Button size="icon-sm" variant="ghost" asChild>
+              <Link href={`/r/${restaurant.slug}`}>
+                <ArrowLeft className="size-4" />
+              </Link>
+            </Button>
+            <h1 className="font-display font-bold">
+              Finalizar pedido · {restaurant.name}
           </h1>
         </div>
       </header>
@@ -176,6 +260,23 @@ export function CheckoutView({ restaurant }: { restaurant: Restaurant }) {
               </div>
               {deliveryType === "entrega" && (
                 <>
+                  {zones.length > 0 && (
+                    <div className="grid gap-2">
+                      <Label>Região de entrega</Label>
+                      <Select value={zoneId} onValueChange={setZoneId}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a região" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {zones.map((z) => (
+                            <SelectItem key={z.id} value={z.id}>
+                              {z.name} · {z.fee === 0 ? "Grátis" : formatBRL(z.fee)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                   <div className="grid gap-2">
                     <Label htmlFor="endereco">Endereço</Label>
                     <Input
@@ -209,17 +310,65 @@ export function CheckoutView({ restaurant }: { restaurant: Restaurant }) {
               )}
               <div className="grid gap-2">
                 <Label>Forma de pagamento</Label>
-                <Select value={payment} onValueChange={setPayment}>
+                <Select
+                  value={payment}
+                  onValueChange={(v: string) => setPayment(v as PaymentMethod)}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pix">Pix</SelectItem>
-                    <SelectItem value="cartao">Cartão na entrega</SelectItem>
-                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                    {acceptedPayments.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {PAYMENT_LABELS[m]}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
+              <div className="grid gap-2">
+                <Label htmlFor="cupom">Cupom de desconto (opcional)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="cupom"
+                    placeholder="Ex.: BEMVINDO10"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    className="uppercase"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={checkingCoupon || !couponInput.trim()}
+                    onClick={applyCoupon}
+                  >
+                    {checkingCoupon ? "..." : "Aplicar"}
+                  </Button>
+                </div>
+                {coupon && (
+                  <p className="text-xs font-medium text-primary">
+                    Cupom {coupon.code} aplicado — desconto de{" "}
+                    {coupon.type === "percent"
+                      ? `${coupon.value}%`
+                      : formatBRL(coupon.value)}
+                    .
+                  </p>
+                )}
+              </div>
+              {restaurant.acceptsScheduled && (
+                <div className="grid gap-2">
+                  <Label htmlFor="agendamento">Agendar para (opcional)</Label>
+                  <Input
+                    id="agendamento"
+                    type="datetime-local"
+                    value={scheduledFor}
+                    onChange={(e) => setScheduledFor(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Deixe em branco para pedir agora.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -263,24 +412,31 @@ export function CheckoutView({ restaurant }: { restaurant: Restaurant }) {
               <span>Subtotal</span>
               <span>{formatBRL(cart.total)}</span>
             </div>
+            {discount > 0 && (
+              <div className="flex justify-between font-medium text-primary">
+                <span>Desconto{coupon ? ` (${coupon.code})` : ""}</span>
+                <span>−{formatBRL(discount)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-muted-foreground">
               <span>Entrega</span>
               <span>{deliveryFee === 0 ? "Grátis" : formatBRL(deliveryFee)}</span>
             </div>
             <div className="flex justify-between text-base font-bold">
               <span>Total</span>
-              <span>{formatBRL(cart.total + deliveryFee)}</span>
+              <span>{formatBRL(cart.total - discount + deliveryFee)}</span>
             </div>
             <Button
               className="w-full rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
               size="lg"
-              disabled={cart.items.length === 0 || sending}
+              disabled={cart.items.length === 0 || sending || closed}
               onClick={submitOrder}
             >
-              {sending ? "Enviando..." : "Enviar pedido"}
+              {sending ? "Enviando..." : closed ? "Restaurante fechado" : "Enviar pedido"}
             </Button>
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   );

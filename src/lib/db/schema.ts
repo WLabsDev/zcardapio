@@ -3,6 +3,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   numeric,
   pgEnum,
   pgTable,
@@ -11,6 +12,7 @@ import {
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
+import type { DayHours, PaymentMethod } from "../mock/types";
 
 export const roleEnum = pgEnum("role", ["admin", "restaurante", "cliente"]);
 export const restaurantStatusEnum = pgEnum("restaurant_status", [
@@ -27,6 +29,7 @@ export const orderStatusEnum = pgEnum("order_status", [
   "cancelado",
 ]);
 export const deliveryTypeEnum = pgEnum("delivery_type", ["entrega", "retirada"]);
+export const couponTypeEnum = pgEnum("coupon_type", ["percent", "fixed"]);
 
 // Dinheiro é armazenado em centavos (integer) — a API converte para reais.
 
@@ -46,9 +49,13 @@ export const plans = pgTable("plans", {
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 120 }).notNull(),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
-  phone: varchar("phone", { length: 20 }).notNull().default(""),
+  // E-mail é obrigatório só para vendedor/admin (validado na API);
+  // clientes podem se cadastrar apenas com o WhatsApp.
+  email: varchar("email", { length: 255 }).unique(),
+  // Senha opcional: contas criadas automaticamente no checkout nascem sem senha.
+  passwordHash: text("password_hash"),
+  // WhatsApp é o identificador do cliente (único quando preenchido).
+  phone: varchar("phone", { length: 20 }).unique(),
   role: roleEnum("role").notNull().default("cliente"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
@@ -76,6 +83,37 @@ export const restaurants = pgTable(
     deliveryTime: varchar("delivery_time", { length: 40 }).notNull().default(""),
     rating: numeric("rating", { precision: 2, scale: 1 }).notNull().default("0"),
     primaryColor: varchar("primary_color", { length: 9 }).notNull().default("#ea580c"),
+    // Horário inteligente
+    hours: jsonb("hours")
+      .$type<DayHours[]>()
+      .notNull()
+      .default([]),
+    pauseMessage: text("pause_message").notNull().default(""),
+    // Banner + comunicação
+    bannerText: text("banner_text").notNull().default(""),
+    whatsapp: varchar("whatsapp", { length: 20 }).notNull().default(""),
+    confirmMessage: text("confirm_message").notNull().default(""),
+    // Pagamentos aceitos
+    paymentMethods: text("payment_methods")
+      .array()
+      .$type<PaymentMethod[]>()
+      .notNull()
+      .default(["pix", "cartao", "dinheiro"]),
+    // Aparência avançada
+    theme: varchar("theme", { length: 10 }).notNull().default("claro"),
+    font: varchar("font", { length: 20 }).notNull().default("bricolage"),
+    buttonStyle: varchar("button_style", { length: 12 }).notNull().default("arredondado"),
+    // Paleta de cores personalizada (vazio = usa o padrão do tema)
+    headingColor: varchar("heading_color", { length: 9 }).notNull().default(""),
+    productTitleColor: varchar("product_title_color", { length: 9 }).notNull().default(""),
+    bodyColor: varchar("body_color", { length: 9 }).notNull().default(""),
+    mutedColor: varchar("muted_color", { length: 9 }).notNull().default(""),
+    bgColor: varchar("bg_color", { length: 9 }).notNull().default(""),
+    cardColor: varchar("card_color", { length: 9 }).notNull().default(""),
+    badgeColor: varchar("badge_color", { length: 9 }).notNull().default(""),
+    badgeTextColor: varchar("badge_text_color", { length: 9 }).notNull().default(""),
+    // Pedidos
+    acceptsScheduled: boolean("accepts_scheduled").notNull().default(false),
     status: restaurantStatusEnum("status").notNull().default("pendente"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
@@ -163,6 +201,10 @@ export const orders = pgTable(
     paymentMethod: varchar("payment_method", { length: 40 }).notNull().default(""),
     subtotalCents: integer("subtotal_cents").notNull(),
     deliveryFeeCents: integer("delivery_fee_cents").notNull().default(0),
+    discountCents: integer("discount_cents").notNull().default(0),
+    couponCode: varchar("coupon_code", { length: 40 }).notNull().default(""),
+    zoneName: varchar("zone_name", { length: 80 }).notNull().default(""),
+    scheduledFor: timestamp("scheduled_for"),
     totalCents: integer("total_cents").notNull(),
     status: orderStatusEnum("status").notNull().default("pendente"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -220,6 +262,35 @@ export const addresses = pgTable(
   (t) => [index("addresses_user_idx").on(t.userId)]
 );
 
+export const deliveryZones = pgTable(
+  "delivery_zones",
+  {
+    id: serial("id").primaryKey(),
+    restaurantId: integer("restaurant_id")
+      .notNull()
+      .references(() => restaurants.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 80 }).notNull(),
+    feeCents: integer("fee_cents").notNull().default(0),
+  },
+  (t) => [index("delivery_zones_restaurant_idx").on(t.restaurantId)]
+);
+
+export const coupons = pgTable(
+  "coupons",
+  {
+    id: serial("id").primaryKey(),
+    restaurantId: integer("restaurant_id")
+      .notNull()
+      .references(() => restaurants.id, { onDelete: "cascade" }),
+    code: varchar("code", { length: 40 }).notNull(),
+    type: couponTypeEnum("type").notNull().default("percent"),
+    /** percentual (0-100) ou valor fixo em centavos */
+    value: integer("value").notNull().default(0),
+    active: boolean("active").notNull().default(true),
+  },
+  (t) => [index("coupons_restaurant_idx").on(t.restaurantId)]
+);
+
 // Relations (para queries aninhadas via db.query)
 export const plansRelations = relations(plans, ({ many }) => ({
   restaurants: many(restaurants),
@@ -237,6 +308,8 @@ export const restaurantsRelations = relations(restaurants, ({ one, many }) => ({
   categories: many(categories),
   products: many(products),
   orders: many(orders),
+  deliveryZones: many(deliveryZones),
+  coupons: many(coupons),
 }));
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -301,4 +374,18 @@ export const orderItemOptionsRelations = relations(orderItemOptions, ({ one }) =
 
 export const addressesRelations = relations(addresses, ({ one }) => ({
   user: one(users, { fields: [addresses.userId], references: [users.id] }),
+}));
+
+export const deliveryZonesRelations = relations(deliveryZones, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [deliveryZones.restaurantId],
+    references: [restaurants.id],
+  }),
+}));
+
+export const couponsRelations = relations(coupons, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [coupons.restaurantId],
+    references: [restaurants.id],
+  }),
 }));

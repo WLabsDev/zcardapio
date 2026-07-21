@@ -10,9 +10,20 @@ export async function GET(request: Request) {
   const q = new URL(request.url).searchParams.get("q")?.trim();
   const rows = await db.query.users.findMany({
     where: q
-      ? or(ilike(users.name, `%${q}%`), ilike(users.email, `%${q}%`))
+      ? or(
+          ilike(users.name, `%${q}%`),
+          ilike(users.email, `%${q}%`),
+          ilike(users.phone, `%${q}%`)
+        )
       : undefined,
-    columns: { id: true, name: true, email: true, role: true, createdAt: true },
+    columns: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      role: true,
+      createdAt: true,
+    },
     orderBy: (u, { desc }) => [desc(u.createdAt)],
     limit: 100,
   });

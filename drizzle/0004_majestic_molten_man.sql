@@ -1,0 +1,1 @@
+ALTER TABLE "restaurants" ADD COLUMN "badge_color" varchar(9) DEFAULT '' NOT NULL;

@@ -22,13 +22,13 @@ export async function getSession(): Promise<SessionPayload | null> {
 export async function setSession(user: {
   id: number;
   name: string;
-  email: string;
+  email: string | null;
   role: SessionRole;
 }) {
   const token = await signToken({
     sub: String(user.id),
     name: user.name,
-    email: user.email,
+    email: user.email ?? "",
     role: user.role,
   });
   const cookieStore = await cookies();

@@ -65,6 +65,7 @@ async function main() {
       mockUsers.map((u) => ({
         name: u.name,
         email: u.email,
+        phone: u.phone ?? null,
         passwordHash,
         role: u.role,
       }))

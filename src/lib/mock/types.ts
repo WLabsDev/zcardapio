@@ -41,6 +41,22 @@ export type Product = {
   optionGroups?: OptionGroup[];
 };
 
+/** Horário de funcionamento de um dia da semana. */
+export type DayHours = {
+  /** 0 = domingo ... 6 = sábado */
+  day: number;
+  /** "18:00" */
+  open: string;
+  /** "23:30" */
+  close: string;
+  /** dia fechado */
+  closed: boolean;
+};
+
+export type PaymentMethod = "pix" | "cartao" | "dinheiro";
+
+export type DeliveryZone = { id: string; name: string; fee: number };
+
 export type Restaurant = {
   id: string;
   slug: string;
@@ -61,6 +77,37 @@ export type Restaurant = {
   plan: string;
   status: "ativo" | "pendente" | "bloqueado";
   createdAt: string;
+  /** cor de destaque do cardápio (hex) — aplicada como --primary no /r/[slug] */
+  primaryColor?: string;
+  /** horário estruturado por dia da semana */
+  hours?: DayHours[];
+  /** mensagem de pausa temporária (restaurante fechado momentaneamente) */
+  pauseMessage?: string;
+  /** aviso/promoção exibido no topo do cardápio */
+  bannerText?: string;
+  /** número de WhatsApp para contato/pedidos */
+  whatsapp?: string;
+  /** mensagem personalizada pós-pedido */
+  confirmMessage?: string;
+  /** métodos de pagamento aceitos */
+  paymentMethods?: PaymentMethod[];
+  /** tema do cardápio */
+  theme?: "claro" | "escuro";
+  /** fonte de destaque do cardápio */
+  font?: "bricolage" | "jakarta" | "mono";
+  /** estilo dos botões */
+  buttonStyle?: "arredondado" | "reto";
+  /** paleta personalizada (hex); vazio = padrão do tema */
+  headingColor?: string;
+  productTitleColor?: string;
+  bodyColor?: string;
+  mutedColor?: string;
+  bgColor?: string;
+  cardColor?: string;
+  badgeColor?: string;
+  badgeTextColor?: string;
+  /** aceita pedidos agendados */
+  acceptsScheduled?: boolean;
 };
 
 export type OrderStatus =
@@ -99,6 +146,7 @@ export type User = {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   role: "admin" | "restaurante" | "cliente";
   createdAt: string;
 };

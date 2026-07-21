@@ -8,6 +8,48 @@
       "when": 1784522612499,
       "tag": "0000_dry_selene",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784558980730,
+      "tag": "0001_optimal_logan",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784565005282,
+      "tag": "0002_faulty_vertigo",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784565671103,
+      "tag": "0003_easy_bucky",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784567202624,
+      "tag": "0004_majestic_molten_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784568771806,
+      "tag": "0005_colossal_zeigeist",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784592061068,
+      "tag": "0006_loose_black_panther",
+      "breakpoints": true
     }
   ]
 }

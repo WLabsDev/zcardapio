@@ -47,8 +47,8 @@ export default function ClientePerfilPage() {
       .then((data) => {
         if (data?.user) {
           setName(data.user.name);
-          setPhone(data.user.phone);
-          setEmail(data.user.email);
+          setPhone(data.user.phone ?? "");
+          setEmail(data.user.email ?? "");
         }
       })
       .catch(() => toast.error("Não foi possível carregar o perfil."));

@@ -20,7 +20,8 @@ import { toast } from "sonner";
 type AdminUser = {
   id: string;
   name: string;
-  email: string;
+  email: string | null;
+  phone: string | null;
   role: "admin" | "restaurante" | "cliente";
   createdAt: string;
 };
@@ -45,7 +46,8 @@ export default function AdminUsuariosPage() {
   const filtered = users.filter(
     (u) =>
       u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase())
+      (u.email ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (u.phone ?? "").includes(search)
   );
 
   return (
@@ -96,7 +98,7 @@ export default function AdminUsuariosPage() {
                     </div>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
-                    {u.email}
+                    {u.email ?? u.phone ?? "—"}
                   </TableCell>
                   <TableCell>
                     <Badge variant={u.role === "admin" ? "default" : "secondary"}>

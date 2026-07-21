@@ -6,6 +6,10 @@
 :root {
   --background: oklch(0.977 0.011 78);
   --foreground: oklch(0.24 0.028 40);
+  --heading: var(--foreground);
+  --product-title: var(--foreground);
+  --badge: var(--secondary);
+  --badge-foreground: var(--secondary-foreground);
   --card: oklch(0.995 0.005 84);
   --card-foreground: oklch(0.24 0.028 40);
   --popover: oklch(0.995 0.005 84);
@@ -40,24 +44,28 @@
 }
 
 .dark {
-  --background: oklch(0.17 0.01 40);
+  --background: oklch(0.13 0.012 40);
   --foreground: oklch(0.96 0.005 80);
-  --card: oklch(0.21 0.012 40);
+  --heading: var(--foreground);
+  --product-title: var(--foreground);
+  --badge: var(--secondary);
+  --badge-foreground: var(--secondary-foreground);
+  --card: oklch(0.185 0.012 40);
   --card-foreground: oklch(0.96 0.005 80);
-  --popover: oklch(0.21 0.012 40);
+  --popover: oklch(0.185 0.012 40);
   --popover-foreground: oklch(0.96 0.005 80);
   --primary: oklch(0.7 0.19 42);
   --primary-foreground: oklch(0.15 0.02 40);
-  --secondary: oklch(0.27 0.012 40);
+  --secondary: oklch(0.245 0.012 40);
   --secondary-foreground: oklch(0.96 0.005 80);
-  --muted: oklch(0.27 0.012 40);
-  --muted-foreground: oklch(0.68 0.015 60);
-  --accent: oklch(0.3 0.03 45);
+  --muted: oklch(0.245 0.012 40);
+  --muted-foreground: oklch(0.72 0.015 60);
+  --accent: oklch(0.28 0.03 45);
   --accent-foreground: oklch(0.96 0.005 80);
   --destructive: oklch(0.62 0.21 27);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.29 0.012 40);
-  --input: oklch(0.29 0.012 40);
+  --border: oklch(0.33 0.012 40);
+  --input: oklch(0.33 0.012 40);
   --ring: oklch(0.7 0.19 42);
   --sidebar: oklch(0.19 0.012 40);
   --sidebar-foreground: oklch(0.96 0.005 80);
@@ -126,6 +134,12 @@
   body {
     @apply bg-background text-foreground font-sans;
   }
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--heading);
+  }
   ::selection {
     @apply bg-primary text-primary-foreground;
   }
@@ -133,6 +147,14 @@
 
 @utility font-display {
   font-family: var(--font-display);
+}
+
+@utility text-product-title {
+  color: var(--product-title);
+}
+
+@utility text-heading {
+  color: var(--heading);
 }
 
 @utility shadow-offset {

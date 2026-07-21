@@ -5,8 +5,8 @@
  */
 import { desc, eq } from "drizzle-orm";
 import { db } from "./index";
-import { orders, restaurants } from "./schema";
-import type { Order, Product, Restaurant } from "@/lib/mock/types";
+import { deliveryZones, orders, restaurants } from "./schema";
+import type { DeliveryZone, Order, Product, Restaurant } from "@/lib/mock/types";
 
 const centsToReais = (v: number) => v / 100;
 
@@ -36,6 +36,25 @@ function mapRestaurant(r: RestaurantRow): Restaurant {
     plan: r.plan?.name ?? "Grátis",
     status: r.status,
     createdAt: r.createdAt.toISOString(),
+    primaryColor: r.primaryColor,
+    hours: r.hours,
+    pauseMessage: r.pauseMessage,
+    bannerText: r.bannerText,
+    whatsapp: r.whatsapp,
+    confirmMessage: r.confirmMessage,
+    paymentMethods: r.paymentMethods,
+    theme: r.theme as Restaurant["theme"],
+    font: r.font as Restaurant["font"],
+    buttonStyle: r.buttonStyle as Restaurant["buttonStyle"],
+    headingColor: r.headingColor,
+    productTitleColor: r.productTitleColor,
+    bodyColor: r.bodyColor,
+    mutedColor: r.mutedColor,
+    bgColor: r.bgColor,
+    cardColor: r.cardColor,
+    badgeColor: r.badgeColor,
+    badgeTextColor: r.badgeTextColor,
+    acceptsScheduled: r.acceptsScheduled,
   };
 }
 
@@ -186,7 +205,7 @@ export async function getRestaurantByOwner(ownerId: number) {
 
 export async function getRestaurantByOwnerMapped(
   ownerId: number
-): Promise<(Restaurant & { primaryColor: string }) | null> {
+): Promise<Restaurant | null> {
   const row = await db.query.restaurants.findFirst({
     where: eq(restaurants.ownerId, ownerId),
     with: {
@@ -194,5 +213,19 @@ export async function getRestaurantByOwnerMapped(
       plan: { columns: { name: true } },
     },
   });
-  return row ? { ...mapRestaurant(row), primaryColor: row.primaryColor } : null;
+  return row ? mapRestaurant(row) : null;
+}
+
+export async function getDeliveryZonesDb(
+  restaurantId: number
+): Promise<DeliveryZone[]> {
+  const rows = await db.query.deliveryZones.findMany({
+    where: eq(deliveryZones.restaurantId, restaurantId),
+    orderBy: (z, { asc }) => [asc(z.id)],
+  });
+  return rows.map((z) => ({
+    id: String(z.id),
+    name: z.name,
+    fee: centsToReais(z.feeCents),
+  }));
 }

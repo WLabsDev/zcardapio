@@ -26,8 +26,7 @@ import { Input } from "@/components/ui/input";
 
 const cadastroSchema = z.object({
   nome: z.string().min(3, "Informe seu nome completo."),
-  email: z.email("Informe um e-mail válido."),
-  telefone: z.string().min(10, "Informe um telefone válido com DDD."),
+  telefone: z.string().min(10, "Informe um WhatsApp válido com DDD."),
   senha: z.string().min(8, "A senha precisa ter pelo menos 8 caracteres."),
 });
 
@@ -38,7 +37,7 @@ export default function CadastroClientePage() {
 
   const form = useForm<CadastroValues>({
     resolver: zodResolver(cadastroSchema),
-    defaultValues: { nome: "", email: "", telefone: "", senha: "" },
+    defaultValues: { nome: "", telefone: "", senha: "" },
   });
 
   async function onSubmit(values: CadastroValues) {
@@ -92,30 +91,13 @@ export default function CadastroClientePage() {
             />
             <FormField
               control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>E-mail</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="voce@email.com"
-                      autoComplete="email"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
               name="telefone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Telefone / WhatsApp</FormLabel>
+                  <FormLabel>WhatsApp</FormLabel>
                   <FormControl>
                     <Input
+                      type="tel"
                       placeholder="(11) 99999-9999"
                       autoComplete="tel"
                       {...field}

@@ -4,12 +4,13 @@ import { z } from "zod";
 import { setSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
+import { normalizePhone } from "@/lib/phone";
 
 const registerSchema = z.object({
   nome: z.string().min(3, "Informe seu nome completo."),
-  email: z.email("Informe um e-mail válido."),
-  telefone: z.string().min(10, "Informe um telefone válido com DDD."),
+  telefone: z.string().min(10, "Informe um WhatsApp válido com DDD."),
   senha: z.string().min(8, "A senha precisa ter pelo menos 8 caracteres."),
+  email: z.string().email("E-mail inválido.").optional().or(z.literal("")),
 });
 
 export async function POST(request: Request) {
@@ -22,15 +23,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const { nome, email, telefone, senha } = parsed.data;
-  const normalizedEmail = email.toLowerCase();
+  const { nome, senha, email } = parsed.data;
+  const phone = normalizePhone(parsed.data.telefone);
+  const normalizedEmail = email ? email.toLowerCase() : null;
 
   const existing = await db.query.users.findFirst({
-    where: eq(users.email, normalizedEmail),
+    where: eq(users.phone, phone),
   });
   if (existing) {
     return Response.json(
-      { message: "Este e-mail já está cadastrado. Faça login." },
+      { message: "Este WhatsApp já está cadastrado. Faça login." },
       { status: 409 }
     );
   }
@@ -41,7 +43,7 @@ export async function POST(request: Request) {
     .values({
       name: nome,
       email: normalizedEmail,
-      phone: telefone,
+      phone,
       passwordHash,
       role: "cliente",
     })

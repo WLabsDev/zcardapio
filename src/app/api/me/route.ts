@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSession, setSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
+import { normalizePhone } from "@/lib/phone";
 
 export async function GET() {
   const session = await getSession();
@@ -40,7 +41,10 @@ export async function PUT(request: Request) {
 
   const [updated] = await db
     .update(users)
-    .set({ name: parsed.data.name, phone: parsed.data.phone })
+    .set({
+      name: parsed.data.name,
+      phone: normalizePhone(parsed.data.phone) || null,
+    })
     .where(eq(users.id, Number(session.sub)))
     .returning();
 

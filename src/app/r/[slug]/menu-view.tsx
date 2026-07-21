@@ -54,6 +54,7 @@ import {
 } from "@/components/cart/cart-context";
 import { formatBRL, type Product, type Restaurant } from "@/lib/mock/types";
 import type { SessionRole } from "@/lib/session";
+import { isDarkTheme, restaurantThemeVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 type MenuUser = { name: string; role: SessionRole } | null;
@@ -131,11 +132,16 @@ export function MenuView({
   restaurant,
   products,
   user,
+  initiallyOpen,
+  pauseMessage,
 }: {
   restaurant: Restaurant;
   products: Product[];
   user: MenuUser;
+  initiallyOpen: boolean;
+  pauseMessage?: string;
 }) {
+  const closed = !initiallyOpen;
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState(
     restaurant.categories[0]?.id ?? ""
@@ -183,6 +189,7 @@ export function MenuView({
     filtered.filter((p) => p.categoryId === categoryId);
 
   const openProduct = (p: Product) => {
+    if (closed) return;
     setSelected(p);
     setQuantity(1);
     setNotes("");
@@ -190,12 +197,28 @@ export function MenuView({
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-24">
-      {/* Cover */}
-      <div
-        className="relative h-40 bg-cover bg-center md:h-56"
-        style={{ backgroundImage: `url(${restaurant.cover})` }}
-      >
+    <div
+      className={cn(isDarkTheme(restaurant) && "dark")}
+      style={restaurantThemeVars(restaurant)}
+    >
+      <div className="min-h-screen bg-muted/30 pb-24">
+        {/* Aviso/promoção no topo */}
+        {restaurant.bannerText?.trim() && (
+          <div className="bg-primary px-4 py-2 text-center text-sm font-semibold text-primary-foreground">
+            {restaurant.bannerText}
+          </div>
+        )}
+        {/* Pausa temporária / fechado */}
+        {closed && (
+          <div className="border-b border-foreground/10 bg-destructive/10 px-4 py-2 text-center text-sm font-medium text-destructive">
+            {pauseMessage ?? "Estamos fechados no momento. Volte mais tarde!"}
+          </div>
+        )}
+        {/* Cover */}
+        <div
+          className="relative h-40 bg-cover bg-center md:h-56"
+          style={{ backgroundImage: `url(${restaurant.cover})` }}
+        >
         <div className="absolute right-4 top-4">
           <AccountButton user={user} slug={restaurant.slug} />
         </div>
@@ -216,8 +239,8 @@ export function MenuView({
                 <h1 className="font-display text-xl font-bold">
                   {restaurant.name}
                 </h1>
-                <Badge variant={restaurant.isOpen ? "default" : "secondary"}>
-                  {restaurant.isOpen ? "Aberto" : "Fechado"}
+                <Badge variant={!closed ? "default" : "secondary"}>
+                  {!closed ? "Aberto" : "Fechado"}
                 </Badge>
               </div>
               <p className="mt-0.5 text-sm text-muted-foreground">
@@ -271,7 +294,7 @@ export function MenuView({
                 className={`whitespace-nowrap rounded-full border-2 px-4 py-1.5 font-display text-sm font-semibold transition-all ${
                   activeCategory === c.id
                     ? "border-foreground bg-primary text-primary-foreground shadow-offset-sm"
-                    : "border-foreground/20 bg-background hover:border-foreground"
+                    : "border-foreground/20 bg-background text-heading hover:border-foreground"
                 }`}
               >
                 {c.name}
@@ -290,21 +313,30 @@ export function MenuView({
             <section key={c.id} id={`cat-${c.id}`} className="scroll-mt-32">
               <h2 className="mb-3 font-display text-lg font-bold">{c.name}</h2>
               <div className="grid gap-3 sm:grid-cols-2">
-                {items.map((p) => (
+                {items.map((p) => {
+                  const canOrder = p.available && !closed;
+                  return (
                   <button
                     key={p.id}
-                    onClick={() => p.available && openProduct(p)}
+                    onClick={() => canOrder && openProduct(p)}
                     className={`flex gap-3 rounded-xl border-2 border-foreground/15 bg-card p-3 text-left transition-all ${
-                      p.available
+                      canOrder
                         ? "hover:-translate-y-0.5 hover:border-foreground hover:shadow-offset-sm"
                         : "cursor-not-allowed opacity-50"
                     }`}
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold">{p.name}</p>
+                        <p className="font-semibold text-product-title">{p.name}</p>
                         {p.popular && (
-                          <Badge variant="secondary" className="text-[10px]">
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px]"
+                            style={{
+                              backgroundColor: "var(--badge)",
+                              color: "var(--badge-foreground)",
+                            }}
+                          >
                             Popular
                           </Badge>
                         )}
@@ -326,7 +358,8 @@ export function MenuView({
                       className="size-24 shrink-0 rounded-lg object-cover"
                     />
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </section>
           );
@@ -359,7 +392,9 @@ export function MenuView({
                 className="h-44 w-full rounded-lg object-cover"
               />
               <DialogHeader>
-                <DialogTitle>{selected.name}</DialogTitle>
+                <DialogTitle className="text-product-title">
+                  {selected.name}
+                </DialogTitle>
                 <DialogDescription>{selected.description}</DialogDescription>
               </DialogHeader>
               {selected.optionGroups?.map((g) => (
@@ -580,6 +615,7 @@ export function MenuView({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

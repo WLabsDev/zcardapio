@@ -1,14 +1,16 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { orderItemOptions, orderItems, orders, products, restaurants } from "@/lib/db/schema";
+import { coupons, deliveryZones, orderItemOptions, orderItems, orders, products, restaurants, users } from "@/lib/db/schema";
 import {
   getOrdersByCustomer,
   getOrdersByRestaurant,
   getRestaurantByOwner,
   orderCode,
 } from "@/lib/db/queries";
+import { computeOpenState } from "@/lib/hours";
+import { normalizePhone } from "@/lib/phone";
 
 const createOrderSchema = z.object({
   restaurantId: z.coerce.number().int().positive(),
@@ -17,6 +19,9 @@ const createOrderSchema = z.object({
   deliveryType: z.enum(["entrega", "retirada"]),
   address: z.string().default(""),
   paymentMethod: z.enum(["pix", "cartao", "dinheiro"]),
+  zoneId: z.coerce.number().int().positive().optional(),
+  couponCode: z.string().max(40).optional(),
+  scheduledFor: z.coerce.date().optional(),
   items: z
     .array(
       z.object({
@@ -64,10 +69,26 @@ export async function POST(request: Request) {
       { status: 404 }
     );
   }
-  if (!restaurant.isOpen) {
+  const openState = computeOpenState(restaurant);
+  if (!openState.open) {
     return Response.json(
-      { message: "O restaurante está fechado no momento." },
+      {
+        message:
+          openState.pauseMessage ?? "O restaurante está fechado no momento.",
+      },
       { status: 409 }
+    );
+  }
+
+  // Valida método de pagamento aceito pelo restaurante.
+  const accepted: string[] =
+    restaurant.paymentMethods && restaurant.paymentMethods.length > 0
+      ? restaurant.paymentMethods
+      : ["pix", "cartao", "dinheiro"];
+  if (!accepted.includes(data.paymentMethod)) {
+    return Response.json(
+      { message: "Forma de pagamento não aceita por este restaurante." },
+      { status: 400 }
     );
   }
 
@@ -136,8 +157,29 @@ export async function POST(request: Request) {
         i.quantity,
     0
   );
-  const deliveryFeeCents =
-    data.deliveryType === "entrega" ? restaurant.deliveryFeeCents : 0;
+  // Taxa de entrega: por região (se informada) ou a taxa padrão do restaurante.
+  let deliveryFeeCents = 0;
+  let zoneName = "";
+  if (data.deliveryType === "entrega") {
+    if (data.zoneId) {
+      const zone = await db.query.deliveryZones.findFirst({
+        where: and(
+          eq(deliveryZones.id, data.zoneId),
+          eq(deliveryZones.restaurantId, restaurant.id)
+        ),
+      });
+      if (!zone) {
+        return Response.json(
+          { message: "Região de entrega inválida." },
+          { status: 400 }
+        );
+      }
+      deliveryFeeCents = zone.feeCents;
+      zoneName = zone.name;
+    } else {
+      deliveryFeeCents = restaurant.deliveryFeeCents;
+    }
+  }
 
   if (subtotalCents < restaurant.minOrderCents) {
     return Response.json(
@@ -146,15 +188,81 @@ export async function POST(request: Request) {
     );
   }
 
+  // Cupom de desconto — sempre recalculado no servidor.
+  let discountCents = 0;
+  let couponCode = "";
+  if (data.couponCode?.trim()) {
+    const code = data.couponCode.trim().toUpperCase();
+    const coupon = await db.query.coupons.findFirst({
+      where: and(
+        eq(coupons.restaurantId, restaurant.id),
+        eq(coupons.code, code),
+        eq(coupons.active, true)
+      ),
+    });
+    if (!coupon) {
+      return Response.json(
+        { message: "Cupom inválido ou inativo." },
+        { status: 400 }
+      );
+    }
+    discountCents =
+      coupon.type === "percent"
+        ? Math.round((subtotalCents * coupon.value) / 100)
+        : coupon.value;
+    discountCents = Math.min(discountCents, subtotalCents);
+    couponCode = code;
+  }
+
+  // Pedido agendado — somente se o restaurante aceitar.
+  let scheduledFor: Date | null = null;
+  if (data.scheduledFor) {
+    if (!restaurant.acceptsScheduled) {
+      return Response.json(
+        { message: "Este restaurante não aceita pedidos agendados." },
+        { status: 400 }
+      );
+    }
+    if (data.scheduledFor.getTime() <= Date.now()) {
+      return Response.json(
+        { message: "A data do agendamento deve ser no futuro." },
+        { status: 400 }
+      );
+    }
+    scheduledFor = data.scheduledFor;
+  }
+
+  const totalCents = subtotalCents - discountCents + deliveryFeeCents;
+
   const session = await getSession();
 
   const order = await db.transaction(async (tx) => {
+    // Dono do pedido: cliente logado ou conta criada/vinculada pelo WhatsApp.
+    let customerId: number | null = null;
+    if (session?.role === "cliente") {
+      customerId = Number(session.sub);
+    } else {
+      const phone = normalizePhone(data.customerPhone);
+      if (phone.length >= 10) {
+        let account = await tx.query.users.findFirst({
+          where: and(eq(users.phone, phone), eq(users.role, "cliente")),
+          columns: { id: true },
+        });
+        if (!account) {
+          [account] = await tx
+            .insert(users)
+            .values({ name: data.customerName, phone, role: "cliente" })
+            .returning({ id: users.id });
+        }
+        customerId = account.id;
+      }
+    }
+
     const [created] = await tx
       .insert(orders)
       .values({
         restaurantId: restaurant.id,
-        customerId:
-          session?.role === "cliente" ? Number(session.sub) : null,
+        customerId,
         customerName: data.customerName,
         customerPhone: data.customerPhone,
         deliveryType: data.deliveryType,
@@ -162,7 +270,11 @@ export async function POST(request: Request) {
         paymentMethod: PAYMENT_LABEL[data.paymentMethod],
         subtotalCents,
         deliveryFeeCents,
-        totalCents: subtotalCents + deliveryFeeCents,
+        discountCents,
+        couponCode,
+        zoneName,
+        scheduledFor,
+        totalCents,
       })
       .returning();
 
@@ -197,7 +309,7 @@ export async function POST(request: Request) {
       order: {
         id: String(order.id),
         code: orderCode(order.id),
-        total: (subtotalCents + deliveryFeeCents) / 100,
+        total: totalCents / 100,
       },
     },
     { status: 201 }

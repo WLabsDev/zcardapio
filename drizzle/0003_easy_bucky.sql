@@ -1,0 +1,1 @@
+ALTER TABLE "restaurants" ADD COLUMN "product_title_color" varchar(9) DEFAULT '' NOT NULL;
