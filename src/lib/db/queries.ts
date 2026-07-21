@@ -141,7 +141,7 @@ type OrderRow = typeof orders.$inferSelect & {
     quantity: number;
     unitPriceCents: number;
     notes: string;
-    options: { name: string; priceCents: number }[];
+    options: { groupName: string; name: string; priceCents: number }[];
   }[];
   restaurant?: { name: string; slug: string } | null;
 };
@@ -154,6 +154,7 @@ export function mapOrder(o: OrderRow): Order {
     restaurantName: o.restaurant?.name,
     restaurantSlug: o.restaurant?.slug,
     customerName: o.customerName,
+    customerPhone: o.customerPhone || undefined,
     items: o.items.map((i) => ({
       productId: i.productId ? String(i.productId) : "",
       name: i.name,
@@ -162,11 +163,26 @@ export function mapOrder(o: OrderRow): Order {
         i.unitPriceCents + i.options.reduce((a, op) => a + op.priceCents, 0)
       ),
       notes: i.notes || undefined,
+      options:
+        i.options.length > 0
+          ? i.options.map((op) => ({
+              groupName: op.groupName,
+              name: op.name,
+              price: centsToReais(op.priceCents),
+            }))
+          : undefined,
     })),
+    subtotal: centsToReais(o.subtotalCents),
+    deliveryFee: centsToReais(o.deliveryFeeCents),
+    discount: o.discountCents > 0 ? centsToReais(o.discountCents) : undefined,
+    couponCode: o.couponCode || undefined,
     total: centsToReais(o.totalCents),
     status: o.status,
     paymentMethod: o.paymentMethod,
     deliveryType: o.deliveryType,
+    address: o.address || undefined,
+    zoneName: o.zoneName || undefined,
+    scheduledFor: o.scheduledFor ? o.scheduledFor.toISOString() : undefined,
     createdAt: o.createdAt.toISOString(),
   };
 }

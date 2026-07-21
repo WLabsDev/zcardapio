@@ -122,8 +122,10 @@ export type OrderItem = {
   productId: string;
   name: string;
   quantity: number;
+  /** preço unitário já somado às opções extras */
   unitPrice: number;
   notes?: string;
+  options?: { groupName: string; name: string; price: number }[];
 };
 
 export type Order = {
@@ -134,11 +136,19 @@ export type Order = {
   restaurantName?: string;
   restaurantSlug?: string;
   customerName: string;
+  customerPhone?: string;
   items: OrderItem[];
+  subtotal?: number;
+  deliveryFee?: number;
+  discount?: number;
+  couponCode?: string;
   total: number;
   status: OrderStatus;
   paymentMethod: string;
   deliveryType: "entrega" | "retirada";
+  address?: string;
+  zoneName?: string;
+  scheduledFor?: string;
   createdAt: string;
 };
 

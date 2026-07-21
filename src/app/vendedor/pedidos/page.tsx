@@ -1,8 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { ReceiptText } from "lucide-react";
+import {
+  Bike,
+  CalendarClock,
+  CreditCard,
+  MapPin,
+  MessageCircle,
+  ReceiptText,
+  Store,
+} from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -40,6 +49,7 @@ import {
   type Order,
   type OrderStatus,
 } from "@/lib/mock/types";
+import { normalizePhone } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 
 const tabs: { value: string; label: string }[] = [
@@ -162,44 +172,54 @@ export default function PedidosPage() {
         open={!!selected}
         onOpenChange={(o: boolean) => !o && setSelectedId(null)}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-xl">
           {selected && (
             <>
               <DialogHeader>
-                <DialogTitle>
-                  Pedido {selected.code} · {selected.customerName}
-                </DialogTitle>
-                <DialogDescription>
-                  {selected.deliveryType === "entrega" ? "Entrega" : "Retirada"} ·{" "}
-                  {selected.paymentMethod}
+                <div className="flex items-start justify-between gap-3">
+                  <DialogTitle className="font-display text-xl">
+                    Pedido {selected.code}
+                  </DialogTitle>
+                  <OrderStatusBadge status={selected.status} />
+                </div>
+                <DialogDescription asChild>
+                  <div className="space-y-1.5">
+                    <p>
+                      {selected.customerName} ·{" "}
+                      {new Date(selected.createdAt).toLocaleString("pt-BR", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </p>
+                    {selected.scheduledFor && (
+                      <Badge
+                        variant="outline"
+                        className="gap-1 border-primary/40 text-primary"
+                      >
+                        <CalendarClock className="size-3" />
+                        Agendado para{" "}
+                        {new Date(selected.scheduledFor).toLocaleString(
+                          "pt-BR",
+                          { dateStyle: "short", timeStyle: "short" }
+                        )}
+                      </Badge>
+                    )}
+                  </div>
                 </DialogDescription>
               </DialogHeader>
-              <OrderStatusTimeline status={selected.status} />
-              <div className="space-y-2 text-sm">
-                {selected.items.map((i) => (
-                  <div key={i.productId} className="flex justify-between">
-                    <span>
-                      {i.quantity}x {i.name}
-                    </span>
-                    <span className="font-medium">
-                      {formatBRL(i.unitPrice * i.quantity)}
-                    </span>
-                  </div>
-                ))}
-                <Separator />
-                <div className="flex justify-between font-bold">
-                  <span>Total</span>
-                  <span>{formatBRL(selected.total)}</span>
-                </div>
-              </div>
-              <DialogFooter className="gap-2 sm:justify-between">
+
+              {/* Alterar status — no topo para acesso rápido */}
+              <div className="flex items-center gap-3 rounded-xl border-2 border-foreground bg-accent p-3 shadow-offset-sm">
+                <span className="shrink-0 text-xs font-bold uppercase tracking-wide text-accent-foreground/70">
+                  Status
+                </span>
                 <Select
                   value={selected.status}
                   onValueChange={(v: string) =>
                     handleChangeStatus(selected, v as OrderStatus)
                   }
                 >
-                  <SelectTrigger className="w-full sm:w-52">
+                  <SelectTrigger className="h-10 flex-1 border-2 border-foreground bg-background font-semibold shadow-none">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -212,6 +232,161 @@ export default function PedidosPage() {
                     )}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <OrderStatusTimeline status={selected.status} />
+
+              {/* Cliente e entrega */}
+              <div className="space-y-2.5 rounded-xl border-2 border-foreground/15 bg-muted/40 p-3.5">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-accent font-display text-sm font-bold">
+                      {selected.customerName.trim().charAt(0).toUpperCase()}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold">
+                        {selected.customerName}
+                      </p>
+                      {selected.customerPhone && (
+                        <p className="text-xs text-muted-foreground">
+                          {selected.customerPhone}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {selected.customerPhone && (
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="shrink-0 rounded-full border-2 border-foreground font-semibold"
+                    >
+                      <a
+                        href={`https://wa.me/55${normalizePhone(selected.customerPhone)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <MessageCircle className="size-4" />
+                        WhatsApp
+                      </a>
+                    </Button>
+                  )}
+                </div>
+                <Separator />
+                <div className="flex items-start gap-2.5 text-sm">
+                  {selected.deliveryType === "entrega" ? (
+                    <Bike className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                  ) : (
+                    <Store className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="font-medium">
+                      {selected.deliveryType === "entrega"
+                        ? "Entrega"
+                        : "Retirada no local"}
+                      {selected.zoneName && (
+                        <span className="font-normal text-muted-foreground">
+                          {" "}
+                          · {selected.zoneName}
+                        </span>
+                      )}
+                    </p>
+                    {selected.deliveryType === "entrega" && selected.address && (
+                      <p className="flex items-start gap-1 text-xs text-muted-foreground">
+                        <MapPin className="mt-0.5 size-3 shrink-0" />
+                        {selected.address}
+                      </p>
+                    )}
+                  </div>
+                  <span className="ml-auto flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+                    <CreditCard className="size-3.5" />
+                    {selected.paymentMethod}
+                  </span>
+                </div>
+              </div>
+
+              {/* Itens */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                  Itens do pedido
+                </p>
+                <div className="space-y-2">
+                  {selected.items.map((i, idx) => (
+                    <div
+                      key={`${i.productId}-${idx}`}
+                      className="rounded-xl border border-foreground/10 bg-card p-3"
+                    >
+                      <div className="flex justify-between gap-2 text-sm">
+                        <span className="font-semibold">
+                          {i.quantity}x {i.name}
+                        </span>
+                        <span className="shrink-0 font-medium">
+                          {formatBRL(i.unitPrice * i.quantity)}
+                        </span>
+                      </div>
+                      {i.options && i.options.length > 0 && (
+                        <ul className="mt-1.5 space-y-0.5 border-l-2 border-primary/40 pl-2.5">
+                          {i.options.map((op, opIdx) => (
+                            <li
+                              key={opIdx}
+                              className="flex justify-between gap-2 text-xs text-muted-foreground"
+                            >
+                              <span>{op.name}</span>
+                              {op.price > 0 && (
+                                <span className="shrink-0">
+                                  +{formatBRL(op.price)}
+                                </span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {i.notes && (
+                        <p className="mt-1.5 rounded-md bg-amber-50 px-2 py-1 text-xs italic text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                          Obs: {i.notes}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Totais */}
+              <div className="space-y-1.5 rounded-xl bg-muted/50 p-3.5 text-sm">
+                {selected.subtotal !== undefined && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Subtotal</span>
+                    <span>{formatBRL(selected.subtotal)}</span>
+                  </div>
+                )}
+                {selected.discount !== undefined && selected.discount > 0 && (
+                  <div className="flex justify-between font-medium text-primary">
+                    <span>
+                      Desconto
+                      {selected.couponCode && ` (${selected.couponCode})`}
+                    </span>
+                    <span>−{formatBRL(selected.discount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-muted-foreground">
+                  <span>
+                    {selected.deliveryType === "entrega" ? "Entrega" : "Retirada"}
+                  </span>
+                  <span>
+                    {selected.deliveryType === "retirada" ||
+                    (selected.deliveryFee ?? 0) === 0
+                      ? "Grátis"
+                      : formatBRL(selected.deliveryFee ?? 0)}
+                  </span>
+                </div>
+                <Separator />
+                <div className="flex justify-between text-base font-bold">
+                  <span>Total</span>
+                  <span>{formatBRL(selected.total)}</span>
+                </div>
+              </div>
+
+              <DialogFooter>
                 <Button variant="outline" onClick={() => setSelectedId(null)}>
                   Fechar
                 </Button>
