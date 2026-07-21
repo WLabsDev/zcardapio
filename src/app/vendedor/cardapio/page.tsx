@@ -30,6 +30,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { formatBRL, type Category, type Product } from "@/lib/mock/types";
 import { uploadImage } from "@/lib/upload";
+import { cn } from "@/lib/utils";
 
 type FormState = {
   name: string;
@@ -221,8 +222,12 @@ export default function CardapioPage() {
             Gerencie categorias e produtos do seu cardápio.
           </p>
         </div>
-        <div className="flex gap-2">
-        <Button variant="outline" onClick={() => openCategoryDialog(null)}>
+        <div className="flex w-full gap-2 sm:w-auto">
+        <Button
+          variant="outline"
+          className="flex-1 sm:flex-none"
+          onClick={() => openCategoryDialog(null)}
+        >
           <FolderPlus className="size-4" />
           Nova categoria
         </Button>
@@ -234,7 +239,7 @@ export default function CardapioPage() {
           }}
         >
           <DialogTrigger asChild>
-            <Button onClick={() => openDialog(null)}>
+            <Button className="flex-1 sm:flex-none" onClick={() => openDialog(null)}>
               <Plus className="size-4" />
               Novo produto
             </Button>
@@ -436,66 +441,91 @@ export default function CardapioPage() {
               {catItems.map((p) => (
                 <div
                   key={p.id}
-                  className="flex items-center gap-3 rounded-lg border p-3"
+                  className={cn(
+                    "rounded-xl border-2 p-3.5 transition-colors md:flex md:items-center md:gap-3",
+                    p.available
+                      ? "border-foreground/10 bg-card"
+                      : "border-foreground/10 bg-muted/40"
+                  )}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={p.image}
-                    alt={p.name}
-                    className="size-12 rounded-lg object-cover"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate font-medium">{p.name}</p>
-                      {p.popular && (
-                        <Badge variant="secondary" className="text-[10px]">
-                          Popular
-                        </Badge>
+                  {/* Produto: imagem + infos + disponibilidade */}
+                  <div className="flex items-center gap-3 md:min-w-0 md:flex-1">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={p.image}
+                      alt={p.name}
+                      className={cn(
+                        "size-14 shrink-0 rounded-lg border-2 border-foreground/10 object-cover",
+                        !p.available && "opacity-50 grayscale"
                       )}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate font-semibold">{p.name}</p>
+                        {p.popular && (
+                          <Badge variant="secondary" className="text-[10px]">
+                            Popular
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="mt-0.5 text-sm font-bold text-primary">
+                        {formatBRL(p.price)}
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {formatBRL(p.price)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex shrink-0 flex-col items-center gap-1">
                       <Switch
                         checked={p.available}
                         onCheckedChange={() => toggleAvailable(p)}
                       />
-                      <span className="hidden text-xs text-muted-foreground sm:inline">
-                        {p.available ? "Disponível" : "Pausado"}
+                      <span
+                        className={cn(
+                          "text-[10px] font-semibold uppercase tracking-wide",
+                          p.available ? "text-muted-foreground" : "text-destructive"
+                        )}
+                      >
+                        {p.available ? "Ativo" : "Pausado"}
                       </span>
                     </div>
+                  </div>
+
+                  {/* Ações: no mobile, Complementos em linha cheia + Editar/Excluir
+                      abaixo; no desktop, os três ícones inline. */}
+                  <div className="mt-3 grid grid-cols-2 gap-2 border-t-2 border-dashed border-foreground/10 pt-3 md:mt-0 md:flex md:items-center md:gap-1.5 md:border-0 md:pt-0">
                     <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      className="relative"
+                      variant="outline"
+                      className="relative col-span-2 h-10 justify-start gap-2 md:col-span-1 md:h-9 md:w-9 md:justify-center md:p-0"
                       onClick={() => setOptionGroupsProductId(p.id)}
                       aria-label="Complementos do produto"
-                      title="Complementos"
                     >
                       <ListPlus className="size-4" />
+                      <span className="truncate md:hidden">
+                        Complementos
+                        {(p.optionGroups?.length ?? 0) > 0 &&
+                          ` · ${p.optionGroups!.length}`}
+                      </span>
                       {(p.optionGroups?.length ?? 0) > 0 && (
-                        <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                        <span className="absolute -top-1.5 -right-1.5 hidden size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground md:flex">
                           {p.optionGroups!.length}
                         </span>
                       )}
                     </Button>
                     <Button
-                      size="icon-sm"
-                      variant="ghost"
+                      variant="outline"
+                      className="h-10 justify-start gap-2 md:h-9 md:w-9 md:justify-center md:p-0"
                       onClick={() => openDialog(p)}
+                      aria-label="Editar produto"
                     >
                       <Pencil className="size-4" />
+                      <span className="md:hidden">Editar</span>
                     </Button>
                     <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      className="text-destructive"
+                      variant="outline"
+                      className="h-10 justify-start gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive md:h-9 md:w-9 md:justify-center md:p-0"
                       onClick={() => removeProduct(p.id)}
+                      aria-label="Excluir produto"
                     >
                       <Trash2 className="size-4" />
+                      <span className="md:hidden">Excluir</span>
                     </Button>
                   </div>
                 </div>

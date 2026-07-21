@@ -45,6 +45,7 @@ import { OrderPrintTicket } from "@/components/panel/order-print-ticket";
 import { OrderStatusBadge } from "@/components/panel/order-status-badge";
 import { OrderStatusTimeline } from "@/components/panel/order-status-timeline";
 import { useOrders } from "@/components/panel/orders-provider";
+import { useBackToClose } from "@/hooks/use-back-to-close";
 import {
   formatBRL,
   ORDER_STATUS_LABEL,
@@ -67,6 +68,9 @@ export default function PedidosPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const selected = orders.find((o) => o.id === selectedId) ?? null;
+
+  // No mobile, o botão "voltar" fecha o modal em vez de sair da página.
+  useBackToClose(!!selected, () => setSelectedId(null));
 
   const filtered =
     tab === "todos" ? orders : orders.filter((o) => o.status === tab);
