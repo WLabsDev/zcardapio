@@ -390,7 +390,7 @@ export default async function LandingPage() {
       {/* CTA */}
       <section className="border-t-2 border-foreground bg-foreground text-background">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-7 px-4 py-20 text-center md:py-28">
-          <h2 className="max-w-3xl font-display text-4xl font-bold tracking-tight md:text-6xl">
+          <h2 className="max-w-3xl font-display text-4xl font-bold tracking-tight text-background md:text-6xl">
             Enquanto você lê isso, tem cliente com fome procurando seu cardápio.
           </h2>
           <p className="max-w-md text-lg text-background/70">

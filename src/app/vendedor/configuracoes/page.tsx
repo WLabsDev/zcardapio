@@ -172,6 +172,14 @@ export default function ConfiguracoesPage() {
         </p>
       </div>
 
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          save();
+        }}
+        className="space-y-6"
+      >
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Dados do restaurante</CardTitle>
@@ -204,7 +212,7 @@ export default function ConfiguracoesPage() {
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="slug">Endereço do cardápio</Label>
+            <Label htmlFor="slug">URL do restaurante</Label>
             <div className="flex items-center gap-2">
               <Input
                 id="slug"
@@ -220,7 +228,7 @@ export default function ConfiguracoesPage() {
               <span className="text-sm text-muted-foreground">.zcardapio.com.br</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Atenção: mudar o endereço quebra QR codes já impressos — gere e
+              Atenção: mudar a URL quebra QR codes já impressos — gere e
               imprima novos depois de salvar.
             </p>
           </div>
@@ -462,9 +470,10 @@ export default function ConfiguracoesPage() {
         </CardContent>
       </Card>
 
-      <Button onClick={save} disabled={saving}>
+      <Button type="submit" disabled={saving}>
         {saving ? "Salvando..." : "Salvar alterações"}
       </Button>
+      </form>
     </div>
   );
 }

@@ -131,7 +131,14 @@ export function LoginForm() {
             senha para acompanhar seus pedidos.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4">
+        <CardContent>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              submitPassword();
+            }}
+            className="grid gap-4"
+          >
           <div className="grid gap-2">
             <label className="text-sm font-medium" htmlFor="nova-senha">
               Nova senha
@@ -159,14 +166,15 @@ export function LoginForm() {
             />
           </div>
           <Button
+            type="submit"
             size="lg"
-            onClick={submitPassword}
             disabled={settingPass}
             className="rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
           >
             {settingPass ? "Salvando..." : "Definir senha e entrar"}
           </Button>
           <Button
+            type="button"
             variant="ghost"
             size="sm"
             className="mx-auto text-muted-foreground"
@@ -175,6 +183,7 @@ export function LoginForm() {
             <ArrowLeft className="size-4" />
             Voltar
           </Button>
+          </form>
         </CardContent>
       </Card>
     );

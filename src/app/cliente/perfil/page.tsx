@@ -131,7 +131,14 @@ export default function ClientePerfilPage() {
         <CardHeader>
           <CardTitle className="text-base">Dados pessoais</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4">
+        <CardContent>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              saveProfile();
+            }}
+            className="grid gap-4"
+          >
           <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
             <div className="grid gap-2">
               <Label htmlFor="nome">Nome</Label>
@@ -154,9 +161,10 @@ export default function ClientePerfilPage() {
             <Label htmlFor="email">E-mail</Label>
             <Input id="email" type="email" value={email} disabled />
           </div>
-          <Button className="w-fit" onClick={saveProfile} disabled={savingProfile}>
+          <Button type="submit" className="w-fit" disabled={savingProfile}>
             {savingProfile ? "Salvando..." : "Salvar"}
           </Button>
+          </form>
         </CardContent>
       </Card>
 
@@ -215,7 +223,13 @@ export default function ClientePerfilPage() {
               {editing ? "Editar endereço" : "Novo endereço"}
             </DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              saveAddress();
+            }}
+            className="grid gap-4"
+          >
             <div className="grid gap-2">
               <Label htmlFor="alabel">Nome</Label>
               <Input
@@ -236,12 +250,12 @@ export default function ClientePerfilPage() {
                 placeholder="Rua, número — Bairro, Cidade/UF"
               />
             </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={saveAddress} disabled={savingAddress}>
-              {savingAddress ? "Salvando..." : "Salvar"}
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="submit" disabled={savingAddress}>
+                {savingAddress ? "Salvando..." : "Salvar"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

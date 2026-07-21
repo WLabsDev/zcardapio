@@ -195,6 +195,12 @@ export function CheckoutView({
         </div>
       </header>
 
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          submitOrder();
+        }}
+      >
       <div className="mx-auto grid max-w-3xl gap-6 px-4 py-6 md:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           {/* Delivery type */}
@@ -204,6 +210,7 @@ export function CheckoutView({
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-3">
               <button
+                type="button"
                 onClick={() => setDeliveryType("entrega")}
                 className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-sm font-semibold transition-all ${
                   deliveryType === "entrega"
@@ -218,6 +225,7 @@ export function CheckoutView({
                 </span>
               </button>
               <button
+                type="button"
                 onClick={() => setDeliveryType("retirada")}
                 className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-sm font-semibold transition-all ${
                   deliveryType === "retirada"
@@ -427,16 +435,17 @@ export function CheckoutView({
               <span>{formatBRL(cart.total - discount + deliveryFee)}</span>
             </div>
             <Button
+              type="submit"
               className="w-full rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
               size="lg"
               disabled={cart.items.length === 0 || sending || closed}
-              onClick={submitOrder}
             >
               {sending ? "Enviando..." : closed ? "Restaurante fechado" : "Enviar pedido"}
             </Button>
           </CardContent>
         </Card>
       </div>
+      </form>
       </div>
     </div>
   );

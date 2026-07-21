@@ -247,7 +247,13 @@ export default function AparenciaPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-6">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            save();
+          }}
+          className="space-y-6"
+        >
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Identidade visual</CardTitle>
@@ -273,6 +279,7 @@ export default function AparenciaPage() {
                     onChange={(e) => handleUpload("logo", e.target.files?.[0])}
                   />
                   <Button
+                    type="button"
                     variant="outline"
                     size="sm"
                     disabled={uploading === "logo"}
@@ -296,6 +303,7 @@ export default function AparenciaPage() {
                   onChange={(e) => handleUpload("cover", e.target.files?.[0])}
                 />
                 <Button
+                  type="button"
                   variant="outline"
                   size="sm"
                   className="w-fit"
@@ -319,6 +327,7 @@ export default function AparenciaPage() {
               <div className="flex flex-wrap gap-3">
                 {colors.map((c) => (
                   <button
+                    type="button"
                     key={c.id}
                     onClick={() => set("primaryColor", c.value)}
                     className={cn(
@@ -365,6 +374,7 @@ export default function AparenciaPage() {
               <div className="flex flex-wrap gap-2">
                 {palettes.map((p) => (
                   <button
+                    type="button"
                     key={p.id}
                     onClick={() => {
                       set("primaryColor", p.colors.primary);
@@ -437,6 +447,7 @@ export default function AparenciaPage() {
                 <div className="flex flex-wrap gap-2">
                   {fonts.map((f) => (
                     <button
+                      type="button"
                       key={f.id}
                       onClick={() => set("font", f.id)}
                       className={cn(
@@ -456,6 +467,7 @@ export default function AparenciaPage() {
                 <div className="flex gap-2">
                   {themes.map((t) => (
                     <button
+                      type="button"
                       key={t.id}
                       onClick={() => set("theme", t.id)}
                       className={cn(
@@ -475,6 +487,7 @@ export default function AparenciaPage() {
                 <div className="flex gap-2">
                   {buttonStyles.map((b) => (
                     <button
+                      type="button"
                       key={b.id}
                       onClick={() => set("buttonStyle", b.id)}
                       className={cn(
@@ -517,10 +530,10 @@ export default function AparenciaPage() {
             </CardContent>
           </Card>
 
-          <Button onClick={save} disabled={saving}>
+          <Button type="submit" disabled={saving}>
             {saving ? "Salvando..." : "Salvar alterações"}
           </Button>
-        </div>
+        </form>
 
         {/* Live preview */}
         <div className="lg:sticky lg:top-24 lg:self-start">

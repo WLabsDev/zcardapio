@@ -121,6 +121,7 @@ export function CouponsManager() {
                   onCheckedChange={() => toggleActive(c)}
                 />
                 <Button
+                  type="button"
                   size="icon-sm"
                   variant="ghost"
                   className="text-destructive"
@@ -170,7 +171,7 @@ export function CouponsManager() {
             placeholder="10"
           />
         </div>
-        <Button onClick={add} disabled={saving} className="mb-0.5">
+        <Button type="button" onClick={add} disabled={saving} className="mb-0.5">
           <Plus className="size-4" />
           Criar
         </Button>

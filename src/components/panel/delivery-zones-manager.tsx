@@ -84,6 +84,7 @@ export function DeliveryZonesManager() {
                   {z.fee === 0 ? "Grátis" : formatBRL(z.fee)}
                 </span>
                 <Button
+                  type="button"
                   size="icon-sm"
                   variant="ghost"
                   className="text-destructive"
@@ -120,7 +121,7 @@ export function DeliveryZonesManager() {
             placeholder="0"
           />
         </div>
-        <Button onClick={add} disabled={saving} className="mb-0.5">
+        <Button type="button" onClick={add} disabled={saving} className="mb-0.5">
           <Plus className="size-4" />
           Adicionar
         </Button>

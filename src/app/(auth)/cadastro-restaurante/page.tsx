@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Check } from "lucide-react";
@@ -18,7 +18,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -81,8 +80,6 @@ export default function CadastroRestaurantePage() {
       cidade: "",
     },
   });
-
-  const slugValue = useWatch({ control: form.control, name: "slug" });
 
   async function nextStep() {
     const valid = await form.trigger(stepFields[step]);
@@ -151,7 +148,14 @@ export default function CadastroRestaurantePage() {
         <CardContent>
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit(onSubmit)}
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (step < steps.length - 1) {
+                  nextStep();
+                } else {
+                  form.handleSubmit(onSubmit)();
+                }
+              }}
               className="grid gap-4"
               noValidate
             >
@@ -255,27 +259,25 @@ export default function CadastroRestaurantePage() {
                     name="slug"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Endereço do cardápio</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="burguer-do-ze"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value
-                                  .toLowerCase()
-                                  .replace(/\s+/g, "-")
-                                  .replace(/[^a-z0-9-]/g, "")
-                              )
-                            }
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Seu cardápio ficará em{" "}
-                          <span className="font-medium text-primary">
-                            {slugValue || "seurestaurante"}.zcardapio.com.br
-                          </span>
-                        </FormDescription>
+                        <FormLabel>URL do restaurante</FormLabel>
+                        <div className="flex items-center gap-2">
+                          <FormControl>
+                            <Input
+                              placeholder="burguer-do-ze"
+                              className="max-w-56"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value
+                                    .toLowerCase()
+                                    .replace(/\s+/g, "-")
+                                    .replace(/[^a-z0-9-]/g, "")
+                                )
+                              }
+                            />
+                          </FormControl>
+                          <span className="text-sm text-muted-foreground">.zcardapio.com.br</span>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
