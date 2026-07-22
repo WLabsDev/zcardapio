@@ -21,10 +21,11 @@ import {
   orderCode,
 } from "@/lib/db/queries";
 import { computeOpenState } from "@/lib/hours";
-import { isAvailable } from "@/lib/mock/types";
+import { formatBRL, isAvailable } from "@/lib/mock/types";
 import { normalizePhone } from "@/lib/phone";
 import { FREE_PLAN_MONTHLY_ORDER_LIMIT, isFreePlan } from "@/lib/plan-limits";
 import { publishOrderEvent } from "@/lib/realtime";
+import { sendWhatsAppMessage } from "@/lib/whatsapp";
 
 /** Lançado dentro da transação quando o estoque acabou entre a validação e o commit. */
 class OutOfStockError extends Error {}
@@ -426,6 +427,19 @@ export async function POST(request: Request) {
     restaurantId: order.restaurantId,
     customerId: order.customerId,
   }).catch(() => {});
+
+  if (restaurant.whatsapp) {
+    // Sem detalhes do pedido de propósito — só o suficiente pra avisar, o
+    // vendedor precisa abrir o app pra ver o que é.
+    const message =
+      `🔔 *Novo pedido ${orderCode(order.id)}*\n` +
+      `Cliente: ${data.customerName}\n` +
+      `Total: ${formatBRL(totalCents / 100)}\n\n` +
+      `Abra o app pra ver os detalhes.`;
+    await sendWhatsAppMessage(restaurant.whatsapp, message).catch((e) =>
+      console.error("[orders] falha ao notificar vendedor por WhatsApp:", e)
+    );
+  }
 
   return Response.json(
     {

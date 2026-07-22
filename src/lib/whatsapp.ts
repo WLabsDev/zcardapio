@@ -29,7 +29,7 @@ export async function sendWhatsAppMessage(phone: string, text: string) {
   }
 
   const res = await fetch(
-    `${EVOLUTION_API_URL}/message/sendText/${EVOLUTION_INSTANCE}`,
+    `${EVOLUTION_API_URL}/message/sendText/${encodeURIComponent(EVOLUTION_INSTANCE)}`,
     {
       method: "POST",
       headers: {
