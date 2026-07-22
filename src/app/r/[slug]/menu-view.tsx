@@ -264,10 +264,12 @@ export function MenuView({
                 {restaurant.description}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Star className="size-3.5 fill-amber-400 text-amber-400" />
-                  {restaurant.rating.toFixed(1)}
-                </span>
+                {visibleReviewCount > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Star className="size-3.5 fill-amber-400 text-amber-400" />
+                    {restaurant.rating.toFixed(1)}
+                  </span>
+                )}
                 <span className="flex items-center gap-1">
                   <Clock className="size-3.5" />
                   {restaurant.deliveryTime}
