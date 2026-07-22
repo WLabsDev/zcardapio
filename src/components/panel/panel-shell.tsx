@@ -148,7 +148,7 @@ export function PanelShell({
       {/* Sidebar desktop */}
       <aside className="hidden w-60 shrink-0 flex-col border-r bg-sidebar lg:flex">
         <div className="flex h-16 items-center border-b px-5">
-          <Logo className="text-lg" />
+          <Logo imgClassName="h-8" />
         </div>
         {navList}
       </aside>
@@ -165,7 +165,7 @@ export function PanelShell({
             <SheetContent side="left" className="w-64 p-0">
               <SheetTitle className="sr-only">Menu</SheetTitle>
               <div className="flex h-16 items-center border-b px-5">
-                <Logo className="text-lg" />
+                <Logo imgClassName="h-8" />
               </div>
               {navList}
             </SheetContent>

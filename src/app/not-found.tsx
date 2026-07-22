@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, UtensilsCrossed } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 
@@ -32,17 +32,6 @@ export default function NotFound() {
           <Link href="/">
             <ArrowLeft className="size-4" />
             Voltar ao início
-          </Link>
-        </Button>
-        <Button
-          variant="outline"
-          size="lg"
-          className="rounded-full border-2 border-foreground font-semibold"
-          asChild
-        >
-          <Link href="/r/burguer-do-ze">
-            <UtensilsCrossed className="size-4" />
-            Ver um cardápio real
           </Link>
         </Button>
       </div>

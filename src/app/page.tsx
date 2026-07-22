@@ -7,7 +7,6 @@ import {
   Smartphone,
   Check,
   ArrowRight,
-  ArrowUpRight,
   Flame,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -135,13 +134,6 @@ export default async function LandingPage() {
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>
-              <Link
-                href="/r/burguer-do-ze"
-                className="group inline-flex items-center gap-1 text-base font-semibold underline decoration-primary decoration-2 underline-offset-4 hover:text-primary"
-              >
-                Ver um cardápio real
-                <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-              </Link>
             </div>
             <p className="text-sm text-muted-foreground">
               Grátis para sempre no plano inicial · Sem cartão de crédito
@@ -412,7 +404,10 @@ export default async function LandingPage() {
       {/* Footer */}
       <footer className="bg-foreground text-background/70">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 border-t border-background/10 px-4 py-8 text-sm md:flex-row">
-          <Logo className="text-base text-background" />
+          <Logo
+            className="rounded-xl bg-background/95 px-2.5 py-1.5 shadow-offset-sm"
+            imgClassName="h-7 group-hover:scale-100"
+          />
           <p>© 2026 zCardapio · zcardapio.com.br</p>
           <div className="flex gap-5">
             <Link href="/login" className="hover:text-background">Entrar</Link>

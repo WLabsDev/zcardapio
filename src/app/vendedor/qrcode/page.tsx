@@ -39,6 +39,7 @@ const steps = [
 const origin = () => window.location.origin;
 const subscribeNoop = () => () => {};
 const fallbackOrigin = "https://zcardapio.com.br";
+const QR_DOWNLOADED_KEY = "zcardapio:qrcode-downloaded";
 
 export default function QrcodePage() {
   const qrWrapRef = useRef<HTMLDivElement>(null);
@@ -94,6 +95,8 @@ export default function QrcodePage() {
       link.download = `qr-code-${restaurant.slug}.png`;
       link.href = canvas.toDataURL("image/png");
       link.click();
+      localStorage.setItem(QR_DOWNLOADED_KEY, "true");
+      window.dispatchEvent(new Event("storage"));
       toast.success("QR code baixado!");
     };
     img.src =

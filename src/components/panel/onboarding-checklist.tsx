@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const steps = [
+const baseSteps = [
   {
     icon: BookOpen,
     title: "Adicione seus produtos",
@@ -33,7 +33,6 @@ const steps = [
     title: "Imprima o QR code",
     description: "Cole nas mesas e o cliente pede sozinho.",
     href: "/vendedor/qrcode",
-    done: false,
   },
   {
     icon: Settings2,
@@ -45,6 +44,7 @@ const steps = [
 ];
 
 const STORAGE_KEY = "zcardapio:onboarding-dismissed";
+const QR_DOWNLOADED_KEY = "zcardapio:qrcode-downloaded";
 
 const subscribeStorage = (onChange: () => void) => {
   window.addEventListener("storage", onChange);
@@ -53,6 +53,9 @@ const subscribeStorage = (onChange: () => void) => {
 const getDismissedSnapshot = () =>
   localStorage.getItem(STORAGE_KEY) === "true";
 const getDismissedServerSnapshot = () => false;
+const getQrDoneSnapshot = () =>
+  localStorage.getItem(QR_DOWNLOADED_KEY) === "true";
+const getQrDoneServerSnapshot = () => false;
 
 export function OnboardingChecklist() {
   const storedDismissed = useSyncExternalStore(
@@ -60,10 +63,18 @@ export function OnboardingChecklist() {
     getDismissedSnapshot,
     getDismissedServerSnapshot
   );
+  const qrDone = useSyncExternalStore(
+    subscribeStorage,
+    getQrDoneSnapshot,
+    getQrDoneServerSnapshot
+  );
   const [justDismissed, setJustDismissed] = useState(false);
 
   if (storedDismissed || justDismissed) return null;
 
+  const steps = baseSteps.map((s) =>
+    s.href === "/vendedor/qrcode" ? { ...s, done: qrDone } : s
+  );
   const doneCount = steps.filter((s) => s.done).length;
   const pct = Math.round((doneCount / steps.length) * 100);
 

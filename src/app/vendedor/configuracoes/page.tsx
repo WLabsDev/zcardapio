@@ -1,6 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  Bike,
+  CalendarClock,
+  ChevronDown,
+  Clock,
+  CreditCard,
+  type LucideIcon,
+  MapPin,
+  MessageCircle,
+  Store,
+  Ticket,
+} from "lucide-react";
 import { toast } from "sonner";
 import { CouponsManager } from "@/components/panel/coupons-manager";
 import { DeliveryZonesManager } from "@/components/panel/delivery-zones-manager";
@@ -12,11 +24,91 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import type { DayHours, PaymentMethod } from "@/lib/mock/types";
+
+function SettingsSection({
+  icon: Icon,
+  title,
+  description,
+  badge,
+  defaultOpen = false,
+  contentClassName,
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description?: string;
+  badge?: { label: string; tone?: "positive" | "neutral" | "muted" };
+  defaultOpen?: boolean;
+  contentClassName?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card className="py-0 gap-0 overflow-hidden">
+      <Collapsible defaultOpen={defaultOpen}>
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="group flex w-full items-center gap-3 px-4 py-4 text-left sm:px-6 sm:py-5"
+          >
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border-2 border-foreground/15 bg-accent">
+              <Icon className="size-4" />
+            </span>
+            <CardHeader className="min-w-0 flex-1 gap-1 p-0">
+              <CardTitle className="text-base leading-snug">{title}</CardTitle>
+              {description && (
+                <CardDescription className="hidden leading-snug sm:block">
+                  {description}
+                </CardDescription>
+              )}
+            </CardHeader>
+            {badge && (
+              <span
+                className={cn(
+                  "shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium",
+                  badge.tone === "positive" &&
+                    "border-primary/30 bg-primary/10 text-primary",
+                  badge.tone === "muted" &&
+                    "border-foreground/15 bg-muted text-muted-foreground",
+                  (!badge.tone || badge.tone === "neutral") &&
+                    "border-foreground/15 bg-muted text-foreground"
+                )}
+              >
+                {badge.label}
+              </span>
+            )}
+            <ChevronDown className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          {description && (
+            <p className="px-4 pt-0 pb-2.5 text-sm leading-snug text-muted-foreground sm:hidden">
+              {description}
+            </p>
+          )}
+          <CardContent
+            className={cn(
+              "grid gap-4 border-t border-foreground/10 px-4 pt-4 pb-5 sm:px-6 sm:pb-6",
+              contentClassName
+            )}
+          >
+            {children}
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+  );
+}
 
 const DAY_NAMES = [
   "Domingo",
@@ -177,14 +269,10 @@ export default function ConfiguracoesPage() {
           e.preventDefault();
           save();
         }}
-        className="space-y-6"
+        className="space-y-2.5"
       >
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Dados do restaurante</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4">
+      <SettingsSection icon={Store} title="Dados do restaurante">
           <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
             <div className="grid gap-2">
               <Label htmlFor="nome">Nome</Label>
@@ -232,17 +320,17 @@ export default function ConfiguracoesPage() {
               imprima novos depois de salvar.
             </p>
           </div>
-        </CardContent>
-      </Card>
+      </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Funcionamento</CardTitle>
-          <CardDescription>
-            O cardápio abre e fecha sozinho conforme a agenda abaixo.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4">
+      <SettingsSection
+        icon={Clock}
+        title="Funcionamento"
+        description="O cardápio abre e fecha sozinho conforme a agenda abaixo."
+        badge={{
+          label: form.isOpen ? "Aberto" : "Fechado",
+          tone: form.isOpen ? "positive" : "muted",
+        }}
+      >
           <div className="flex items-center justify-between rounded-lg border p-3">
             <div>
               <p className="text-sm font-medium">Aceitando pedidos</p>
@@ -320,14 +408,13 @@ export default function ConfiguracoesPage() {
               placeholder="Ex.: Ter a Dom · 18h às 23h30"
             />
           </div>
-        </CardContent>
-      </Card>
+      </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Entrega</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-3">
+      <SettingsSection
+        icon={Bike}
+        title="Entrega"
+        contentClassName="sm:grid-cols-3"
+      >
           <div className="grid gap-2">
             <Label htmlFor="taxa">Taxa de entrega (R$)</Label>
             <Input
@@ -355,17 +442,15 @@ export default function ConfiguracoesPage() {
               onChange={(e) => set("deliveryTime", e.target.value)}
             />
           </div>
-        </CardContent>
-      </Card>
+      </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Pagamentos aceitos</CardTitle>
-          <CardDescription>
-            Aparecem como opção no checkout do cliente.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-2">
+      <SettingsSection
+        icon={CreditCard}
+        title="Pagamentos aceitos"
+        description="Aparecem como opção no checkout do cliente."
+        badge={{ label: `${form.paymentMethods.length} de ${ALL_PAYMENTS.length}` }}
+        contentClassName="gap-2"
+      >
           {ALL_PAYMENTS.map((m) => (
             <div
               key={m}
@@ -378,17 +463,13 @@ export default function ConfiguracoesPage() {
               />
             </div>
           ))}
-        </CardContent>
-      </Card>
+      </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Comunicação</CardTitle>
-          <CardDescription>
-            Avisos e mensagens para os clientes.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4">
+      <SettingsSection
+        icon={MessageCircle}
+        title="Comunicação"
+        description="Avisos e mensagens para os clientes."
+      >
           <div className="grid gap-2">
             <Label htmlFor="banner">Aviso no topo do cardápio (opcional)</Label>
             <Input
@@ -419,60 +500,52 @@ export default function ConfiguracoesPage() {
               placeholder="Ex.: Obrigado! Já estamos preparando seu pedido. Qualquer dúvida, chame no WhatsApp."
             />
           </div>
-        </CardContent>
-      </Card>
+      </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Entrega por região</CardTitle>
-          <CardDescription>
-            Defina taxas diferentes por região. Sem regiões, vale a taxa padrão
-            de entrega.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <DeliveryZonesManager />
-        </CardContent>
-      </Card>
+      <SettingsSection
+        icon={MapPin}
+        title="Entrega por região"
+        description="Defina taxas diferentes por região. Sem regiões, vale a taxa padrão de entrega."
+      >
+        <DeliveryZonesManager />
+      </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Cupons de desconto</CardTitle>
-          <CardDescription>
-            Crie códigos que o cliente aplica no checkout.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <CouponsManager />
-        </CardContent>
-      </Card>
+      <SettingsSection
+        icon={Ticket}
+        title="Cupons de desconto"
+        description="Crie códigos que o cliente aplica no checkout."
+      >
+        <CouponsManager />
+      </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Pedidos agendados</CardTitle>
-          <CardDescription>
-            Permita que o cliente escolha data e hora para o pedido.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <div>
-              <p className="text-sm font-medium">Aceitar agendamento</p>
-              <p className="text-xs text-muted-foreground">
-                Exibe um campo de data/hora no checkout.
-              </p>
-            </div>
-            <Switch
-              checked={form.acceptsScheduled}
-              onCheckedChange={(v: boolean) => set("acceptsScheduled", v)}
-            />
+      <SettingsSection
+        icon={CalendarClock}
+        title="Pedidos agendados"
+        description="Permita que o cliente escolha data e hora para o pedido."
+        badge={{
+          label: form.acceptsScheduled ? "Ativado" : "Desativado",
+          tone: form.acceptsScheduled ? "positive" : "muted",
+        }}
+      >
+        <div className="flex items-center justify-between rounded-lg border p-3">
+          <div>
+            <p className="text-sm font-medium">Aceitar agendamento</p>
+            <p className="text-xs text-muted-foreground">
+              Exibe um campo de data/hora no checkout.
+            </p>
           </div>
-        </CardContent>
-      </Card>
+          <Switch
+            checked={form.acceptsScheduled}
+            onCheckedChange={(v: boolean) => set("acceptsScheduled", v)}
+          />
+        </div>
+      </SettingsSection>
 
-      <Button type="submit" disabled={saving}>
-        {saving ? "Salvando..." : "Salvar alterações"}
-      </Button>
+      <div className="sticky bottom-0 -mx-4 flex justify-end border-t bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:mx-0 sm:rounded-xl sm:border sm:border-foreground/15 sm:px-4">
+        <Button type="submit" disabled={saving} className="w-full sm:w-auto">
+          {saving ? "Salvando..." : "Salvar alterações"}
+        </Button>
+      </div>
       </form>
     </div>
   );

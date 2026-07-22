@@ -136,8 +136,8 @@ export function CouponsManager() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-end gap-2">
-        <div className="grid flex-1 gap-1">
+      <div className="flex flex-col gap-3 rounded-lg border border-dashed p-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-2 sm:border-0 sm:p-0">
+        <div className="grid gap-1.5 sm:flex-1">
           <Label htmlFor="ccode">Código</Label>
           <Input
             id="ccode"
@@ -147,31 +147,38 @@ export function CouponsManager() {
             className="uppercase"
           />
         </div>
-        <div className="grid w-32 gap-1">
-          <Label>Tipo</Label>
-          <Select value={type} onValueChange={(v: string) => setType(v as "percent" | "fixed")}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="percent">Percentual</SelectItem>
-              <SelectItem value="fixed">Valor fixo</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="grid grid-cols-2 gap-3 sm:contents">
+          <div className="grid gap-1.5 sm:w-32">
+            <Label>Tipo</Label>
+            <Select value={type} onValueChange={(v: string) => setType(v as "percent" | "fixed")}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="percent">Percentual</SelectItem>
+                <SelectItem value="fixed">Valor fixo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5 sm:w-24">
+            <Label htmlFor="cvalue">{type === "percent" ? "%" : "R$"}</Label>
+            <Input
+              id="cvalue"
+              type="number"
+              step="0.01"
+              min="0"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder="10"
+            />
+          </div>
         </div>
-        <div className="grid w-24 gap-1">
-          <Label htmlFor="cvalue">{type === "percent" ? "%" : "R$"}</Label>
-          <Input
-            id="cvalue"
-            type="number"
-            step="0.01"
-            min="0"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder="10"
-          />
-        </div>
-        <Button type="button" onClick={add} disabled={saving} className="mb-0.5">
+        <Button
+          type="button"
+          onClick={add}
+          disabled={saving}
+          className="w-full sm:mb-0.5 sm:w-auto"
+        >
           <Plus className="size-4" />
           Criar
         </Button>

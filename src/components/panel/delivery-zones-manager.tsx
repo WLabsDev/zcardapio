@@ -99,8 +99,8 @@ export function DeliveryZonesManager() {
         </div>
       )}
 
-      <div className="flex items-end gap-2">
-        <div className="grid flex-1 gap-1">
+      <div className="flex flex-col gap-3 rounded-lg border border-dashed p-3 sm:flex-row sm:items-end sm:gap-2 sm:border-0 sm:p-0">
+        <div className="grid gap-1.5 sm:flex-1">
           <Label htmlFor="zname">Região</Label>
           <Input
             id="zname"
@@ -109,7 +109,7 @@ export function DeliveryZonesManager() {
             placeholder="Ex.: Centro"
           />
         </div>
-        <div className="grid w-28 gap-1">
+        <div className="grid gap-1.5 sm:w-28">
           <Label htmlFor="zfee">Taxa (R$)</Label>
           <Input
             id="zfee"
@@ -121,7 +121,12 @@ export function DeliveryZonesManager() {
             placeholder="0"
           />
         </div>
-        <Button type="button" onClick={add} disabled={saving} className="mb-0.5">
+        <Button
+          type="button"
+          onClick={add}
+          disabled={saving}
+          className="w-full sm:mb-0.5 sm:w-auto"
+        >
           <Plus className="size-4" />
           Adicionar
         </Button>
