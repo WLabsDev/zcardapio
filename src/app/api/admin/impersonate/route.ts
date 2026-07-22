@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/admin";
-import { startImpersonation } from "@/lib/auth";
+import { getSession, startImpersonation } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { restaurants } from "@/lib/db/schema";
 
@@ -21,10 +21,16 @@ export async function POST(request: Request) {
   }
 
   if (parsed.data.target === "cliente") {
+    // Usa o próprio id do admin (linha válida em users) para satisfazer a FK
+    // de orders/addresses — só o papel na sessão muda para "cliente".
+    const session = await getSession();
+    if (!session) {
+      return Response.json({ message: "Sessão inválida." }, { status: 401 });
+    }
     await startImpersonation({
-      id: 0,
-      name: "Visitante (admin)",
-      email: null,
+      id: Number(session.sub),
+      name: session.name,
+      email: session.email || null,
       role: "cliente",
     });
     return Response.json({ redirect: "/cliente" });
