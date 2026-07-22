@@ -138,6 +138,7 @@ function normalizeHours(incoming: DayHours[] | undefined): DayHours[] {
 
 type Settings = {
   name: string;
+  description: string;
   phone: string;
   address: string;
   slug: string;
@@ -166,6 +167,7 @@ export default function ConfiguracoesPage() {
         const r = data.restaurant;
         setForm({
           name: r.name,
+          description: r.description ?? "",
           phone: r.phone,
           address: r.address,
           slug: r.slug,
@@ -224,6 +226,7 @@ export default function ConfiguracoesPage() {
       body: JSON.stringify({
         slug: form.slug.trim(),
         name: form.name.trim(),
+        description: form.description.trim(),
         phone: form.phone.trim(),
         address: form.address.trim(),
         isOpen: form.isOpen,
@@ -290,6 +293,15 @@ export default function ConfiguracoesPage() {
                 onChange={(e) => set("phone", e.target.value)}
               />
             </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="desc">Descrição curta</Label>
+            <Input
+              id="desc"
+              value={form.description}
+              onChange={(e) => set("description", e.target.value)}
+              placeholder="Ex.: Hambúrgueres artesanais feitos na brasa"
+            />
           </div>
           <div className="grid gap-2">
             <Label htmlFor="endereco">Endereço</Label>

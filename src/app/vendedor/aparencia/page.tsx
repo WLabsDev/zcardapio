@@ -24,22 +24,6 @@ const colors = [
   { id: "rosa", value: "#db2777" },
 ];
 
-const fonts = [
-  { id: "bricolage", label: "Bricolage (moderna)" },
-  { id: "jakarta", label: "Jakarta (limpa)" },
-  { id: "mono", label: "Mono (técnica)" },
-] as const;
-
-const themes = [
-  { id: "claro", label: "Claro" },
-  { id: "escuro", label: "Escuro" },
-] as const;
-
-const buttonStyles = [
-  { id: "arredondado", label: "Arredondado" },
-  { id: "reto", label: "Reto" },
-] as const;
-
 type Palette = {
   primary: string;
   heading: string;
@@ -431,102 +415,6 @@ export default function AparenciaPage() {
                   Limpar cores personalizadas
                 </Button>
               )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Estilo do cardápio</CardTitle>
-              <CardDescription>
-                Fonte, tema e formato dos botões.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-5">
-              <div className="grid gap-2">
-                <p className="text-sm font-medium">Fonte dos títulos</p>
-                <div className="flex flex-wrap gap-2">
-                  {fonts.map((f) => (
-                    <button
-                      type="button"
-                      key={f.id}
-                      onClick={() => set("font", f.id)}
-                      className={cn(
-                        "rounded-lg border-2 px-3 py-2 text-sm transition-all",
-                        form.font === f.id
-                          ? "border-foreground bg-accent font-semibold"
-                          : "border-foreground/15 hover:border-foreground/40"
-                      )}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <p className="text-sm font-medium">Tema</p>
-                <div className="flex gap-2">
-                  {themes.map((t) => (
-                    <button
-                      type="button"
-                      key={t.id}
-                      onClick={() => set("theme", t.id)}
-                      className={cn(
-                        "flex-1 rounded-lg border-2 px-3 py-2 text-sm transition-all",
-                        form.theme === t.id
-                          ? "border-foreground bg-accent font-semibold"
-                          : "border-foreground/15 hover:border-foreground/40"
-                      )}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <p className="text-sm font-medium">Botões</p>
-                <div className="flex gap-2">
-                  {buttonStyles.map((b) => (
-                    <button
-                      type="button"
-                      key={b.id}
-                      onClick={() => set("buttonStyle", b.id)}
-                      className={cn(
-                        "flex-1 border-2 px-3 py-2 text-sm transition-all",
-                        b.id === "arredondado" ? "rounded-full" : "rounded-md",
-                        form.buttonStyle === b.id
-                          ? "border-foreground bg-accent font-semibold"
-                          : "border-foreground/15 hover:border-foreground/40"
-                      )}
-                    >
-                      {b.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Textos</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="nome">Nome exibido</Label>
-                <Input
-                  id="nome"
-                  value={form.name}
-                  onChange={(e) => set("name", e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="desc">Descrição curta</Label>
-                <Input
-                  id="desc"
-                  value={form.description}
-                  onChange={(e) => set("description", e.target.value)}
-                />
-              </div>
             </CardContent>
           </Card>
 
