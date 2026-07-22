@@ -406,14 +406,7 @@ export function MenuView({
                   className="rounded-xl border-2 border-foreground/10 bg-card p-3"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <p className="flex items-center gap-1.5 text-sm font-semibold">
-                      {r.customerName}
-                      {r.hidden && (
-                        <Badge variant="outline" className="text-[10px] font-normal">
-                          Oculta · só você vê
-                        </Badge>
-                      )}
-                    </p>
+                    <p className="text-sm font-semibold">{r.customerName}</p>
                     <span className="flex items-center gap-1 text-xs font-semibold text-amber-500">
                       <Star className="size-3.5 fill-amber-400 text-amber-400" />
                       {r.rating}
