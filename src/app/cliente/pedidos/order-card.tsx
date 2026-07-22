@@ -77,6 +77,7 @@ export function OrderCard({ order: o }: { order: Order }) {
               <span className="font-bold">{formatBRL(o.total)}</span>
             )}
             <OrderStatusBadge status={o.status} />
+            {!active && !expanded && reorderButton}
             {!active && (
               <button
                 type="button"
@@ -97,11 +98,6 @@ export function OrderCard({ order: o }: { order: Order }) {
             )}
           </div>
         </div>
-
-        {/* Resumo compacto — finalizado e recolhido */}
-        {!active && !expanded && reorderButton && (
-          <div className="mt-3 flex justify-end">{reorderButton}</div>
-        )}
 
         {/* Detalhes — ativos sempre; finalizados ao expandir (com animação) */}
         <div

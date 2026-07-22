@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { Product } from "@/lib/mock/types";
 
 export type SelectedOption = {
@@ -39,8 +39,35 @@ type CartContextValue = {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
+function readStoredItems(storageKey: string): CartItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(storageKey);
+    return raw ? (JSON.parse(raw) as CartItem[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function CartProvider({
+  restaurantSlug,
+  children,
+}: {
+  restaurantSlug: string;
+  children: React.ReactNode;
+}) {
+  const storageKey = `zcardapio:cart:${restaurantSlug}`;
+  const [items, setItems] = useState<CartItem[]>(() =>
+    readStoredItems(storageKey)
+  );
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(items));
+    } catch {
+      // localStorage indisponível (modo privado etc.) — carrinho segue apenas em memória
+    }
+  }, [storageKey, items]);
 
   const value = useMemo<CartContextValue>(() => {
     const addItem = (
