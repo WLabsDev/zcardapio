@@ -431,11 +431,12 @@ export async function POST(request: Request) {
   if (restaurant.whatsapp) {
     // Sem detalhes do pedido de propósito — só o suficiente pra avisar, o
     // vendedor precisa abrir o app pra ver o que é.
+    const pedidosUrl = `${new URL(request.url).origin}/vendedor/pedidos`;
     const message =
       `🔔 *Novo pedido ${orderCode(order.id)}*\n` +
       `Cliente: ${data.customerName}\n` +
       `Total: ${formatBRL(totalCents / 100)}\n\n` +
-      `Abra o app pra ver os detalhes.`;
+      `Ver detalhes: ${pedidosUrl}`;
     await sendWhatsAppMessage(restaurant.whatsapp, message).catch((e) =>
       console.error("[orders] falha ao notificar vendedor por WhatsApp:", e)
     );
