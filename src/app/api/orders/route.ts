@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, gt, gte, inArray, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -251,7 +251,8 @@ export async function POST(request: Request) {
         eq(coupons.restaurantId, restaurant.id),
         eq(coupons.code, code),
         eq(coupons.active, true),
-        isNull(coupons.usedAt)
+        isNull(coupons.usedAt),
+        or(isNull(coupons.expiresAt), gt(coupons.expiresAt, new Date()))
       ),
     });
     if (!coupon) {
@@ -394,6 +395,7 @@ export async function POST(request: Request) {
           await tx.insert(orderItemOptions).values(
             item.options.map((o) => ({
               orderItemId: createdItem.id,
+              optionId: o.optionId,
               groupName: o.groupName,
               name: o.name,
               priceCents: o.priceCents,

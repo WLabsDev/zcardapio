@@ -83,6 +83,7 @@ export async function POST(request: Request) {
         value: couponValue,
         active: true,
         singleUse: true,
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       })
       .returning({ code: coupons.code });
 

@@ -263,6 +263,12 @@ export const orderItemOptions = pgTable(
     orderItemId: integer("order_item_id")
       .notNull()
       .references(() => orderItems.id, { onDelete: "cascade" }),
+    // Referência à opção original — usada só para restaurar o estoque se o
+    // pedido for cancelado; groupName/name/priceCents abaixo continuam sendo o
+    // snapshot histórico e não dependem desta coluna.
+    optionId: integer("option_id").references(() => groupOptions.id, {
+      onDelete: "set null",
+    }),
     groupName: varchar("group_name", { length: 80 }).notNull().default(""),
     name: varchar("name", { length: 80 }).notNull(),
     priceCents: integer("price_cents").notNull().default(0),
@@ -314,6 +320,8 @@ export const coupons = pgTable(
     // manualmente pelo vendedor ficam sempre singleUse=false/usedAt=null (reutilizáveis).
     singleUse: boolean("single_use").notNull().default(false),
     usedAt: timestamp("used_at"),
+    // Só preenchido em cupons de resgate (30 dias); cupons manuais não expiram.
+    expiresAt: timestamp("expires_at"),
   },
   (t) => [index("coupons_restaurant_idx").on(t.restaurantId)]
 );

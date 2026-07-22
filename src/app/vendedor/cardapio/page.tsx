@@ -29,7 +29,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useBackToClose } from "@/hooks/use-back-to-close";
-import { formatBRL, type Category, type Product } from "@/lib/mock/types";
+import { formatBRL, stockLevel, type Category, type Product } from "@/lib/mock/types";
 import { uploadImage } from "@/lib/upload";
 import { cn } from "@/lib/utils";
 
@@ -514,12 +514,20 @@ export default function CardapioPage() {
                         )}
                         {p.trackStock && (
                           <Badge
-                            variant={(p.stock ?? 0) <= 0 ? "destructive" : "outline"}
-                            className="text-[10px]"
+                            variant={
+                              stockLevel(p) === "out" ? "destructive" : "outline"
+                            }
+                            className={cn(
+                              "text-[10px]",
+                              stockLevel(p) === "low" &&
+                                "border-amber-500 text-amber-600 dark:text-amber-400"
+                            )}
                           >
-                            {(p.stock ?? 0) <= 0
+                            {stockLevel(p) === "out"
                               ? "Esgotado"
-                              : `Estoque: ${p.stock}`}
+                              : stockLevel(p) === "low"
+                                ? `Estoque baixo: ${p.stock}`
+                                : `Estoque: ${p.stock}`}
                           </Badge>
                         )}
                       </div>

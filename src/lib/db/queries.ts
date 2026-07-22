@@ -202,6 +202,9 @@ export function mapOrder(o: OrderRow): Order {
     createdAt: o.createdAt.toISOString(),
     reviewed: o.review !== undefined ? Boolean(o.review) : undefined,
     restaurantReviewsEnabled: o.restaurant?.reviewsEnabled,
+    loyaltyPointsEarned: o.loyaltyPointsEarned,
+    loyaltyCashbackEarnedCents: o.loyaltyCashbackEarnedCents,
+    loyaltyStampEarned: o.loyaltyStampEarned,
   };
 }
 

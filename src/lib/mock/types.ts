@@ -57,6 +57,23 @@ export function isAvailable(p: {
   return (p.available ?? true) && (!p.trackStock || (p.stock ?? 0) > 0);
 }
 
+/** Estoque igual ou abaixo disso mostra o aviso "Estoque baixo" pro vendedor. */
+export const LOW_STOCK_THRESHOLD = 3;
+
+export type StockLevel = "unlimited" | "ok" | "low" | "out";
+
+/** Nível de estoque de um produto/opção, para exibir a badge certa no painel. */
+export function stockLevel(p: {
+  trackStock?: boolean | null;
+  stock?: number | null;
+}): StockLevel {
+  if (!p.trackStock) return "unlimited";
+  const stock = p.stock ?? 0;
+  if (stock <= 0) return "out";
+  if (stock <= LOW_STOCK_THRESHOLD) return "low";
+  return "ok";
+}
+
 /** Horário de funcionamento de um dia da semana. */
 export type DayHours = {
   /** 0 = domingo ... 6 = sábado */
@@ -172,6 +189,10 @@ export type Order = {
   reviewed?: boolean;
   /** presente quando o pedido vem da API: o restaurante aceita avaliações? */
   restaurantReviewsEnabled?: boolean;
+  /** fidelidade creditada por este pedido (só > 0 depois de marcado como entregue) */
+  loyaltyPointsEarned?: number;
+  loyaltyCashbackEarnedCents?: number;
+  loyaltyStampEarned?: boolean;
 };
 
 export type Review = {

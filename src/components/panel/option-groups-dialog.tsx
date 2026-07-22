@@ -33,7 +33,13 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useBackToClose } from "@/hooks/use-back-to-close";
-import { formatBRL, type OptionGroup, type Product } from "@/lib/mock/types";
+import {
+  formatBRL,
+  stockLevel,
+  type OptionGroup,
+  type Product,
+} from "@/lib/mock/types";
+import { cn } from "@/lib/utils";
 
 type OptionFormState = {
   groupId: string;
@@ -422,12 +428,16 @@ export function OptionGroupsDialog({
                             {o.trackStock && (
                               <Badge
                                 variant={
-                                  (o.stock ?? 0) <= 0 ? "destructive" : "outline"
+                                  stockLevel(o) === "out" ? "destructive" : "outline"
                                 }
-                                className="gap-1 text-[10px]"
+                                className={cn(
+                                  "gap-1 text-[10px]",
+                                  stockLevel(o) === "low" &&
+                                    "border-amber-500 text-amber-600 dark:text-amber-400"
+                                )}
                               >
                                 <Boxes className="size-3" />
-                                {(o.stock ?? 0) <= 0 ? "Esgotado" : o.stock}
+                                {stockLevel(o) === "out" ? "Esgotado" : o.stock}
                               </Badge>
                             )}
                             {o.price > 0 && (

@@ -2,7 +2,14 @@ import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { loyaltyPrograms, loyaltyProgress, orders } from "@/lib/db/schema";
+import {
+  groupOptions,
+  loyaltyPrograms,
+  loyaltyProgress,
+  orderItems,
+  orders,
+  products,
+} from "@/lib/db/schema";
 import { mapOrder } from "@/lib/db/queries";
 import { isFreePlan } from "@/lib/plan-limits";
 import { publishOrderEvent } from "@/lib/realtime";
@@ -101,6 +108,9 @@ export async function PATCH(
       .where(and(eq(orders.id, orderId), eq(orders.restaurantId, restaurant.id)));
     if (!existing) return null;
 
+    const isCancelling =
+      parsed.data.status === "cancelado" && existing.status !== "cancelado";
+
     // Fidelidade só é liberada quando o pedido é efetivamente entregue — e só uma
     // vez (evita creditar de novo se o status for setado como "entregue" outra vez).
     let loyaltyPointsEarned = 0;
@@ -175,7 +185,7 @@ export async function PATCH(
       row.loyaltyPointsEarned > 0 ||
       row.loyaltyCashbackEarnedCents > 0 ||
       row.loyaltyStampEarned;
-    if (row.status === "cancelado" && row.customerId !== null && earnedSomething) {
+    if (isCancelling && row.customerId !== null && earnedSomething) {
       await tx
         .update(loyaltyProgress)
         .set({
@@ -191,6 +201,39 @@ export async function PATCH(
           )
         );
     }
+
+    // Cancelamento também devolve o estoque debitado por este pedido (só do que
+    // ainda estiver com rastreamento ativo hoje).
+    if (isCancelling) {
+      const items = await tx.query.orderItems.findMany({
+        where: eq(orderItems.orderId, orderId),
+        with: { options: true },
+      });
+      for (const item of items) {
+        if (item.productId !== null) {
+          await tx
+            .update(products)
+            .set({ stock: sql`${products.stock} + ${item.quantity}` })
+            .where(
+              and(eq(products.id, item.productId), eq(products.trackStock, true))
+            );
+        }
+        for (const opt of item.options) {
+          if (opt.optionId !== null) {
+            await tx
+              .update(groupOptions)
+              .set({ stock: sql`${groupOptions.stock} + ${item.quantity}` })
+              .where(
+                and(
+                  eq(groupOptions.id, opt.optionId),
+                  eq(groupOptions.trackStock, true)
+                )
+              );
+          }
+        }
+      }
+    }
+
     return row;
   });
 
