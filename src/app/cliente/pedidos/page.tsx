@@ -1,18 +1,10 @@
 import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { EmptyState } from "@/components/panel/empty-state";
-import { OrderStatusBadge } from "@/components/panel/order-status-badge";
-import { OrderStatusTimeline } from "@/components/panel/order-status-timeline";
 import { getSession } from "@/lib/auth";
 import { getOrdersByCustomer } from "@/lib/db/queries";
-import { formatBRL, type OrderStatus } from "@/lib/mock/types";
-import { cn } from "@/lib/utils";
-
-const isActive = (status: OrderStatus) =>
-  status !== "entregue" && status !== "cancelado";
+import { OrderCard } from "./order-card";
 
 export default async function ClientePedidosPage() {
   const session = await getSession();
@@ -43,53 +35,7 @@ export default async function ClientePedidosPage() {
       ) : (
         <div className="space-y-4">
           {orders.map((o) => (
-            <Card
-              key={o.id}
-              className={cn(
-                isActive(o.status) && "border-primary/40 bg-primary/5"
-              )}
-            >
-              <CardContent className="space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="font-semibold">
-                      {o.restaurantName ?? "Restaurante"} · Pedido {o.code}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(o.createdAt).toLocaleString("pt-BR", {
-                        dateStyle: "short",
-                        timeStyle: "short",
-                      })}{" "}
-                      · {o.deliveryType === "entrega" ? "Entrega" : "Retirada"} ·{" "}
-                      {o.paymentMethod}
-                    </p>
-                  </div>
-                  <OrderStatusBadge status={o.status} />
-                </div>
-
-                <OrderStatusTimeline status={o.status} className="py-1" />
-
-                <Separator />
-                <div className="space-y-1 text-sm">
-                  {o.items.map((i, idx) => (
-                    <div key={idx} className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        {i.quantity}x {i.name}
-                      </span>
-                      <span>{formatBRL(i.unitPrice * i.quantity)}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between">
-                  <p className="font-bold">Total: {formatBRL(o.total)}</p>
-                  {o.restaurantSlug && (
-                    <Button size="sm" variant="outline" asChild>
-                      <Link href={`/r/${o.restaurantSlug}`}>Pedir de novo</Link>
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <OrderCard key={o.id} order={o} />
           ))}
         </div>
       )}

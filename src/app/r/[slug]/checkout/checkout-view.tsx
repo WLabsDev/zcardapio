@@ -1,8 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Bike, CheckCircle2, MessageCircle, Store } from "lucide-react";
+import {
+  ArrowLeft,
+  Bike,
+  Check,
+  CheckCircle2,
+  MapPin,
+  MessageCircle,
+  Plus,
+  Store,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +36,13 @@ const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   dinheiro: "Dinheiro",
 };
 
+type SavedAddress = {
+  id: string;
+  label: string;
+  address: string;
+  isMain: boolean;
+};
+
 export function CheckoutView({
   restaurant,
   initiallyOpen,
@@ -49,6 +65,7 @@ export function CheckoutView({
   const [phone, setPhone] = useState("");
   const [street, setStreet] = useState("");
   const [district, setDistrict] = useState("");
+  const [city, setCity] = useState("");
   const [complement, setComplement] = useState("");
   const [payment, setPayment] = useState<PaymentMethod>(acceptedPayments[0]);
   const [sending, setSending] = useState(false);
@@ -60,6 +77,47 @@ export function CheckoutView({
   const [checkingCoupon, setCheckingCoupon] = useState(false);
   // Agendamento
   const [scheduledFor, setScheduledFor] = useState("");
+  // Dados do cliente logado (auto-preenchimento) e endereços salvos
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [useNewAddress, setUseNewAddress] = useState(false);
+  const [saveAddress, setSaveAddress] = useState(false);
+  const [addressLabel, setAddressLabel] = useState("");
+
+  // Se o cliente está logado, pré-preenche nome/telefone e carrega endereços.
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const meRes = await fetch("/api/me").catch(() => null);
+      const me = meRes?.ok ? await meRes.json().catch(() => null) : null;
+      if (!active) return;
+      if (me?.user) {
+        setLoggedIn(true);
+        setName((prev) => prev || me.user.name || "");
+        setPhone((prev) => prev || me.user.phone || "");
+      }
+      const addrRes = await fetch("/api/me/addresses").catch(() => null);
+      const addr = addrRes?.ok ? await addrRes.json().catch(() => null) : null;
+      if (!active) return;
+      if (addr?.addresses?.length) {
+        setSavedAddresses(addr.addresses);
+        const main =
+          addr.addresses.find((a: SavedAddress) => a.isMain) ??
+          addr.addresses[0];
+        setSelectedAddressId(main.id);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const selectedSavedAddress = savedAddresses.find(
+    (a) => a.id === selectedAddressId
+  );
+  const usingSavedAddress =
+    loggedIn && savedAddresses.length > 0 && !useNewAddress && !!selectedSavedAddress;
 
   const selectedZone = zones.find((z) => z.id === zoneId);
   const deliveryFee =
@@ -98,9 +156,9 @@ export function CheckoutView({
 
   async function submitOrder() {
     setSending(true);
-    const address = [street, district, complement]
-      .filter(Boolean)
-      .join(" — ");
+    const address = usingSavedAddress
+      ? selectedSavedAddress!.address
+      : [street, district, city, complement].filter(Boolean).join(" — ");
     const res = await fetch("/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -132,6 +190,20 @@ export function CheckoutView({
       toast.error(data?.message ?? "Não foi possível enviar o pedido.");
       return;
     }
+
+    // Salva o endereço novo no perfil, se o cliente pediu (sem sair do checkout).
+    if (saveAddress && loggedIn && !usingSavedAddress && address.trim()) {
+      await fetch("/api/me/addresses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          label: addressLabel.trim() || "Endereço",
+          address,
+          isMain: savedAddresses.length === 0,
+        }),
+      }).catch(() => null);
+    }
+
     cart.clear();
     setDone(true);
     toast.success(`Pedido ${data.order.code} enviado ao restaurante!`);
@@ -286,33 +358,137 @@ export function CheckoutView({
                     </div>
                   )}
                   <div className="grid gap-2">
-                    <Label htmlFor="endereco">Endereço</Label>
-                    <Input
-                      id="endereco"
-                      placeholder="Rua, número"
-                      value={street}
-                      onChange={(e) => setStreet(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="bairro">Bairro</Label>
-                      <Input
-                        id="bairro"
-                        placeholder="Bairro"
-                        value={district}
-                        onChange={(e) => setDistrict(e.target.value)}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="complemento">Complemento</Label>
-                      <Input
-                        id="complemento"
-                        placeholder="Apto, bloco..."
-                        value={complement}
-                        onChange={(e) => setComplement(e.target.value)}
-                      />
-                    </div>
+                    <Label>Endereço</Label>
+
+                    {/* Endereços salvos no perfil */}
+                    {loggedIn && savedAddresses.length > 0 && (
+                      <div className="grid gap-2">
+                        {savedAddresses.map((a) => {
+                          const active =
+                            selectedAddressId === a.id && !useNewAddress;
+                          return (
+                            <button
+                              key={a.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedAddressId(a.id);
+                                setUseNewAddress(false);
+                              }}
+                              className={cn(
+                                "flex items-start gap-2.5 rounded-xl border-2 p-3 text-left text-sm transition-all",
+                                active
+                                  ? "border-foreground bg-accent shadow-offset-sm"
+                                  : "border-foreground/15 hover:border-foreground"
+                              )}
+                            >
+                              <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                              <span className="min-w-0 flex-1">
+                                <span className="flex items-center gap-1.5 font-semibold">
+                                  {a.label}
+                                  {a.isMain && (
+                                    <span className="text-[10px] font-bold uppercase tracking-wide text-primary">
+                                      Principal
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="block text-xs text-muted-foreground">
+                                  {a.address}
+                                </span>
+                              </span>
+                              {active && (
+                                <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                              )}
+                            </button>
+                          );
+                        })}
+                        <button
+                          type="button"
+                          onClick={() => setUseNewAddress(true)}
+                          className={cn(
+                            "flex items-center gap-2 rounded-xl border-2 border-dashed p-3 text-left text-sm font-medium transition-all",
+                            useNewAddress
+                              ? "border-foreground bg-accent"
+                              : "border-foreground/15 hover:border-foreground"
+                          )}
+                        >
+                          <Plus className="size-4" />
+                          Usar outro endereço
+                        </button>
+                      </div>
+                    )}
+
+                    {loggedIn && savedAddresses.length === 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Você ainda não tem endereços salvos. Preencha abaixo e
+                        salve para agilizar os próximos pedidos.
+                      </p>
+                    )}
+
+                    {/* Endereço novo (manual) */}
+                    {(!loggedIn || savedAddresses.length === 0 || useNewAddress) && (
+                      <div className="grid gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="endereco">Rua e número</Label>
+                          <Input
+                            id="endereco"
+                            placeholder="Rua, número"
+                            value={street}
+                            onChange={(e) => setStreet(e.target.value)}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="bairro">Bairro</Label>
+                            <Input
+                              id="bairro"
+                              placeholder="Bairro"
+                              value={district}
+                              onChange={(e) => setDistrict(e.target.value)}
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="cidade">Cidade</Label>
+                            <Input
+                              id="cidade"
+                              placeholder="Cidade"
+                              value={city}
+                              onChange={(e) => setCity(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="complemento">Complemento</Label>
+                          <Input
+                            id="complemento"
+                            placeholder="Apto, bloco..."
+                            value={complement}
+                            onChange={(e) => setComplement(e.target.value)}
+                          />
+                        </div>
+
+                        {/* Salvar no perfil (cadastro rápido, sem sair do checkout) */}
+                        {loggedIn && (
+                          <div className="grid gap-2 rounded-xl border-2 border-foreground/10 bg-muted/40 p-3">
+                            <label className="flex cursor-pointer items-center gap-2.5 text-sm font-medium">
+                              <input
+                                type="checkbox"
+                                checked={saveAddress}
+                                onChange={(e) => setSaveAddress(e.target.checked)}
+                                className="size-4 shrink-0 accent-[var(--primary)]"
+                              />
+                              Salvar este endereço no meu perfil
+                            </label>
+                            {saveAddress && (
+                              <Input
+                                placeholder="Nome do endereço (ex.: Casa)"
+                                value={addressLabel}
+                                onChange={(e) => setAddressLabel(e.target.value)}
+                              />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </>
               )}

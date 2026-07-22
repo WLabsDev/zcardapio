@@ -1,6 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useRef,
+  useState,
+  type TouchEvent as ReactTouchEvent,
+} from "react";
 import {
   Bike,
   CalendarClock,
@@ -85,7 +89,15 @@ function timeAgo(iso: string): string {
 export default function PedidosPage() {
   const { orders, updateStatus } = useOrders();
   const [tab, setTab] = useState("todos");
+  const [slideDir, setSlideDir] = useState<1 | -1>(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Troca de aba com direção, para o conteúdo deslizar no sentido do gesto.
+  function changeTab(next: string) {
+    const order = tabs.map((x) => x.value);
+    setSlideDir(order.indexOf(next) >= order.indexOf(tab) ? 1 : -1);
+    setTab(next);
+  }
 
   const selected = orders.find((o) => o.id === selectedId) ?? null;
 
@@ -102,8 +114,47 @@ export default function PedidosPage() {
     toast.success(`Pedido atualizado para “${ORDER_STATUS_LABEL[status]}”.`);
   }
 
+  // Arrastar para o lado troca de aba: ← vai para a próxima, → para a anterior.
+  const swipeRef = useRef<{ x: number; y: number } | null>(null);
+  const onTouchStart = (e: ReactTouchEvent) => {
+    const t = e.touches[0];
+    // Borda esquerda é reservada ao gesto de abrir o menu (panel-shell).
+    if (t.clientX <= 24) {
+      swipeRef.current = null;
+      return;
+    }
+    swipeRef.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchMove = (e: ReactTouchEvent) => {
+    if (!swipeRef.current) return;
+    const t = e.touches[0];
+    const dx = t.clientX - swipeRef.current.x;
+    const dy = t.clientY - swipeRef.current.y;
+    // Movimento vertical dominante → é rolagem da lista, aborta o gesto.
+    if (Math.abs(dy) > 24 && Math.abs(dy) > Math.abs(dx)) {
+      swipeRef.current = null;
+      return;
+    }
+    // Arrasto horizontal claro → troca de aba.
+    if (Math.abs(dx) > 64 && Math.abs(dx) > Math.abs(dy) * 2) {
+      swipeRef.current = null;
+      const order = tabs.map((x) => x.value);
+      const idx = order.indexOf(tab);
+      const next = dx < 0 ? idx + 1 : idx - 1;
+      if (next >= 0 && next < order.length) changeTab(order[next]);
+    }
+  };
+  const onTouchEnd = () => {
+    swipeRef.current = null;
+  };
+
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div
+      className="mx-auto max-w-5xl space-y-6"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       <div>
         <h2 className="font-display text-xl font-bold">Pedidos</h2>
         <p className="text-sm text-muted-foreground">
@@ -119,7 +170,7 @@ export default function PedidosPage() {
         </p>
       </div>
 
-      <Tabs value={tab} onValueChange={setTab}>
+      <Tabs value={tab} onValueChange={changeTab}>
         <TabsList>
           {tabs.map((t) => (
             <TabsTrigger key={t.value} value={t.value}>
@@ -129,6 +180,10 @@ export default function PedidosPage() {
         </TabsList>
       </Tabs>
 
+      <div
+        key={tab}
+        className={slideDir === 1 ? "animate-tab-next" : "animate-tab-prev"}
+      >
       {filtered.length === 0 ? (
         <Card>
           <CardContent>
@@ -256,6 +311,7 @@ export default function PedidosPage() {
           </Card>
         </>
       )}
+      </div>
 
       <Dialog
         open={!!selected}
