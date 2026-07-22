@@ -64,7 +64,11 @@ export default function ClientePerfilPage() {
     const res = await fetch("/api/me", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), phone: phone.trim() }),
+      body: JSON.stringify({
+        name: name.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+      }),
     }).catch(() => null);
     const data = await res?.json().catch(() => null);
     setSavingProfile(false);
@@ -163,7 +167,13 @@ export default function ClientePerfilPage() {
           </div>
           <div className="grid gap-2">
             <Label htmlFor="email">E-mail</Label>
-            <Input id="email" type="email" value={email} disabled />
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="seu@email.com"
+            />
           </div>
           <Button type="submit" className="w-fit" disabled={savingProfile}>
             {savingProfile ? "Salvando..." : "Salvar"}
