@@ -278,7 +278,7 @@ export function CheckoutView({
           {/* Delivery type */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Como quer receber?</CardTitle>
+              <CardTitle className="text-base text-heading">Como quer receber?</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-3">
               <button
@@ -286,13 +286,19 @@ export function CheckoutView({
                 onClick={() => setDeliveryType("entrega")}
                 className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-sm font-semibold transition-all ${
                   deliveryType === "entrega"
-                    ? "border-foreground bg-accent shadow-offset-sm"
-                    : "border-foreground/15 hover:border-foreground"
+                    ? "border-foreground bg-primary text-primary-foreground shadow-offset-sm"
+                    : "border-foreground/15 text-heading hover:border-foreground"
                 }`}
               >
                 <Bike className="size-5" />
                 Entrega
-                <span className="text-xs font-normal text-muted-foreground">
+                <span
+                  className={`text-xs font-normal ${
+                    deliveryType === "entrega"
+                      ? "text-primary-foreground/80"
+                      : "text-muted-foreground"
+                  }`}
+                >
                   {formatBRL(restaurant.deliveryFee)} · {restaurant.deliveryTime}
                 </span>
               </button>
@@ -301,13 +307,19 @@ export function CheckoutView({
                 onClick={() => setDeliveryType("retirada")}
                 className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-sm font-semibold transition-all ${
                   deliveryType === "retirada"
-                    ? "border-foreground bg-accent shadow-offset-sm"
-                    : "border-foreground/15 hover:border-foreground"
+                    ? "border-foreground bg-primary text-primary-foreground shadow-offset-sm"
+                    : "border-foreground/15 text-heading hover:border-foreground"
                 }`}
               >
                 <Store className="size-5" />
                 Retirada
-                <span className="text-xs font-normal text-muted-foreground">
+                <span
+                  className={`text-xs font-normal ${
+                    deliveryType === "retirada"
+                      ? "text-primary-foreground/80"
+                      : "text-muted-foreground"
+                  }`}
+                >
                   Grátis · 20–30 min
                 </span>
               </button>
@@ -317,7 +329,7 @@ export function CheckoutView({
           {/* Contact / address */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Seus dados</CardTitle>
+              <CardTitle className="text-base text-heading">Seus dados</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4">
               <div className="grid gap-2">
@@ -377,13 +389,18 @@ export function CheckoutView({
                               className={cn(
                                 "flex items-start gap-2.5 rounded-xl border-2 p-3 text-left text-sm transition-all",
                                 active
-                                  ? "border-foreground bg-accent shadow-offset-sm"
+                                  ? "border-primary bg-primary/10 shadow-offset-sm"
                                   : "border-foreground/15 hover:border-foreground"
                               )}
                             >
-                              <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                              <MapPin
+                                className={cn(
+                                  "mt-0.5 size-4 shrink-0",
+                                  active ? "text-primary" : "text-muted-foreground"
+                                )}
+                              />
                               <span className="min-w-0 flex-1">
-                                <span className="flex items-center gap-1.5 font-semibold">
+                                <span className="flex items-center gap-1.5 font-semibold text-heading">
                                   {a.label}
                                   {a.isMain && (
                                     <span className="text-[10px] font-bold uppercase tracking-wide text-primary">
@@ -407,8 +424,8 @@ export function CheckoutView({
                           className={cn(
                             "flex items-center gap-2 rounded-xl border-2 border-dashed p-3 text-left text-sm font-medium transition-all",
                             useNewAddress
-                              ? "border-foreground bg-accent"
-                              : "border-foreground/15 hover:border-foreground"
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-foreground/15 text-heading hover:border-foreground"
                           )}
                         >
                           <Plus className="size-4" />
@@ -560,7 +577,7 @@ export function CheckoutView({
         {/* Summary */}
         <Card className="h-fit border-2 border-foreground shadow-offset">
           <CardHeader>
-            <CardTitle className="text-base">Resumo do pedido</CardTitle>
+            <CardTitle className="text-base text-heading">Resumo do pedido</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {cart.items.length === 0 && (

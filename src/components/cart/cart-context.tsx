@@ -57,11 +57,19 @@ export function CartProvider({
   children: React.ReactNode;
 }) {
   const storageKey = `zcardapio:cart:${restaurantSlug}`;
-  const [items, setItems] = useState<CartItem[]>(() =>
-    readStoredItems(storageKey)
-  );
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Carrega do localStorage só depois de montar, para o primeiro render do
+  // cliente bater com o HTML vindo do servidor (evita hydration mismatch).
+  useEffect(() => {
+    setItems(readStoredItems(storageKey));
+    setHydrated(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
 
   useEffect(() => {
+    if (!hydrated) return;
     try {
       localStorage.setItem(storageKey, JSON.stringify(items));
     } catch {

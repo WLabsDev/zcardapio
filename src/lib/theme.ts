@@ -43,7 +43,14 @@ export function restaurantThemeVars(restaurant: Restaurant): CSSProperties {
   if (restaurant.headingColor) vars["--heading"] = restaurant.headingColor;
   if (restaurant.productTitleColor)
     vars["--product-title"] = restaurant.productTitleColor;
-  if (restaurant.bodyColor) vars["--foreground"] = restaurant.bodyColor;
+  if (restaurant.bodyColor) {
+    // --card-foreground e --popover-foreground não herdam de --foreground no
+    // CSS base (são tokens independentes), então textos dentro de Card/Select
+    // ficavam com a cor padrão em vez da cor de corpo escolhida pelo vendedor.
+    vars["--foreground"] = restaurant.bodyColor;
+    vars["--card-foreground"] = restaurant.bodyColor;
+    vars["--popover-foreground"] = restaurant.bodyColor;
+  }
   if (restaurant.mutedColor) vars["--muted-foreground"] = restaurant.mutedColor;
   if (restaurant.bgColor) vars["--background"] = restaurant.bgColor;
   if (restaurant.cardColor) vars["--card"] = restaurant.cardColor;
