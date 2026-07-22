@@ -9,6 +9,8 @@ const reaisToCents = (v: number) => Math.round(v * 100);
 const postSchema = z.object({
   name: z.string().min(1, "Informe o nome da opção.").max(80),
   price: z.number().min(0, "Preço inválido.").default(0),
+  trackStock: z.boolean().optional(),
+  stock: z.number().int().min(0).nullable().optional(),
 });
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -46,6 +48,8 @@ export async function POST(request: Request, { params }: Ctx) {
       groupId,
       name: parsed.data.name.trim(),
       priceCents: reaisToCents(parsed.data.price),
+      trackStock: parsed.data.trackStock ?? false,
+      stock: parsed.data.stock ?? null,
     })
     .returning({ id: groupOptions.id });
 

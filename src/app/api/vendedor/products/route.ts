@@ -17,6 +17,8 @@ const productSchema = z.object({
     .default(""),
   popular: z.boolean().optional(),
   available: z.boolean().optional(),
+  trackStock: z.boolean().optional(),
+  stock: z.number().int().min(0).nullable().optional(),
 });
 
 export async function GET() {
@@ -71,6 +73,8 @@ export async function POST(request: Request) {
       imageUrl: d.image,
       popular: d.popular ?? false,
       available: d.available ?? true,
+      trackStock: d.trackStock ?? false,
+      stock: d.stock ?? null,
     })
     .returning({ id: products.id });
 

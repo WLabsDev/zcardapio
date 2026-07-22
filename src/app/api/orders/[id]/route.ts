@@ -1,8 +1,8 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { orders } from "@/lib/db/schema";
+import { loyaltyProgress, orders } from "@/lib/db/schema";
 import { getRestaurantByOwner, mapOrder } from "@/lib/db/queries";
 import { publishOrderEvent } from "@/lib/realtime";
 
@@ -84,16 +84,46 @@ export async function PATCH(
     return Response.json({ message: "Restaurante não encontrado." }, { status: 404 });
   }
 
-  const [updated] = await db
-    .update(orders)
-    .set({ status: parsed.data.status })
-    .where(and(eq(orders.id, orderId), eq(orders.restaurantId, restaurant.id)))
-    .returning({
-      id: orders.id,
-      status: orders.status,
-      restaurantId: orders.restaurantId,
-      customerId: orders.customerId,
-    });
+  const updated = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .update(orders)
+      .set({ status: parsed.data.status })
+      .where(and(eq(orders.id, orderId), eq(orders.restaurantId, restaurant.id)))
+      .returning({
+        id: orders.id,
+        status: orders.status,
+        restaurantId: orders.restaurantId,
+        customerId: orders.customerId,
+        loyaltyPointsEarned: orders.loyaltyPointsEarned,
+        loyaltyCashbackEarnedCents: orders.loyaltyCashbackEarnedCents,
+        loyaltyStampEarned: orders.loyaltyStampEarned,
+      });
+    if (!row) return null;
+
+    // Cancelamento reverte a fidelidade que este pedido tinha creditado, sem
+    // deixar o saldo do cliente negativo.
+    const earnedSomething =
+      row.loyaltyPointsEarned > 0 ||
+      row.loyaltyCashbackEarnedCents > 0 ||
+      row.loyaltyStampEarned;
+    if (row.status === "cancelado" && row.customerId !== null && earnedSomething) {
+      await tx
+        .update(loyaltyProgress)
+        .set({
+          points: sql`GREATEST(${loyaltyProgress.points} - ${row.loyaltyPointsEarned}, 0)`,
+          cashbackCents: sql`GREATEST(${loyaltyProgress.cashbackCents} - ${row.loyaltyCashbackEarnedCents}, 0)`,
+          stampCount: sql`GREATEST(${loyaltyProgress.stampCount} - ${row.loyaltyStampEarned ? 1 : 0}, 0)`,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(loyaltyProgress.restaurantId, row.restaurantId),
+            eq(loyaltyProgress.customerId, row.customerId)
+          )
+        );
+    }
+    return row;
+  });
 
   if (!updated) {
     return Response.json({ message: "Pedido não encontrado." }, { status: 404 });

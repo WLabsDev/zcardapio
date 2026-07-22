@@ -9,6 +9,8 @@ const reaisToCents = (v: number) => Math.round(v * 100);
 const putSchema = z.object({
   name: z.string().min(1, "Informe o nome da opção.").max(80),
   price: z.number().min(0, "Preço inválido."),
+  trackStock: z.boolean().optional(),
+  stock: z.number().int().min(0).nullable().optional(),
 });
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -55,6 +57,10 @@ export async function PUT(request: Request, { params }: Ctx) {
     .set({
       name: parsed.data.name.trim(),
       priceCents: reaisToCents(parsed.data.price),
+      ...(parsed.data.trackStock !== undefined && {
+        trackStock: parsed.data.trackStock,
+      }),
+      ...(parsed.data.stock !== undefined && { stock: parsed.data.stock }),
     })
     .where(eq(groupOptions.id, optionId));
 

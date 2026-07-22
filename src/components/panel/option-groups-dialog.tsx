@@ -1,7 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronLeft, ListPlus, Pencil, Plus, Trash2, X } from "lucide-react";
+import {
+  Boxes,
+  Check,
+  ChevronLeft,
+  ListPlus,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/panel/empty-state";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +41,8 @@ type OptionFormState = {
   optionId?: string;
   name: string;
   price: string;
+  trackStock: boolean;
+  stock: string;
 };
 
 const emptyGroupForm = { name: "", required: false, max: "1" };
@@ -128,6 +139,7 @@ export function OptionGroupsDialog({
     if (!optionForm) return;
     setSavingOption(true);
     const price = Number(optionForm.price.replace(",", ".")) || 0;
+    const stock = Number(optionForm.stock) || 0;
     const res = await fetch(
       optionForm.optionId
         ? `/api/vendedor/group-options/${optionForm.optionId}`
@@ -135,7 +147,12 @@ export function OptionGroupsDialog({
       {
         method: optionForm.optionId ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: optionForm.name.trim(), price }),
+        body: JSON.stringify({
+          name: optionForm.name.trim(),
+          price,
+          trackStock: optionForm.trackStock,
+          stock: optionForm.trackStock ? stock : null,
+        }),
       }
     ).catch(() => null);
     const data = await res?.json().catch(() => null);
@@ -313,48 +330,85 @@ export function OptionGroupsDialog({
                       optionForm?.optionId === o.id ? (
                         <div
                           key={o.id}
-                          className="flex items-center gap-2 rounded-lg border-2 border-foreground/20 bg-background p-2"
+                          className="space-y-2 rounded-lg border-2 border-foreground/20 bg-background p-2"
                         >
-                          <Input
-                            className="h-8 text-sm"
-                            value={optionForm.name}
-                            onChange={(e) =>
-                              setOptionForm((f) =>
-                                f ? { ...f, name: e.target.value } : f
-                              )
-                            }
-                            placeholder="Nome da opção"
-                            autoFocus
-                          />
-                          <Input
-                            className="h-8 w-24 text-sm"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={optionForm.price}
-                            onChange={(e) =>
-                              setOptionForm((f) =>
-                                f ? { ...f, price: e.target.value } : f
-                              )
-                            }
-                            placeholder="0,00"
-                          />
-                          <Button
-                            size="icon-sm"
-                            onClick={saveOption}
-                            disabled={savingOption}
-                            aria-label="Salvar opção"
-                          >
-                            <Check className="size-4" />
-                          </Button>
-                          <Button
-                            size="icon-sm"
-                            variant="ghost"
-                            onClick={() => setOptionForm(null)}
-                            aria-label="Cancelar"
-                          >
-                            <X className="size-4" />
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              className="h-8 text-sm"
+                              value={optionForm.name}
+                              onChange={(e) =>
+                                setOptionForm((f) =>
+                                  f ? { ...f, name: e.target.value } : f
+                                )
+                              }
+                              placeholder="Nome da opção"
+                              autoFocus
+                            />
+                            <Input
+                              className="h-8 w-24 text-sm"
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={optionForm.price}
+                              onChange={(e) =>
+                                setOptionForm((f) =>
+                                  f ? { ...f, price: e.target.value } : f
+                                )
+                              }
+                              placeholder="0,00"
+                            />
+                            <Button
+                              size="icon-sm"
+                              onClick={saveOption}
+                              disabled={savingOption}
+                              aria-label="Salvar opção"
+                            >
+                              <Check className="size-4" />
+                            </Button>
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              onClick={() => setOptionForm(null)}
+                              aria-label="Cancelar"
+                            >
+                              <X className="size-4" />
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setOptionForm((f) =>
+                                  f ? { ...f, trackStock: !f.trackStock } : f
+                                )
+                              }
+                              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                            >
+                              <Switch
+                                checked={optionForm.trackStock}
+                                onCheckedChange={(v: boolean) =>
+                                  setOptionForm((f) =>
+                                    f ? { ...f, trackStock: v } : f
+                                  )
+                                }
+                              />
+                              Controlar estoque
+                            </button>
+                            {optionForm.trackStock && (
+                              <Input
+                                className="h-7 w-20 text-sm"
+                                type="number"
+                                min="0"
+                                value={optionForm.stock}
+                                onChange={(e) =>
+                                  setOptionForm((f) =>
+                                    f ? { ...f, stock: e.target.value } : f
+                                  )
+                                }
+                                placeholder="Qtd."
+                              />
+                            )}
+                          </div>
                         </div>
                       ) : (
                         <div
@@ -365,6 +419,17 @@ export function OptionGroupsDialog({
                             {o.name}
                           </span>
                           <div className="flex shrink-0 items-center gap-1">
+                            {o.trackStock && (
+                              <Badge
+                                variant={
+                                  (o.stock ?? 0) <= 0 ? "destructive" : "outline"
+                                }
+                                className="gap-1 text-[10px]"
+                              >
+                                <Boxes className="size-3" />
+                                {(o.stock ?? 0) <= 0 ? "Esgotado" : o.stock}
+                              </Badge>
+                            )}
                             {o.price > 0 && (
                               <span className="text-xs font-medium text-muted-foreground">
                                 +{formatBRL(o.price)}
@@ -379,6 +444,8 @@ export function OptionGroupsDialog({
                                   optionId: o.id,
                                   name: o.name,
                                   price: o.price > 0 ? String(o.price) : "",
+                                  trackStock: !!o.trackStock,
+                                  stock: o.stock != null ? String(o.stock) : "",
                                 })
                               }
                               aria-label="Editar opção"
@@ -400,53 +467,96 @@ export function OptionGroupsDialog({
                     )}
 
                     {optionForm && !optionForm.optionId && optionForm.groupId === g.id ? (
-                      <div className="flex items-center gap-2 rounded-lg border-2 border-foreground/20 bg-background p-2">
-                        <Input
-                          className="h-8 text-sm"
-                          value={optionForm.name}
-                          onChange={(e) =>
-                            setOptionForm((f) =>
-                              f ? { ...f, name: e.target.value } : f
-                            )
-                          }
-                          placeholder="Ex.: Barbecue"
-                          autoFocus
-                        />
-                        <Input
-                          className="h-8 w-24 text-sm"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={optionForm.price}
-                          onChange={(e) =>
-                            setOptionForm((f) =>
-                              f ? { ...f, price: e.target.value } : f
-                            )
-                          }
-                          placeholder="0,00"
-                        />
-                        <Button
-                          size="icon-sm"
-                          onClick={saveOption}
-                          disabled={savingOption}
-                          aria-label="Adicionar opção"
-                        >
-                          <Check className="size-4" />
-                        </Button>
-                        <Button
-                          size="icon-sm"
-                          variant="ghost"
-                          onClick={() => setOptionForm(null)}
-                          aria-label="Cancelar"
-                        >
-                          <X className="size-4" />
-                        </Button>
+                      <div className="space-y-2 rounded-lg border-2 border-foreground/20 bg-background p-2">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            className="h-8 text-sm"
+                            value={optionForm.name}
+                            onChange={(e) =>
+                              setOptionForm((f) =>
+                                f ? { ...f, name: e.target.value } : f
+                              )
+                            }
+                            placeholder="Ex.: Barbecue"
+                            autoFocus
+                          />
+                          <Input
+                            className="h-8 w-24 text-sm"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={optionForm.price}
+                            onChange={(e) =>
+                              setOptionForm((f) =>
+                                f ? { ...f, price: e.target.value } : f
+                              )
+                            }
+                            placeholder="0,00"
+                          />
+                          <Button
+                            size="icon-sm"
+                            onClick={saveOption}
+                            disabled={savingOption}
+                            aria-label="Adicionar opção"
+                          >
+                            <Check className="size-4" />
+                          </Button>
+                          <Button
+                            size="icon-sm"
+                            variant="ghost"
+                            onClick={() => setOptionForm(null)}
+                            aria-label="Cancelar"
+                          >
+                            <X className="size-4" />
+                          </Button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setOptionForm((f) =>
+                                f ? { ...f, trackStock: !f.trackStock } : f
+                              )
+                            }
+                            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                          >
+                            <Switch
+                              checked={optionForm.trackStock}
+                              onCheckedChange={(v: boolean) =>
+                                setOptionForm((f) =>
+                                  f ? { ...f, trackStock: v } : f
+                                )
+                              }
+                            />
+                            Controlar estoque
+                          </button>
+                          {optionForm.trackStock && (
+                            <Input
+                              className="h-7 w-20 text-sm"
+                              type="number"
+                              min="0"
+                              value={optionForm.stock}
+                              onChange={(e) =>
+                                setOptionForm((f) =>
+                                  f ? { ...f, stock: e.target.value } : f
+                                )
+                              }
+                              placeholder="Qtd."
+                            />
+                          )}
+                        </div>
                       </div>
                     ) : (
                       (!optionForm || optionForm.groupId !== g.id) && (
                         <button
                           onClick={() =>
-                            setOptionForm({ groupId: g.id, name: "", price: "" })
+                            setOptionForm({
+                              groupId: g.id,
+                              name: "",
+                              price: "",
+                              trackStock: false,
+                              stock: "",
+                            })
                           }
                           className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-foreground/25 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/50 hover:text-foreground"
                         >

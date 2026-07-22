@@ -1,0 +1,1 @@
+ALTER TABLE "coupons" ADD COLUMN "single_use" boolean DEFAULT false NOT NULL;

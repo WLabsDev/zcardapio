@@ -1,8 +1,20 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { coupons, deliveryZones, orderItemOptions, orderItems, orders, products, restaurants, users } from "@/lib/db/schema";
+import {
+  coupons,
+  deliveryZones,
+  groupOptions,
+  loyaltyPrograms,
+  loyaltyProgress,
+  orderItemOptions,
+  orderItems,
+  orders,
+  products,
+  restaurants,
+  users,
+} from "@/lib/db/schema";
 import {
   getMonthlyOrderCount,
   getOrdersByCustomer,
@@ -11,9 +23,13 @@ import {
   orderCode,
 } from "@/lib/db/queries";
 import { computeOpenState } from "@/lib/hours";
+import { isAvailable } from "@/lib/mock/types";
 import { normalizePhone } from "@/lib/phone";
 import { FREE_PLAN_MONTHLY_ORDER_LIMIT, isFreePlan } from "@/lib/plan-limits";
 import { publishOrderEvent } from "@/lib/realtime";
+
+/** Lançado dentro da transação quando o estoque acabou entre a validação e o commit. */
+class OutOfStockError extends Error {}
 
 const createOrderSchema = z.object({
   restaurantId: z.coerce.number().int().positive(),
@@ -118,13 +134,20 @@ export async function POST(request: Request) {
   });
   const productById = new Map(productRows.map((p) => [p.id, p]));
 
-  type PricedOption = { groupName: string; name: string; priceCents: number };
+  type PricedOption = {
+    optionId: number;
+    groupName: string;
+    name: string;
+    priceCents: number;
+    trackStock: boolean;
+  };
   const pricedItems: {
     productId: number;
     name: string;
     quantity: number;
     unitPriceCents: number;
     notes: string;
+    trackStock: boolean;
     options: PricedOption[];
   }[] = [];
 
@@ -133,10 +156,16 @@ export async function POST(request: Request) {
     if (
       !product ||
       product.restaurantId !== restaurant.id ||
-      !product.available
+      !isAvailable(product)
     ) {
       return Response.json(
         { message: "Um dos produtos do carrinho não está mais disponível." },
+        { status: 409 }
+      );
+    }
+    if (product.trackStock && (product.stock ?? 0) < item.quantity) {
+      return Response.json(
+        { message: `Estoque insuficiente para ${product.name}.` },
         { status: 409 }
       );
     }
@@ -144,16 +173,24 @@ export async function POST(request: Request) {
     for (const chosen of item.options) {
       const group = product.optionGroups.find((g) => g.name === chosen.groupName);
       const option = group?.options.find((o) => o.name === chosen.name);
-      if (!option) {
+      if (!option || !isAvailable(option)) {
         return Response.json(
-          { message: `Opção inválida em ${product.name}.` },
+          { message: `Opção inválida ou indisponível em ${product.name}.` },
           { status: 400 }
         );
       }
+      if (option.trackStock && (option.stock ?? 0) < item.quantity) {
+        return Response.json(
+          { message: `Estoque insuficiente para ${option.name}.` },
+          { status: 409 }
+        );
+      }
       options.push({
+        optionId: option.id,
         groupName: chosen.groupName,
         name: option.name,
         priceCents: option.priceCents,
+        trackStock: option.trackStock,
       });
     }
     pricedItems.push({
@@ -162,6 +199,7 @@ export async function POST(request: Request) {
       quantity: item.quantity,
       unitPriceCents: product.priceCents,
       notes: item.notes ?? "",
+      trackStock: product.trackStock,
       options,
     });
   }
@@ -207,18 +245,20 @@ export async function POST(request: Request) {
   // Cupom de desconto — sempre recalculado no servidor.
   let discountCents = 0;
   let couponCode = "";
+  let appliedCouponId: number | null = null;
   if (data.couponCode?.trim()) {
     const code = data.couponCode.trim().toUpperCase();
     const coupon = await db.query.coupons.findFirst({
       where: and(
         eq(coupons.restaurantId, restaurant.id),
         eq(coupons.code, code),
-        eq(coupons.active, true)
+        eq(coupons.active, true),
+        isNull(coupons.usedAt)
       ),
     });
     if (!coupon) {
       return Response.json(
-        { message: "Cupom inválido ou inativo." },
+        { message: "Cupom inválido, inativo ou já utilizado." },
         { status: 400 }
       );
     }
@@ -228,6 +268,32 @@ export async function POST(request: Request) {
         : coupon.value;
     discountCents = Math.min(discountCents, subtotalCents);
     couponCode = code;
+    appliedCouponId = coupon.id;
+  }
+
+  // Fidelidade — acréscimo calculado agora (mecânica ativa não muda durante o
+  // request) e gravado no pedido, tanto pra creditar quanto pra permitir reverter
+  // se o pedido for cancelado depois.
+  const loyaltyProgram = isFreePlan(restaurant.plan?.name)
+    ? null
+    : await db.query.loyaltyPrograms.findFirst({
+        where: eq(loyaltyPrograms.restaurantId, restaurant.id),
+      });
+  let loyaltyPointsEarned = 0;
+  let loyaltyCashbackEarnedCents = 0;
+  let loyaltyStampEarned = false;
+  if (loyaltyProgram) {
+    if (loyaltyProgram.mechanic === "points") {
+      loyaltyPointsEarned = Math.floor(
+        (subtotalCents / 100) * loyaltyProgram.pointsPerReal
+      );
+    } else if (loyaltyProgram.mechanic === "cashback") {
+      loyaltyCashbackEarnedCents = Math.round(
+        (subtotalCents * loyaltyProgram.cashbackPercent) / 100
+      );
+    } else if (loyaltyProgram.mechanic === "stamps") {
+      loyaltyStampEarned = true;
+    }
   }
 
   // Pedido agendado — somente se o restaurante aceitar.
@@ -252,80 +318,161 @@ export async function POST(request: Request) {
 
   const session = await getSession();
 
-  const order = await db.transaction(async (tx) => {
-    // Dono do pedido: cliente logado ou conta criada/vinculada pelo WhatsApp.
-    let customerId: number | null = null;
-    if (session?.role === "cliente") {
-      const account = await tx.query.users.findFirst({
-        where: eq(users.id, Number(session.sub)),
-        columns: { id: true },
-      });
-      // Sessão pode apontar para um id que não existe mais (ex.: cookie de
-      // impersonação antiga) — nesse caso trata como pedido de visitante.
-      customerId = account?.id ?? null;
-    }
-    if (customerId === null) {
-      const phone = normalizePhone(data.customerPhone);
-      if (phone.length >= 10) {
-        let account = await tx.query.users.findFirst({
-          where: and(eq(users.phone, phone), eq(users.role, "cliente")),
+  let order: typeof orders.$inferSelect;
+  try {
+    order = await db.transaction(async (tx) => {
+      // Dono do pedido: cliente logado ou conta criada/vinculada pelo WhatsApp.
+      let customerId: number | null = null;
+      if (session?.role === "cliente") {
+        const account = await tx.query.users.findFirst({
+          where: eq(users.id, Number(session.sub)),
           columns: { id: true },
         });
-        if (!account) {
-          [account] = await tx
-            .insert(users)
-            .values({ name: data.customerName, phone, role: "cliente" })
-            .returning({ id: users.id });
-        }
-        customerId = account.id;
+        // Sessão pode apontar para um id que não existe mais (ex.: cookie de
+        // impersonação antiga) — nesse caso trata como pedido de visitante.
+        customerId = account?.id ?? null;
       }
-    }
+      if (customerId === null) {
+        const phone = normalizePhone(data.customerPhone);
+        if (phone.length >= 10) {
+          let account = await tx.query.users.findFirst({
+            where: and(eq(users.phone, phone), eq(users.role, "cliente")),
+            columns: { id: true },
+          });
+          if (!account) {
+            [account] = await tx
+              .insert(users)
+              .values({ name: data.customerName, phone, role: "cliente" })
+              .returning({ id: users.id });
+          }
+          customerId = account.id;
+        }
+      }
 
-    const [created] = await tx
-      .insert(orders)
-      .values({
-        restaurantId: restaurant.id,
-        customerId,
-        customerName: data.customerName,
-        customerPhone: data.customerPhone,
-        deliveryType: data.deliveryType,
-        address: data.deliveryType === "entrega" ? data.address.trim() : "",
-        paymentMethod: PAYMENT_LABEL[data.paymentMethod],
-        subtotalCents,
-        deliveryFeeCents,
-        discountCents,
-        couponCode,
-        zoneName,
-        scheduledFor,
-        totalCents,
-      })
-      .returning();
-
-    for (const item of pricedItems) {
-      const [createdItem] = await tx
-        .insert(orderItems)
+      const [created] = await tx
+        .insert(orders)
         .values({
-          orderId: created.id,
-          productId: item.productId,
-          name: item.name,
-          quantity: item.quantity,
-          unitPriceCents: item.unitPriceCents,
-          notes: item.notes,
+          restaurantId: restaurant.id,
+          customerId,
+          customerName: data.customerName,
+          customerPhone: data.customerPhone,
+          deliveryType: data.deliveryType,
+          address: data.deliveryType === "entrega" ? data.address.trim() : "",
+          paymentMethod: PAYMENT_LABEL[data.paymentMethod],
+          subtotalCents,
+          deliveryFeeCents,
+          discountCents,
+          couponCode,
+          zoneName,
+          scheduledFor,
+          totalCents,
+          loyaltyPointsEarned,
+          loyaltyCashbackEarnedCents,
+          loyaltyStampEarned,
         })
         .returning();
-      if (item.options.length > 0) {
-        await tx.insert(orderItemOptions).values(
-          item.options.map((o) => ({
-            orderItemId: createdItem.id,
-            groupName: o.groupName,
-            name: o.name,
-            priceCents: o.priceCents,
-          }))
-        );
+
+      for (const item of pricedItems) {
+        if (item.trackStock) {
+          const [dec] = await tx
+            .update(products)
+            .set({ stock: sql`${products.stock} - ${item.quantity}` })
+            .where(
+              and(
+                eq(products.id, item.productId),
+                eq(products.trackStock, true),
+                gte(products.stock, item.quantity)
+              )
+            )
+            .returning({ id: products.id });
+          if (!dec) {
+            throw new OutOfStockError(
+              `${item.name} não está mais disponível.`
+            );
+          }
+        }
+        for (const opt of item.options) {
+          if (!opt.trackStock) continue;
+          const [dec] = await tx
+            .update(groupOptions)
+            .set({ stock: sql`${groupOptions.stock} - ${item.quantity}` })
+            .where(
+              and(
+                eq(groupOptions.id, opt.optionId),
+                eq(groupOptions.trackStock, true),
+                gte(groupOptions.stock, item.quantity)
+              )
+            )
+            .returning({ id: groupOptions.id });
+          if (!dec) {
+            throw new OutOfStockError(`${opt.name} não está mais disponível.`);
+          }
+        }
+
+        const [createdItem] = await tx
+          .insert(orderItems)
+          .values({
+            orderId: created.id,
+            productId: item.productId,
+            name: item.name,
+            quantity: item.quantity,
+            unitPriceCents: item.unitPriceCents,
+            notes: item.notes,
+          })
+          .returning();
+        if (item.options.length > 0) {
+          await tx.insert(orderItemOptions).values(
+            item.options.map((o) => ({
+              orderItemId: createdItem.id,
+              groupName: o.groupName,
+              name: o.name,
+              priceCents: o.priceCents,
+            }))
+          );
+        }
       }
+
+      if (appliedCouponId !== null) {
+        await tx
+          .update(coupons)
+          .set({ usedAt: new Date() })
+          .where(and(eq(coupons.id, appliedCouponId), eq(coupons.singleUse, true)));
+      }
+
+      if (
+        customerId !== null &&
+        (loyaltyPointsEarned > 0 ||
+          loyaltyCashbackEarnedCents > 0 ||
+          loyaltyStampEarned)
+      ) {
+        await tx
+          .insert(loyaltyProgress)
+          .values({
+            restaurantId: restaurant.id,
+            customerId,
+            points: loyaltyPointsEarned,
+            cashbackCents: loyaltyCashbackEarnedCents,
+            stampCount: loyaltyStampEarned ? 1 : 0,
+          })
+          .onConflictDoUpdate({
+            target: [loyaltyProgress.restaurantId, loyaltyProgress.customerId],
+            set: {
+              points: sql`${loyaltyProgress.points} + ${loyaltyPointsEarned}`,
+              cashbackCents: sql`${loyaltyProgress.cashbackCents} + ${loyaltyCashbackEarnedCents}`,
+              stampCount: sql`${loyaltyProgress.stampCount} + ${loyaltyStampEarned ? 1 : 0}`,
+              updatedAt: new Date(),
+            },
+          });
+      }
+
+      return created;
+    });
+  } catch (e) {
+    if (e instanceof OutOfStockError) {
+      return Response.json({ message: e.message }, { status: 409 });
     }
-    return created;
-  });
+    throw e;
+  }
 
   await publishOrderEvent({
     type: "order_created",

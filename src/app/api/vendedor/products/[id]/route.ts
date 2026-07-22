@@ -15,6 +15,8 @@ const putSchema = z.object({
     .union([z.url(), z.string().regex(/^\/uploads\/[\w.-]+$/), z.literal("")])
     .default(""),
   popular: z.boolean().optional(),
+  trackStock: z.boolean().optional(),
+  stock: z.number().int().min(0).nullable().optional(),
 });
 
 const patchSchema = z.object({ available: z.boolean() });
@@ -64,6 +66,8 @@ export async function PUT(request: Request, { params }: Ctx) {
       categoryId: d.categoryId,
       imageUrl: d.image,
       ...(d.popular !== undefined && { popular: d.popular }),
+      ...(d.trackStock !== undefined && { trackStock: d.trackStock }),
+      ...(d.stock !== undefined && { stock: d.stock }),
     })
     .where(
       and(eq(products.id, productId), eq(products.restaurantId, restaurant.id))

@@ -104,8 +104,13 @@ export async function getProductsByRestaurantDb(
     description: p.description,
     price: centsToReais(p.priceCents),
     image: p.imageUrl,
+    // "available" continua o valor manual (pra vendedor); a checagem de estoque é
+    // aplicada separadamente com isAvailable (lib/mock/types.ts) no storefront e na
+    // criação de pedidos.
     available: p.available,
     popular: p.popular,
+    trackStock: p.trackStock,
+    stock: p.stock,
     optionGroups:
       p.optionGroups.length > 0
         ? p.optionGroups.map((g) => ({
@@ -117,6 +122,9 @@ export async function getProductsByRestaurantDb(
               id: String(o.id),
               name: o.name,
               price: centsToReais(o.priceCents),
+              available: o.available,
+              trackStock: o.trackStock,
+              stock: o.stock,
             })),
           }))
         : undefined,

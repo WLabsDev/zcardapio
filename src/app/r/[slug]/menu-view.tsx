@@ -55,6 +55,7 @@ import {
 import { useBackToClose } from "@/hooks/use-back-to-close";
 import {
   formatBRL,
+  isAvailable,
   type Product,
   type Restaurant,
   type Review,
@@ -333,7 +334,7 @@ export function MenuView({
               <h2 className="mb-3 font-display text-lg font-bold">{c.name}</h2>
               <div className="grid gap-3 sm:grid-cols-2">
                 {items.map((p) => {
-                  const canOrder = p.available && !closed;
+                  const canOrder = isAvailable(p) && !closed;
                   return (
                   <button
                     key={p.id}
@@ -366,7 +367,7 @@ export function MenuView({
                       <p className="mt-2 font-display font-bold text-primary">
                         {formatBRL(p.price)}
                       </p>
-                      {!p.available && (
+                      {!isAvailable(p) && (
                         <p className="text-xs text-destructive">Indisponível</p>
                       )}
                     </div>
@@ -473,15 +474,21 @@ export function MenuView({
                   <div className="space-y-1.5">
                     {g.options.map((o) => {
                       const checked = (choices[g.id] ?? []).includes(o.id);
+                      const optionAvailable = isAvailable(o);
                       return (
                         <button
                           key={o.id}
-                          onClick={() => toggleChoice(g.id, o.id, g.max)}
+                          disabled={!optionAvailable}
+                          onClick={() =>
+                            optionAvailable && toggleChoice(g.id, o.id, g.max)
+                          }
                           className={cn(
                             "flex w-full items-center justify-between rounded-lg border-2 px-3 py-2 text-sm transition-all",
-                            checked
-                              ? "border-foreground bg-accent"
-                              : "border-foreground/15 hover:border-foreground/40"
+                            !optionAvailable
+                              ? "cursor-not-allowed border-foreground/15 opacity-50"
+                              : checked
+                                ? "border-foreground bg-accent"
+                                : "border-foreground/15 hover:border-foreground/40"
                           )}
                         >
                           <span className="flex items-center gap-2">
@@ -500,10 +507,16 @@ export function MenuView({
                             </span>
                             {o.name}
                           </span>
-                          {o.price > 0 && (
-                            <span className="text-xs text-muted-foreground">
-                              +{formatBRL(o.price)}
+                          {!optionAvailable ? (
+                            <span className="text-xs text-destructive">
+                              Esgotado
                             </span>
+                          ) : (
+                            o.price > 0 && (
+                              <span className="text-xs text-muted-foreground">
+                                +{formatBRL(o.price)}
+                              </span>
+                            )
                           )}
                         </button>
                       );

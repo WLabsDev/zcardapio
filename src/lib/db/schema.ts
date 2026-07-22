@@ -31,6 +31,12 @@ export const orderStatusEnum = pgEnum("order_status", [
 ]);
 export const deliveryTypeEnum = pgEnum("delivery_type", ["entrega", "retirada"]);
 export const couponTypeEnum = pgEnum("coupon_type", ["percent", "fixed"]);
+export const loyaltyMechanicEnum = pgEnum("loyalty_mechanic", [
+  "none",
+  "points",
+  "cashback",
+  "stamps",
+]);
 
 // Dinheiro é armazenado em centavos (integer) — a API converte para reais.
 
@@ -152,6 +158,9 @@ export const products = pgTable(
     imageUrl: text("image_url").notNull().default(""),
     available: boolean("available").notNull().default(true),
     popular: boolean("popular").notNull().default(false),
+    // Estoque automático — opcional (trackStock=false = ilimitado, comportamento padrão).
+    trackStock: boolean("track_stock").notNull().default(false),
+    stock: integer("stock"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => [
@@ -183,6 +192,9 @@ export const groupOptions = pgTable(
       .references(() => optionGroups.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 80 }).notNull(),
     priceCents: integer("price_cents").notNull().default(0),
+    available: boolean("available").notNull().default(true),
+    trackStock: boolean("track_stock").notNull().default(false),
+    stock: integer("stock"),
   },
   (t) => [index("group_options_group_idx").on(t.groupId)]
 );
@@ -210,6 +222,13 @@ export const orders = pgTable(
     scheduledFor: timestamp("scheduled_for"),
     totalCents: integer("total_cents").notNull(),
     status: orderStatusEnum("status").notNull().default("pendente"),
+    // Snapshot do que este pedido creditou de fidelidade — usado para reverter
+    // corretamente se o pedido for cancelado depois.
+    loyaltyPointsEarned: integer("loyalty_points_earned").notNull().default(0),
+    loyaltyCashbackEarnedCents: integer("loyalty_cashback_earned_cents")
+      .notNull()
+      .default(0),
+    loyaltyStampEarned: boolean("loyalty_stamp_earned").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => [
@@ -290,6 +309,11 @@ export const coupons = pgTable(
     /** percentual (0-100) ou valor fixo em centavos */
     value: integer("value").notNull().default(0),
     active: boolean("active").notNull().default(true),
+    // true apenas em cupons gerados por resgate de fidelidade — nesse caso o cupom
+    // é consumido (usedAt preenchido) no primeiro pedido que o usa. Cupons criados
+    // manualmente pelo vendedor ficam sempre singleUse=false/usedAt=null (reutilizáveis).
+    singleUse: boolean("single_use").notNull().default(false),
+    usedAt: timestamp("used_at"),
   },
   (t) => [index("coupons_restaurant_idx").on(t.restaurantId)]
 );
@@ -338,6 +362,55 @@ export const reviewHides = pgTable(
   (t) => [index("review_hides_restaurant_idx").on(t.restaurantId)]
 );
 
+/** Configuração de fidelidade do restaurante — um row por restaurante, mecânica única ativa por vez. */
+export const loyaltyPrograms = pgTable("loyalty_programs", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id")
+    .notNull()
+    .references(() => restaurants.id, { onDelete: "cascade" })
+    .unique(),
+  mechanic: loyaltyMechanicEnum("mechanic").notNull().default("none"),
+  // Mecânica "pontos"
+  pointsPerReal: integer("points_per_real").notNull().default(1),
+  pointsRequired: integer("points_required").notNull().default(100),
+  pointsRewardType: couponTypeEnum("points_reward_type").notNull().default("fixed"),
+  pointsRewardValue: integer("points_reward_value").notNull().default(0),
+  // Mecânica "cashback"
+  cashbackPercent: integer("cashback_percent").notNull().default(5),
+  // Mecânica "carimbos"
+  stampsRequired: integer("stamps_required").notNull().default(10),
+  stampsRewardType: couponTypeEnum("stamps_reward_type").notNull().default("fixed"),
+  stampsRewardValue: integer("stamps_reward_value").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+/** Progresso de fidelidade de um cliente em um restaurante — guarda os 3 contadores
+ * sempre, independente de qual mecânica está ativa no momento (permite trocar de
+ * mecânica sem perder histórico). */
+export const loyaltyProgress = pgTable(
+  "loyalty_progress",
+  {
+    id: serial("id").primaryKey(),
+    restaurantId: integer("restaurant_id")
+      .notNull()
+      .references(() => restaurants.id, { onDelete: "cascade" }),
+    customerId: integer("customer_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    points: integer("points").notNull().default(0),
+    cashbackCents: integer("cashback_cents").notNull().default(0),
+    stampCount: integer("stamp_count").notNull().default(0),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    unique("loyalty_progress_restaurant_customer_unique").on(
+      t.restaurantId,
+      t.customerId
+    ),
+    index("loyalty_progress_customer_idx").on(t.customerId),
+  ]
+);
+
 // Relations (para queries aninhadas via db.query)
 export const plansRelations = relations(plans, ({ many }) => ({
   restaurants: many(restaurants),
@@ -347,6 +420,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   restaurants: many(restaurants),
   orders: many(orders),
   addresses: many(addresses),
+  loyaltyProgress: many(loyaltyProgress),
 }));
 
 export const restaurantsRelations = relations(restaurants, ({ one, many }) => ({
@@ -359,6 +433,11 @@ export const restaurantsRelations = relations(restaurants, ({ one, many }) => ({
   coupons: many(coupons),
   reviews: many(reviews),
   reviewHides: many(reviewHides),
+  loyaltyProgram: one(loyaltyPrograms, {
+    fields: [restaurants.id],
+    references: [loyaltyPrograms.restaurantId],
+  }),
+  loyaltyProgress: many(loyaltyProgress),
 }));
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -460,5 +539,23 @@ export const reviewHidesRelations = relations(reviewHides, ({ one }) => ({
   review: one(reviews, {
     fields: [reviewHides.reviewId],
     references: [reviews.id],
+  }),
+}));
+
+export const loyaltyProgramsRelations = relations(loyaltyPrograms, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [loyaltyPrograms.restaurantId],
+    references: [restaurants.id],
+  }),
+}));
+
+export const loyaltyProgressRelations = relations(loyaltyProgress, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [loyaltyProgress.restaurantId],
+    references: [restaurants.id],
+  }),
+  customer: one(users, {
+    fields: [loyaltyProgress.customerId],
+    references: [users.id],
   }),
 }));

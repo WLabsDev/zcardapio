@@ -39,6 +39,8 @@ type FormState = {
   price: string;
   categoryId: string;
   image: string;
+  trackStock: boolean;
+  stock: string;
 };
 
 const emptyForm: FormState = {
@@ -47,6 +49,8 @@ const emptyForm: FormState = {
   price: "",
   categoryId: "",
   image: "",
+  trackStock: false,
+  stock: "",
 };
 
 export default function CardapioPage() {
@@ -98,6 +102,8 @@ export default function CardapioPage() {
             price: String(product.price),
             categoryId: product.categoryId,
             image: product.image,
+            trackStock: !!product.trackStock,
+            stock: product.stock != null ? String(product.stock) : "",
           }
         : { ...emptyForm, categoryId: categories[0]?.id ?? "" }
     );
@@ -106,6 +112,7 @@ export default function CardapioPage() {
 
   const save = async () => {
     const price = Number(form.price.replace(",", "."));
+    const stock = Number(form.stock) || 0;
     setSaving(true);
     const res = await fetch(
       editing ? `/api/vendedor/products/${editing.id}` : "/api/vendedor/products",
@@ -118,6 +125,8 @@ export default function CardapioPage() {
           price,
           categoryId: form.categoryId,
           image: form.image.trim(),
+          trackStock: form.trackStock,
+          stock: form.trackStock ? stock : null,
         }),
       }
     ).catch(() => null);
@@ -352,6 +361,36 @@ export default function CardapioPage() {
                   </Button>
                 </div>
               </div>
+              <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">Controlar estoque</p>
+                  <p className="text-xs text-muted-foreground">
+                    Cada pedido desconta a quantidade; ao zerar, o produto some
+                    do cardápio automaticamente.
+                  </p>
+                </div>
+                <Switch
+                  checked={form.trackStock}
+                  onCheckedChange={(v: boolean) =>
+                    setForm((f) => ({ ...f, trackStock: v }))
+                  }
+                />
+              </div>
+              {form.trackStock && (
+                <div className="grid gap-2">
+                  <Label htmlFor="pestoque">Quantidade em estoque</Label>
+                  <Input
+                    id="pestoque"
+                    type="number"
+                    min="0"
+                    value={form.stock}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, stock: e.target.value }))
+                    }
+                    placeholder="Ex.: 20"
+                  />
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button onClick={save} disabled={saving}>
@@ -471,6 +510,16 @@ export default function CardapioPage() {
                         {p.popular && (
                           <Badge variant="secondary" className="text-[10px]">
                             Popular
+                          </Badge>
+                        )}
+                        {p.trackStock && (
+                          <Badge
+                            variant={(p.stock ?? 0) <= 0 ? "destructive" : "outline"}
+                            className="text-[10px]"
+                          >
+                            {(p.stock ?? 0) <= 0
+                              ? "Esgotado"
+                              : `Estoque: ${p.stock}`}
                           </Badge>
                         )}
                       </div>

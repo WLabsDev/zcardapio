@@ -71,6 +71,20 @@
       "when": 1784695368336,
       "tag": "0009_sparkling_blade",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784754724427,
+      "tag": "0010_low_clint_barton",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1784754957637,
+      "tag": "0011_typical_puff_adder",
+      "breakpoints": true
     }
   ]
 }

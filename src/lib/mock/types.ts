@@ -16,6 +16,10 @@ export type ProductOption = {
   id: string;
   name: string;
   price: number;
+  available?: boolean;
+  /** null/undefined = estoque não controlado (ilimitado) */
+  trackStock?: boolean;
+  stock?: number | null;
 };
 
 export type OptionGroup = {
@@ -39,7 +43,19 @@ export type Product = {
   available: boolean;
   popular?: boolean;
   optionGroups?: OptionGroup[];
+  /** null/undefined = estoque não controlado (ilimitado) */
+  trackStock?: boolean;
+  stock?: number | null;
 };
+
+/** Disponibilidade efetiva de um produto/opção: toggle manual + estoque (quando rastreado). */
+export function isAvailable(p: {
+  available?: boolean;
+  trackStock?: boolean | null;
+  stock?: number | null;
+}) {
+  return (p.available ?? true) && (!p.trackStock || (p.stock ?? 0) > 0);
+}
 
 /** Horário de funcionamento de um dia da semana. */
 export type DayHours = {
