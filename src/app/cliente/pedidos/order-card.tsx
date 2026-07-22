@@ -191,7 +191,7 @@ export function OrderCard({ order: o }: { order: Order }) {
                   <span>{formatBRL(o.total)}</span>
                 </div>
               </div>
-              {o.status === "entregue" && (
+              {o.status === "entregue" && o.restaurantReviewsEnabled !== false && (
                 <OrderReview
                   orderId={o.id}
                   initiallyReviewed={Boolean(o.reviewed)}

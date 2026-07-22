@@ -115,6 +115,8 @@ export const restaurants = pgTable(
     badgeTextColor: varchar("badge_text_color", { length: 9 }).notNull().default(""),
     // Pedidos
     acceptsScheduled: boolean("accepts_scheduled").notNull().default(false),
+    // Desativar avaliações é recurso de plano pro+ (ver requireProPlan em lib/vendedor.ts).
+    reviewsEnabled: boolean("reviews_enabled").notNull().default(true),
     status: restaurantStatusEnum("status").notNull().default("pendente"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },

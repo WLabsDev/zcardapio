@@ -61,6 +61,7 @@ function mapRestaurant(r: RestaurantRow): Restaurant {
     badgeColor: r.badgeColor,
     badgeTextColor: r.badgeTextColor,
     acceptsScheduled: r.acceptsScheduled,
+    reviewsEnabled: r.reviewsEnabled,
   };
 }
 
@@ -149,7 +150,7 @@ type OrderRow = typeof orders.$inferSelect & {
     notes: string;
     options: { groupName: string; name: string; priceCents: number }[];
   }[];
-  restaurant?: { name: string; slug: string } | null;
+  restaurant?: { name: string; slug: string; reviewsEnabled: boolean } | null;
   review?: { id: number } | null;
 };
 
@@ -192,12 +193,13 @@ export function mapOrder(o: OrderRow): Order {
     scheduledFor: o.scheduledFor ? o.scheduledFor.toISOString() : undefined,
     createdAt: o.createdAt.toISOString(),
     reviewed: o.review !== undefined ? Boolean(o.review) : undefined,
+    restaurantReviewsEnabled: o.restaurant?.reviewsEnabled,
   };
 }
 
 const orderWith = {
   items: { with: { options: true } },
-  restaurant: { columns: { name: true, slug: true } },
+  restaurant: { columns: { name: true, slug: true, reviewsEnabled: true } },
   review: { columns: { id: true } },
 } as const;
 

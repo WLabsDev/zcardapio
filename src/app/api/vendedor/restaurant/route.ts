@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { restaurants } from "@/lib/db/schema";
+import { plans, restaurants } from "@/lib/db/schema";
 import { getRestaurantByOwnerMapped } from "@/lib/db/queries";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
 
@@ -69,6 +69,8 @@ const putSchema = z.object({
   buttonStyle: z.enum(["arredondado", "reto"]).optional(),
   // Pedidos
   acceptsScheduled: z.boolean().optional(),
+  // Desativar avaliações de clientes é recurso do plano pro+.
+  reviewsEnabled: z.boolean().optional(),
 });
 
 export async function GET() {
@@ -96,6 +98,25 @@ export async function PUT(request: Request) {
     );
   }
   const d = parsed.data;
+
+  if (d.reviewsEnabled === false) {
+    const plan = restaurant.planId
+      ? await db.query.plans.findFirst({
+          where: eq(plans.id, restaurant.planId),
+          columns: { name: true },
+        })
+      : null;
+    const isFree = !plan || plan.name === "Grátis";
+    if (isFree) {
+      return Response.json(
+        {
+          message:
+            "Desativar avaliações é um recurso do plano Pro ou superior.",
+        },
+        { status: 403 }
+      );
+    }
+  }
 
   if (d.slug !== undefined && d.slug !== restaurant.slug) {
     const taken = await db.query.restaurants.findFirst({
@@ -151,6 +172,9 @@ export async function PUT(request: Request) {
       ...(d.badgeTextColor !== undefined && { badgeTextColor: d.badgeTextColor }),
       ...(d.acceptsScheduled !== undefined && {
         acceptsScheduled: d.acceptsScheduled,
+      }),
+      ...(d.reviewsEnabled !== undefined && {
+        reviewsEnabled: d.reviewsEnabled,
       }),
     })
     .where(eq(restaurants.id, restaurant.id));

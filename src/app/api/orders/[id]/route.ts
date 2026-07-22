@@ -35,7 +35,9 @@ export async function GET(
     where: eq(orders.id, orderId),
     with: {
       items: { with: { options: true } },
-      restaurant: { columns: { name: true, slug: true, ownerId: true } },
+      restaurant: {
+        columns: { name: true, slug: true, ownerId: true, reviewsEnabled: true },
+      },
     },
   });
 

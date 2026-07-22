@@ -1,0 +1,1 @@
+ALTER TABLE "restaurants" ADD COLUMN "reviews_enabled" boolean DEFAULT true NOT NULL;

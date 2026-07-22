@@ -108,6 +108,8 @@ export type Restaurant = {
   badgeTextColor?: string;
   /** aceita pedidos agendados */
   acceptsScheduled?: boolean;
+  /** clientes podem avaliar pedidos entregues (desativar é recurso pro+) */
+  reviewsEnabled?: boolean;
 };
 
 export type OrderStatus =
@@ -152,6 +154,8 @@ export type Order = {
   createdAt: string;
   /** presente quando o pedido vem da API: já existe avaliação para ele? */
   reviewed?: boolean;
+  /** presente quando o pedido vem da API: o restaurante aceita avaliações? */
+  restaurantReviewsEnabled?: boolean;
 };
 
 export type Review = {

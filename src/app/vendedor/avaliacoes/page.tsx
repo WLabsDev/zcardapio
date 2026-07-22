@@ -7,16 +7,20 @@ import { EmptyState } from "@/components/panel/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import type { Review } from "@/lib/mock/types";
 import { cn } from "@/lib/utils";
 
 type Quota = { unlimited: boolean; limit: number; used: number };
+type Settings = { reviewsEnabled: boolean; canToggle: boolean };
 
 export default function AvaliacoesPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [quota, setQuota] = useState<Quota | null>(null);
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   const load = () => {
     fetch("/api/vendedor/reviews")
@@ -24,12 +28,33 @@ export default function AvaliacoesPage() {
       .then((data) => {
         setReviews(data?.reviews ?? []);
         setQuota(data?.quota ?? null);
+        setSettings(data?.settings ?? null);
       })
       .catch(() => toast.error("Não foi possível carregar as avaliações."))
       .finally(() => setLoading(false));
   };
 
   useEffect(load, []);
+
+  const toggleReviewsEnabled = async (checked: boolean) => {
+    if (!settings) return;
+    setSavingSettings(true);
+    const res = await fetch("/api/vendedor/restaurant", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reviewsEnabled: checked }),
+    }).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    setSavingSettings(false);
+    if (!res?.ok) {
+      toast.error(data?.message ?? "Não foi possível atualizar.");
+      return;
+    }
+    setSettings((s) => (s ? { ...s, reviewsEnabled: checked } : s));
+    toast.success(
+      checked ? "Clientes podem avaliar pedidos." : "Avaliações desativadas."
+    );
+  };
 
   const toggleHidden = async (review: Review) => {
     setUpdatingId(review.id);
@@ -63,6 +88,34 @@ export default function AvaliacoesPage() {
           O que os clientes acharam dos pedidos.
         </p>
       </div>
+
+      {settings && (
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-5">
+            <div className="min-w-0">
+              <p className="flex items-center gap-1.5 text-sm font-medium">
+                Permitir que clientes avaliem pedidos
+                {!settings.canToggle && (
+                  <Badge variant="outline" className="gap-1 text-[10px]">
+                    <Crown className="size-3" />
+                    Pro+
+                  </Badge>
+                )}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {settings.canToggle
+                  ? "Desative para parar de receber novas avaliações no cardápio."
+                  : "Desativar avaliações é um recurso dos planos Pro e Premium."}
+              </p>
+            </div>
+            <Switch
+              checked={settings.reviewsEnabled}
+              disabled={!settings.canToggle || savingSettings}
+              onCheckedChange={toggleReviewsEnabled}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {!loading && reviews.length > 0 && (
         <Card>

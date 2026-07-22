@@ -33,5 +33,10 @@ export async function GET() {
       limit: FREE_PLAN_MONTHLY_HIDE_LIMIT,
       used: hiddenThisMonth,
     },
+    settings: {
+      reviewsEnabled: restaurant.reviewsEnabled,
+      // Só planos pro+ podem desativar avaliações de clientes.
+      canToggle: !isFree,
+    },
   });
 }

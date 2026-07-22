@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { orders } from "@/lib/db/schema";
+import { orders, restaurants } from "@/lib/db/schema";
 import { createReview, getOrderById } from "@/lib/db/queries";
 
 const bodySchema = z.object({
@@ -53,6 +53,17 @@ export async function POST(
     return Response.json(
       { message: "Este pedido já foi avaliado." },
       { status: 409 }
+    );
+  }
+
+  const restaurant = await db.query.restaurants.findFirst({
+    where: eq(restaurants.id, orderRow.restaurantId),
+    columns: { reviewsEnabled: true },
+  });
+  if (!restaurant?.reviewsEnabled) {
+    return Response.json(
+      { message: "Este restaurante desativou as avaliações." },
+      { status: 403 }
     );
   }
 
