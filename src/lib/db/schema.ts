@@ -377,6 +377,41 @@ export const reviewHides = pgTable(
   (t) => [index("review_hides_restaurant_idx").on(t.restaurantId)]
 );
 
+/** Recuperação de senha por e-mail (vendedor/admin) — link com token expira em 30min. */
+export const passwordResetTokens = pgTable(
+  "password_reset_tokens",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // Guardamos o hash (sha256) do token, nunca o valor em texto puro.
+    tokenHash: varchar("token_hash", { length: 64 }).notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    usedAt: timestamp("used_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("password_reset_tokens_user_idx").on(t.userId)]
+);
+
+/** Recuperação de senha por WhatsApp (cliente) — código de 6 dígitos expira em 10min. */
+export const phoneOtpCodes = pgTable(
+  "phone_otp_codes",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    codeHash: varchar("code_hash", { length: 64 }).notNull(),
+    expiresAt: timestamp("expires_at").notNull(),
+    usedAt: timestamp("used_at"),
+    // Tentativas de verificação com código errado; bloqueia depois de 5.
+    attempts: integer("attempts").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("phone_otp_codes_user_idx").on(t.userId)]
+);
+
 /** Configuração de fidelidade do restaurante — um row por restaurante, mecânica única ativa por vez. */
 export const loyaltyPrograms = pgTable("loyalty_programs", {
   id: serial("id").primaryKey(),

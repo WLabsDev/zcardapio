@@ -32,13 +32,21 @@ type RecuperarValues = z.infer<typeof recuperarSchema>;
 
 export default function RecuperarSenhaPage() {
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const form = useForm<RecuperarValues>({
     resolver: zodResolver(recuperarSchema),
     defaultValues: { email: "" },
   });
 
-  function onSubmit() {
+  async function onSubmit(values: RecuperarValues) {
+    setSending(true);
+    await fetch("/api/auth/forgot-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(values),
+    }).catch(() => null);
+    setSending(false);
     setSent(true);
   }
 
@@ -114,9 +122,10 @@ export default function RecuperarSenhaPage() {
             <Button
               type="submit"
               size="lg"
+              disabled={sending}
               className="rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
             >
-              Enviar link de recuperação
+              {sending ? "Enviando..." : "Enviar link de recuperação"}
             </Button>
           </form>
         </Form>

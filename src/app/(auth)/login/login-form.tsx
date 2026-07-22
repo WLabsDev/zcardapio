@@ -247,7 +247,7 @@ export function LoginForm() {
                   <div className="flex items-center justify-between">
                     <FormLabel>Senha</FormLabel>
                     <Link
-                      href="/recuperar-senha"
+                      href={isCliente ? "/recuperar-senha-cliente" : "/recuperar-senha"}
                       className="text-xs text-primary hover:underline"
                     >
                       Esqueci minha senha
