@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Clock, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { uploadImage } from "@/lib/upload";
@@ -13,6 +14,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { formatBRL, type Product } from "@/lib/mock/types";
+import { contrastTextColor, FONT_DISPLAY } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const colors = [
@@ -130,8 +133,18 @@ type Appearance = {
   badgeTextColor: string;
 };
 
+type RestaurantMeta = {
+  address: string;
+  deliveryTime: string;
+  deliveryFee: number;
+  minOrder: number;
+  openingHours: string;
+};
+
 export default function AparenciaPage() {
   const [form, setForm] = useState<Appearance | null>(null);
+  const [meta, setMeta] = useState<RestaurantMeta | null>(null);
+  const [previewProduct, setPreviewProduct] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<"logo" | "cover" | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -174,8 +187,27 @@ export default function AparenciaPage() {
           badgeColor: r.badgeColor ?? "",
           badgeTextColor: r.badgeTextColor ?? "",
         });
+        setMeta({
+          address: r.address ?? "",
+          deliveryTime: r.deliveryTime ?? "",
+          deliveryFee: r.deliveryFee ?? 0,
+          minOrder: r.minOrder ?? 0,
+          openingHours: r.openingHours ?? "",
+        });
       })
       .catch(() => toast.error("Não foi possível carregar a aparência."));
+
+    fetch("/api/vendedor/products")
+      .then((res) => res.json())
+      .then((data) => {
+        const products: Product[] = data?.products ?? [];
+        const pick =
+          products.find((p) => p.popular && p.available) ??
+          products.find((p) => p.available) ??
+          products[0];
+        if (pick) setPreviewProduct(pick);
+      })
+      .catch(() => {});
   }, []);
 
   const set = <K extends keyof Appearance>(key: K, value: Appearance[K]) =>
@@ -438,6 +470,17 @@ export default function AparenciaPage() {
             const pMuted = form.mutedColor || "#a8a29e";
             const pBadge = form.badgeColor || "#f59e0b";
             const pBadgeText = form.badgeTextColor || "#1c1917";
+            const pRadius = form.buttonStyle === "reto" ? "0.25rem" : "9999px";
+            const fontFamily = FONT_DISPLAY[form.font];
+            const onColor = contrastTextColor(color);
+            const product = previewProduct ?? {
+              name: "Zé Clássico",
+              description: "Pão brioche, blend 160g e queijo cheddar.",
+              price: 29.9,
+              image: "",
+              popular: true,
+            };
+
             return (
               <div
                 className="overflow-hidden rounded-2xl border shadow-sm"
@@ -447,45 +490,116 @@ export default function AparenciaPage() {
                   className="h-20 bg-cover bg-center"
                   style={{ backgroundImage: `url(${form.cover})` }}
                 />
-                <div className="-mt-5 px-4">
+                <div className="-mt-6 px-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={form.logo}
                     alt="Logo"
-                    className="size-10 rounded-lg border shadow"
+                    className="size-12 rounded-xl border-2 object-cover shadow"
+                    style={{ borderColor: pCard }}
                   />
                 </div>
-                <div className="space-y-2.5 p-4">
-                  <p className="font-display text-lg font-bold" style={{ color: pHeading }}>
-                    {form.name}
-                  </p>
-                  <div
-                    className="rounded-lg border p-2.5"
-                    style={{ backgroundColor: pCard, borderColor: `${pBody}26` }}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-semibold" style={{ color: pProductTitle }}>
-                        Zé Clássico
+                <div className="space-y-3 p-4">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <p
+                        className="text-lg font-bold"
+                        style={{ color: pHeading, fontFamily }}
+                      >
+                        {form.name || "Nome do restaurante"}
                       </p>
                       <span
                         className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
-                        style={{ backgroundColor: pBadge, color: pBadgeText }}
+                        style={{ backgroundColor: color, color: onColor }}
                       >
-                        Popular
+                        Aberto
                       </span>
                     </div>
-                    <p className="mt-0.5 text-xs" style={{ color: pMuted }}>
-                      Pão brioche, blend 160g e queijo cheddar.
-                    </p>
-                    <p className="mt-1 text-sm font-bold" style={{ color }}>
-                      R$ 29,90
-                    </p>
+                    {form.description && (
+                      <p className="text-xs" style={{ color: pMuted }}>
+                        {form.description}
+                      </p>
+                    )}
+                    {meta && (meta.deliveryTime || meta.address) && (
+                      <div
+                        className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]"
+                        style={{ color: pMuted }}
+                      >
+                        {meta.deliveryTime && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="size-3" />
+                            {meta.deliveryTime}
+                          </span>
+                        )}
+                        {meta.address && (
+                          <span className="flex items-center gap-1 truncate">
+                            <MapPin className="size-3 shrink-0" />
+                            <span className="truncate">{meta.address}</span>
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {meta && (
+                      <p className="text-[11px]" style={{ color: pMuted }}>
+                        Entrega {formatBRL(meta.deliveryFee)} · Pedido mínimo{" "}
+                        {formatBRL(meta.minOrder)}
+                        {meta.openingHours && ` · ${meta.openingHours}`}
+                      </p>
+                    )}
                   </div>
+
                   <div
-                    className="rounded-lg p-2 text-center text-sm font-semibold"
+                    className="flex gap-2.5 rounded-lg border p-2.5"
+                    style={{ backgroundColor: pCard, borderColor: `${pBody}26` }}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <p
+                          className="truncate text-sm font-semibold"
+                          style={{ color: pProductTitle, fontFamily }}
+                        >
+                          {product.name}
+                        </p>
+                        {product.popular && (
+                          <span
+                            className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
+                            style={{ backgroundColor: pBadge, color: pBadgeText }}
+                          >
+                            Popular
+                          </span>
+                        )}
+                      </div>
+                      <p
+                        className="mt-0.5 line-clamp-2 text-xs"
+                        style={{ color: pMuted }}
+                      >
+                        {product.description}
+                      </p>
+                      <p
+                        className="mt-1 text-sm font-bold"
+                        style={{ color, fontFamily }}
+                      >
+                        {formatBRL(product.price)}
+                      </p>
+                    </div>
+                    {product.image && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="size-16 shrink-0 rounded-md border object-cover"
+                        style={{ borderColor: `${pBody}26` }}
+                      />
+                    )}
+                  </div>
+
+                  <div
+                    className="p-2 text-center text-sm font-semibold"
                     style={{
+                      borderRadius: pRadius,
                       backgroundColor: color,
-                      color: dark && !form.primaryColor ? "#1c1917" : "#ffffff",
+                      color: onColor,
+                      fontFamily,
                     }}
                   >
                     Ver carrinho

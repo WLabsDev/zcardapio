@@ -1,11 +1,16 @@
 import type { CSSProperties } from "react";
 import type { Restaurant } from "@/lib/mock/types";
 
-const FONT_DISPLAY: Record<NonNullable<Restaurant["font"]>, string> = {
+export const FONT_DISPLAY: Record<NonNullable<Restaurant["font"]>, string> = {
   bricolage: "var(--font-bricolage)",
   jakarta: "var(--font-jakarta)",
   mono: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
 };
+
+/** Cor de texto (clara ou escura) com contraste adequado sobre um hex de fundo. */
+export function contrastTextColor(hex: string): string {
+  return luminance(hex) > 0.45 ? "#1c1917" : "#fafaf9";
+}
 
 /** Luminância relativa (0–1) de um hex, para decidir o texto sobre a cor. */
 function luminance(hex: string): number {
