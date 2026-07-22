@@ -240,8 +240,15 @@ export async function POST(request: Request) {
     // Dono do pedido: cliente logado ou conta criada/vinculada pelo WhatsApp.
     let customerId: number | null = null;
     if (session?.role === "cliente") {
-      customerId = Number(session.sub);
-    } else {
+      const account = await tx.query.users.findFirst({
+        where: eq(users.id, Number(session.sub)),
+        columns: { id: true },
+      });
+      // Sessão pode apontar para um id que não existe mais (ex.: cookie de
+      // impersonação antiga) — nesse caso trata como pedido de visitante.
+      customerId = account?.id ?? null;
+    }
+    if (customerId === null) {
       const phone = normalizePhone(data.customerPhone);
       if (phone.length >= 10) {
         let account = await tx.query.users.findFirst({
