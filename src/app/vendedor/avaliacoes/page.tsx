@@ -91,9 +91,9 @@ export default function AvaliacoesPage() {
 
       {settings && (
         <Card>
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-5">
-            <div className="min-w-0">
-              <p className="flex items-center gap-1.5 text-sm font-medium">
+          <CardContent className="flex items-start justify-between gap-3 pt-5">
+            <div className="min-w-0 flex-1">
+              <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium">
                 Permitir que clientes avaliem pedidos
                 {!settings.canToggle && (
                   <Badge variant="outline" className="gap-1 text-[10px]">
@@ -102,13 +102,14 @@ export default function AvaliacoesPage() {
                   </Badge>
                 )}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 {settings.canToggle
                   ? "Desative para parar de receber novas avaliações no cardápio."
                   : "Desativar avaliações é um recurso dos planos Pro e Premium."}
               </p>
             </div>
             <Switch
+              className="mt-0.5 shrink-0"
               checked={settings.reviewsEnabled}
               disabled={!settings.canToggle || savingSettings}
               onCheckedChange={toggleReviewsEnabled}
