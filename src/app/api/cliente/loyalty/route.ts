@@ -1,7 +1,7 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { loyaltyProgress } from "@/lib/db/schema";
+import { coupons, loyaltyProgress } from "@/lib/db/schema";
 
 export async function GET() {
   const session = await getSession();
@@ -53,5 +53,23 @@ export async function GET() {
       };
     });
 
-  return Response.json({ items });
+  const redeemedCoupons = await db.query.coupons.findMany({
+    where: eq(coupons.customerId, Number(session.sub)),
+    orderBy: [desc(coupons.createdAt)],
+    with: { restaurant: { columns: { name: true, slug: true } } },
+  });
+
+  const mappedCoupons = redeemedCoupons.map((c) => ({
+    code: c.code,
+    type: c.type,
+    value: c.value,
+    active: c.active,
+    usedAt: c.usedAt ? c.usedAt.toISOString() : null,
+    expiresAt: c.expiresAt ? c.expiresAt.toISOString() : null,
+    createdAt: c.createdAt.toISOString(),
+    restaurantName: c.restaurant.name,
+    restaurantSlug: c.restaurant.slug,
+  }));
+
+  return Response.json({ items, coupons: mappedCoupons });
 }

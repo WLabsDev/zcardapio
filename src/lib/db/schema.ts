@@ -322,6 +322,13 @@ export const coupons = pgTable(
     usedAt: timestamp("used_at"),
     // Só preenchido em cupons de resgate (30 dias); cupons manuais não expiram.
     expiresAt: timestamp("expires_at"),
+    // Dono do cupom — só preenchido em cupons gerados por resgate de fidelidade,
+    // pra listar "meus cupons" em /cliente/fidelidade. Cupons manuais do vendedor
+    // ficam sempre null (são de uso geral, não de um cliente específico).
+    customerId: integer("customer_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => [index("coupons_restaurant_idx").on(t.restaurantId)]
 );
@@ -524,6 +531,10 @@ export const couponsRelations = relations(coupons, ({ one }) => ({
   restaurant: one(restaurants, {
     fields: [coupons.restaurantId],
     references: [restaurants.id],
+  }),
+  customer: one(users, {
+    fields: [coupons.customerId],
+    references: [users.id],
   }),
 }));
 
