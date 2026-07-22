@@ -6,8 +6,6 @@ import {
   coupons,
   deliveryZones,
   groupOptions,
-  loyaltyPrograms,
-  loyaltyProgress,
   orderItemOptions,
   orderItems,
   orders,
@@ -271,31 +269,6 @@ export async function POST(request: Request) {
     appliedCouponId = coupon.id;
   }
 
-  // Fidelidade — acréscimo calculado agora (mecânica ativa não muda durante o
-  // request) e gravado no pedido, tanto pra creditar quanto pra permitir reverter
-  // se o pedido for cancelado depois.
-  const loyaltyProgram = isFreePlan(restaurant.plan?.name)
-    ? null
-    : await db.query.loyaltyPrograms.findFirst({
-        where: eq(loyaltyPrograms.restaurantId, restaurant.id),
-      });
-  let loyaltyPointsEarned = 0;
-  let loyaltyCashbackEarnedCents = 0;
-  let loyaltyStampEarned = false;
-  if (loyaltyProgram) {
-    if (loyaltyProgram.mechanic === "points") {
-      loyaltyPointsEarned = Math.floor(
-        (subtotalCents / 100) * loyaltyProgram.pointsPerReal
-      );
-    } else if (loyaltyProgram.mechanic === "cashback") {
-      loyaltyCashbackEarnedCents = Math.round(
-        (subtotalCents * loyaltyProgram.cashbackPercent) / 100
-      );
-    } else if (loyaltyProgram.mechanic === "stamps") {
-      loyaltyStampEarned = true;
-    }
-  }
-
   // Pedido agendado — somente se o restaurante aceitar.
   let scheduledFor: Date | null = null;
   if (data.scheduledFor) {
@@ -366,9 +339,6 @@ export async function POST(request: Request) {
           zoneName,
           scheduledFor,
           totalCents,
-          loyaltyPointsEarned,
-          loyaltyCashbackEarnedCents,
-          loyaltyStampEarned,
         })
         .returning();
 
@@ -437,32 +407,6 @@ export async function POST(request: Request) {
           .update(coupons)
           .set({ usedAt: new Date() })
           .where(and(eq(coupons.id, appliedCouponId), eq(coupons.singleUse, true)));
-      }
-
-      if (
-        customerId !== null &&
-        (loyaltyPointsEarned > 0 ||
-          loyaltyCashbackEarnedCents > 0 ||
-          loyaltyStampEarned)
-      ) {
-        await tx
-          .insert(loyaltyProgress)
-          .values({
-            restaurantId: restaurant.id,
-            customerId,
-            points: loyaltyPointsEarned,
-            cashbackCents: loyaltyCashbackEarnedCents,
-            stampCount: loyaltyStampEarned ? 1 : 0,
-          })
-          .onConflictDoUpdate({
-            target: [loyaltyProgress.restaurantId, loyaltyProgress.customerId],
-            set: {
-              points: sql`${loyaltyProgress.points} + ${loyaltyPointsEarned}`,
-              cashbackCents: sql`${loyaltyProgress.cashbackCents} + ${loyaltyCashbackEarnedCents}`,
-              stampCount: sql`${loyaltyProgress.stampCount} + ${loyaltyStampEarned ? 1 : 0}`,
-              updatedAt: new Date(),
-            },
-          });
       }
 
       return created;

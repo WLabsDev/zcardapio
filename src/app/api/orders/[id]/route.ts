@@ -2,8 +2,9 @@ import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { loyaltyProgress, orders } from "@/lib/db/schema";
-import { getRestaurantByOwner, mapOrder } from "@/lib/db/queries";
+import { loyaltyPrograms, loyaltyProgress, orders } from "@/lib/db/schema";
+import { mapOrder } from "@/lib/db/queries";
+import { isFreePlan } from "@/lib/plan-limits";
 import { publishOrderEvent } from "@/lib/realtime";
 
 const patchSchema = z.object({
@@ -79,15 +80,58 @@ export async function PATCH(
     return Response.json({ message: "Status inválido." }, { status: 400 });
   }
 
-  const restaurant = await getRestaurantByOwner(Number(session.sub));
+  const restaurant = await db.query.restaurants.findFirst({
+    where: (r, { eq }) => eq(r.ownerId, Number(session.sub)),
+    with: { plan: { columns: { name: true } } },
+  });
   if (!restaurant) {
     return Response.json({ message: "Restaurante não encontrado." }, { status: 404 });
   }
 
+  const loyaltyProgram = isFreePlan(restaurant.plan?.name)
+    ? null
+    : await db.query.loyaltyPrograms.findFirst({
+        where: eq(loyaltyPrograms.restaurantId, restaurant.id),
+      });
+
   const updated = await db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select({ status: orders.status, subtotalCents: orders.subtotalCents })
+      .from(orders)
+      .where(and(eq(orders.id, orderId), eq(orders.restaurantId, restaurant.id)));
+    if (!existing) return null;
+
+    // Fidelidade só é liberada quando o pedido é efetivamente entregue — e só uma
+    // vez (evita creditar de novo se o status for setado como "entregue" outra vez).
+    let loyaltyPointsEarned = 0;
+    let loyaltyCashbackEarnedCents = 0;
+    let loyaltyStampEarned = false;
+    if (
+      parsed.data.status === "entregue" &&
+      existing.status !== "entregue" &&
+      loyaltyProgram
+    ) {
+      if (loyaltyProgram.mechanic === "points") {
+        loyaltyPointsEarned = Math.floor(
+          (existing.subtotalCents / 100) * loyaltyProgram.pointsPerReal
+        );
+      } else if (loyaltyProgram.mechanic === "cashback") {
+        loyaltyCashbackEarnedCents = Math.round(
+          (existing.subtotalCents * loyaltyProgram.cashbackPercent) / 100
+        );
+      } else if (loyaltyProgram.mechanic === "stamps") {
+        loyaltyStampEarned = true;
+      }
+    }
+
     const [row] = await tx
       .update(orders)
-      .set({ status: parsed.data.status })
+      .set({
+        status: parsed.data.status,
+        ...(loyaltyPointsEarned > 0 && { loyaltyPointsEarned }),
+        ...(loyaltyCashbackEarnedCents > 0 && { loyaltyCashbackEarnedCents }),
+        ...(loyaltyStampEarned && { loyaltyStampEarned }),
+      })
       .where(and(eq(orders.id, orderId), eq(orders.restaurantId, restaurant.id)))
       .returning({
         id: orders.id,
@@ -100,8 +144,33 @@ export async function PATCH(
       });
     if (!row) return null;
 
-    // Cancelamento reverte a fidelidade que este pedido tinha creditado, sem
-    // deixar o saldo do cliente negativo.
+    if (
+      row.customerId !== null &&
+      (loyaltyPointsEarned > 0 || loyaltyCashbackEarnedCents > 0 || loyaltyStampEarned)
+    ) {
+      await tx
+        .insert(loyaltyProgress)
+        .values({
+          restaurantId: row.restaurantId,
+          customerId: row.customerId,
+          points: loyaltyPointsEarned,
+          cashbackCents: loyaltyCashbackEarnedCents,
+          stampCount: loyaltyStampEarned ? 1 : 0,
+        })
+        .onConflictDoUpdate({
+          target: [loyaltyProgress.restaurantId, loyaltyProgress.customerId],
+          set: {
+            points: sql`${loyaltyProgress.points} + ${loyaltyPointsEarned}`,
+            cashbackCents: sql`${loyaltyProgress.cashbackCents} + ${loyaltyCashbackEarnedCents}`,
+            stampCount: sql`${loyaltyProgress.stampCount} + ${loyaltyStampEarned ? 1 : 0}`,
+            updatedAt: new Date(),
+          },
+        });
+    }
+
+    // Cancelamento reverte a fidelidade que este pedido tinha creditado (só existe
+    // algo a reverter se ele já havia sido marcado como entregue antes), sem deixar
+    // o saldo do cliente negativo.
     const earnedSomething =
       row.loyaltyPointsEarned > 0 ||
       row.loyaltyCashbackEarnedCents > 0 ||
