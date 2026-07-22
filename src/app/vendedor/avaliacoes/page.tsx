@@ -91,7 +91,7 @@ export default function AvaliacoesPage() {
 
       {settings && (
         <Card>
-          <CardContent className="flex items-start justify-between gap-3 pt-5">
+          <CardContent className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium">
                 Permitir que clientes avaliem pedidos
@@ -120,7 +120,7 @@ export default function AvaliacoesPage() {
 
       {!loading && reviews.length > 0 && (
         <Card>
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-5">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <span className="flex items-center gap-1 font-display text-2xl font-bold">
                 <Star className="size-5 fill-amber-400 text-amber-400" />
@@ -165,7 +165,7 @@ export default function AvaliacoesPage() {
               key={r.id}
               className={cn(r.hidden && "border-dashed opacity-70")}
             >
-              <CardContent className="space-y-2 pt-5">
+              <CardContent className="space-y-2">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="flex items-center gap-1.5 font-semibold">
