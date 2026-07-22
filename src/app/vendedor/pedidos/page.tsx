@@ -62,8 +62,11 @@ import { cn } from "@/lib/utils";
 const tabs: { value: string; label: string }[] = [
   { value: "todos", label: "Todos" },
   { value: "pendente", label: "Pendentes" },
+  { value: "confirmado", label: "Confirmados" },
   { value: "preparando", label: "Em preparo" },
+  { value: "saiu_para_entrega", label: "Saiu p/ entrega" },
   { value: "entregue", label: "Concluídos" },
+  { value: "cancelado", label: "Cancelados" },
 ];
 
 /** Barra lateral de cor por status, para bater o olho e saber a situação. */
@@ -171,13 +174,15 @@ export default function PedidosPage() {
       </div>
 
       <Tabs value={tab} onValueChange={changeTab}>
-        <TabsList>
-          {tabs.map((t) => (
-            <TabsTrigger key={t.value} value={t.value}>
-              {t.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="scrollbar-hide -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+          <TabsList className="w-max">
+            {tabs.map((t) => (
+              <TabsTrigger key={t.value} value={t.value} className="flex-none">
+                {t.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
       </Tabs>
 
       <div
