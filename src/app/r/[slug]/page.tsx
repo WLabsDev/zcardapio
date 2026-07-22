@@ -18,8 +18,11 @@ export default async function RestaurantMenuPage({
   const restaurant = await getRestaurantBySlugDb(slug);
   if (!restaurant) notFound();
   const products = await getProductsByRestaurantDb(Number(restaurant.id));
-  const reviews = await getReviewsByRestaurant(Number(restaurant.id));
   const session = await getSession();
+  const reviews = await getReviewsByRestaurant(
+    Number(restaurant.id),
+    session?.role === "cliente" ? Number(session.sub) : undefined
+  );
   const openState = computeOpenState(restaurant);
 
   return (

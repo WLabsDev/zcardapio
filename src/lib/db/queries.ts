@@ -5,7 +5,7 @@
  */
 import { avg, desc, eq } from "drizzle-orm";
 import { db } from "./index";
-import { deliveryZones, orders, restaurants, reviews } from "./schema";
+import { deliveryZones, orders, restaurants, reviewHides, reviews } from "./schema";
 import type {
   DeliveryZone,
   Order,
@@ -263,22 +263,108 @@ export async function createReview(input: {
   return created;
 }
 
+function mapReview(r: typeof reviews.$inferSelect): Review {
+  return {
+    id: String(r.id),
+    restaurantId: String(r.restaurantId),
+    orderId: String(r.orderId),
+    customerId: r.customerId !== null ? String(r.customerId) : null,
+    customerName: r.customerName,
+    rating: r.rating,
+    comment: r.comment || undefined,
+    hidden: r.hidden,
+    createdAt: r.createdAt.toISOString(),
+  };
+}
+
+/**
+ * Avaliações públicas de um restaurante: oculta as marcadas como `hidden`,
+ * exceto para o próprio autor (`viewerCustomerId`), que continua vendo a sua.
+ */
 export async function getReviewsByRestaurant(
+  restaurantId: number,
+  viewerCustomerId?: number
+): Promise<Review[]> {
+  const rows = await db.query.reviews.findMany({
+    where: eq(reviews.restaurantId, restaurantId),
+    orderBy: [desc(reviews.createdAt)],
+  });
+  return rows
+    .filter((r) => !r.hidden || r.customerId === viewerCustomerId)
+    .map(mapReview);
+}
+
+/** Todas as avaliações do restaurante (inclusive ocultas) — visão do vendedor. */
+export async function getReviewsForOwner(
   restaurantId: number
 ): Promise<Review[]> {
   const rows = await db.query.reviews.findMany({
     where: eq(reviews.restaurantId, restaurantId),
     orderBy: [desc(reviews.createdAt)],
   });
-  return rows.map((r) => ({
-    id: String(r.id),
-    restaurantId: String(r.restaurantId),
-    orderId: String(r.orderId),
-    customerName: r.customerName,
-    rating: r.rating,
-    comment: r.comment || undefined,
-    createdAt: r.createdAt.toISOString(),
-  }));
+  return rows.map(mapReview);
+}
+
+const FREE_PLAN_MONTHLY_HIDE_LIMIT = 2;
+
+/** Quantas vezes o restaurante já ocultou avaliações neste mês (calendário). */
+export async function getMonthlyHideCount(restaurantId: number) {
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const rows = await db.query.reviewHides.findMany({
+    where: (h, { and, eq, gte }) =>
+      and(eq(h.restaurantId, restaurantId), gte(h.createdAt, monthStart)),
+    columns: { id: true },
+  });
+  return rows.length;
+}
+
+/**
+ * Oculta/reexibe uma avaliação. Ocultar consome a cota mensal do plano
+ * grátis (contas pro ou superior são ilimitadas); reexibir é sempre livre.
+ */
+export async function setReviewHidden(input: {
+  restaurantId: number;
+  reviewId: number;
+  hidden: boolean;
+  planName: string | null;
+}): Promise<{ ok: true } | { ok: false; message: string }> {
+  const review = await db.query.reviews.findFirst({
+    where: eq(reviews.id, input.reviewId),
+    columns: { id: true, restaurantId: true },
+  });
+  if (!review || review.restaurantId !== input.restaurantId) {
+    return { ok: false, message: "Avaliação não encontrada." };
+  }
+
+  if (input.hidden) {
+    const isFree = !input.planName || input.planName === "Grátis";
+    if (isFree) {
+      const used = await getMonthlyHideCount(input.restaurantId);
+      if (used >= FREE_PLAN_MONTHLY_HIDE_LIMIT) {
+        return {
+          ok: false,
+          message: `Seu plano permite ocultar até ${FREE_PLAN_MONTHLY_HIDE_LIMIT} avaliações por mês. Faça upgrade para ocultar sem limites.`,
+        };
+      }
+    }
+    await db.transaction(async (tx) => {
+      await tx
+        .update(reviews)
+        .set({ hidden: true })
+        .where(eq(reviews.id, input.reviewId));
+      await tx
+        .insert(reviewHides)
+        .values({ restaurantId: input.restaurantId, reviewId: input.reviewId });
+    });
+  } else {
+    await db
+      .update(reviews)
+      .set({ hidden: false })
+      .where(eq(reviews.id, input.reviewId));
+  }
+
+  return { ok: true };
 }
 
 /** Restaurante do vendedor logado (primeiro por ownerId). */

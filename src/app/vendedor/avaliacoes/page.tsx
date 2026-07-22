@@ -1,0 +1,163 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Crown, Eye, EyeOff, Star } from "lucide-react";
+import { toast } from "sonner";
+import { EmptyState } from "@/components/panel/empty-state";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import type { Review } from "@/lib/mock/types";
+import { cn } from "@/lib/utils";
+
+type Quota = { unlimited: boolean; limit: number; used: number };
+
+export default function AvaliacoesPage() {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [quota, setQuota] = useState<Quota | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const load = () => {
+    fetch("/api/vendedor/reviews")
+      .then((res) => res.json())
+      .then((data) => {
+        setReviews(data?.reviews ?? []);
+        setQuota(data?.quota ?? null);
+      })
+      .catch(() => toast.error("Não foi possível carregar as avaliações."))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(load, []);
+
+  const toggleHidden = async (review: Review) => {
+    setUpdatingId(review.id);
+    const res = await fetch(`/api/vendedor/reviews/${review.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ hidden: !review.hidden }),
+    }).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    setUpdatingId(null);
+    if (!res?.ok) {
+      toast.error(data?.message ?? "Não foi possível atualizar a avaliação.");
+      return;
+    }
+    toast.success(review.hidden ? "Avaliação reexibida." : "Avaliação ocultada.");
+    load();
+  };
+
+  const avg =
+    reviews.length > 0
+      ? reviews.reduce((a, r) => a + r.rating, 0) / reviews.length
+      : 0;
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-6">
+      <div>
+        <h2 className="font-display text-xl font-bold">Avaliações</h2>
+        <p className="text-sm text-muted-foreground">
+          O que os clientes acharam dos pedidos.
+        </p>
+      </div>
+
+      {!loading && reviews.length > 0 && (
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-5">
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1 font-display text-2xl font-bold">
+                <Star className="size-5 fill-amber-400 text-amber-400" />
+                {avg.toFixed(1)}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                · {reviews.length} {reviews.length === 1 ? "avaliação" : "avaliações"}
+              </span>
+            </div>
+            {quota && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                {quota.unlimited ? (
+                  <>
+                    <Crown className="size-3.5 text-primary" />
+                    Seu plano permite ocultar avaliações sem limite.
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="size-3.5" />
+                    Você já ocultou {quota.used} de {quota.limit} avaliações
+                    permitidas este mês.
+                  </>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Carregando avaliações...</p>
+      ) : reviews.length === 0 ? (
+        <EmptyState
+          icon={Star}
+          title="Nenhuma avaliação ainda"
+          description="Quando clientes avaliarem pedidos entregues, elas aparecem aqui."
+        />
+      ) : (
+        <div className="space-y-3">
+          {reviews.map((r) => (
+            <Card
+              key={r.id}
+              className={cn(r.hidden && "border-dashed opacity-70")}
+            >
+              <CardContent className="space-y-2 pt-5">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-1.5 font-semibold">
+                      {r.customerName}
+                      {r.hidden && (
+                        <Badge variant="outline" className="text-[10px]">
+                          Oculta
+                        </Badge>
+                      )}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(r.createdAt).toLocaleString("pt-BR", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </p>
+                  </div>
+                  <span className="flex shrink-0 items-center gap-1 font-semibold text-amber-500">
+                    <Star className="size-4 fill-amber-400 text-amber-400" />
+                    {r.rating}
+                  </span>
+                </div>
+                {r.comment && <p className="text-sm">{r.comment}</p>}
+                <div className="flex justify-end pt-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={updatingId === r.id}
+                    onClick={() => toggleHidden(r)}
+                  >
+                    {r.hidden ? (
+                      <Eye className="size-3.5" />
+                    ) : (
+                      <EyeOff className="size-3.5" />
+                    )}
+                    {updatingId === r.id
+                      ? "Salvando..."
+                      : r.hidden
+                        ? "Reexibir"
+                        : "Ocultar"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

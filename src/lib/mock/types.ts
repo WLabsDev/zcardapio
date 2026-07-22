@@ -158,9 +158,11 @@ export type Review = {
   id: string;
   restaurantId: string;
   orderId: string;
+  customerId: string | null;
   customerName: string;
   rating: number;
   comment?: string;
+  hidden: boolean;
   createdAt: string;
 };
 

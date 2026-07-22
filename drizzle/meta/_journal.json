@@ -57,6 +57,13 @@
       "when": 1784691842985,
       "tag": "0007_outgoing_war_machine",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784693996708,
+      "tag": "0008_workable_loki",
+      "breakpoints": true
     }
   ]
 }

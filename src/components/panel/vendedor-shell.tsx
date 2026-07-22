@@ -8,6 +8,7 @@ import {
   QrCode,
   Palette,
   Settings,
+  Star,
 } from "lucide-react";
 import { OrdersProvider, useOrders } from "@/components/panel/orders-provider";
 import { PanelShell, type NavItem } from "@/components/panel/panel-shell";
@@ -42,6 +43,7 @@ function Shell({
         ) : undefined,
     },
     { href: "/vendedor/relatorios", label: "Relatórios", icon: BarChart3 },
+    { href: "/vendedor/avaliacoes", label: "Avaliações", icon: Star },
     { href: "/vendedor/qrcode", label: "QR code", icon: QrCode },
     { href: "/vendedor/aparencia", label: "Aparência", icon: Palette },
     { href: "/vendedor/configuracoes", label: "Configurações", icon: Settings },

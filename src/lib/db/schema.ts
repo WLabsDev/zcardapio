@@ -309,6 +309,8 @@ export const reviews = pgTable(
     // 1 a 5 estrelas.
     rating: integer("rating").notNull(),
     comment: text("comment").notNull().default(""),
+    // Oculta a avaliação do cardápio público; o autor continua vendo a própria.
+    hidden: boolean("hidden").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => [
@@ -316,6 +318,22 @@ export const reviews = pgTable(
     unique("reviews_order_unique").on(t.orderId),
     index("reviews_restaurant_idx").on(t.restaurantId),
   ]
+);
+
+/** Registro de cada vez que o vendedor ocultou uma avaliação — usado para o limite mensal do plano grátis. */
+export const reviewHides = pgTable(
+  "review_hides",
+  {
+    id: serial("id").primaryKey(),
+    restaurantId: integer("restaurant_id")
+      .notNull()
+      .references(() => restaurants.id, { onDelete: "cascade" }),
+    reviewId: integer("review_id")
+      .notNull()
+      .references(() => reviews.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("review_hides_restaurant_idx").on(t.restaurantId)]
 );
 
 // Relations (para queries aninhadas via db.query)
@@ -338,6 +356,7 @@ export const restaurantsRelations = relations(restaurants, ({ one, many }) => ({
   deliveryZones: many(deliveryZones),
   coupons: many(coupons),
   reviews: many(reviews),
+  reviewHides: many(reviewHides),
 }));
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -428,5 +447,16 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
   customer: one(users, {
     fields: [reviews.customerId],
     references: [users.id],
+  }),
+}));
+
+export const reviewHidesRelations = relations(reviewHides, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [reviewHides.restaurantId],
+    references: [restaurants.id],
+  }),
+  review: one(reviews, {
+    fields: [reviewHides.reviewId],
+    references: [reviews.id],
   }),
 }));
