@@ -150,6 +150,18 @@ export type Order = {
   zoneName?: string;
   scheduledFor?: string;
   createdAt: string;
+  /** presente quando o pedido vem da API: já existe avaliação para ele? */
+  reviewed?: boolean;
+};
+
+export type Review = {
+  id: string;
+  restaurantId: string;
+  orderId: string;
+  customerName: string;
+  rating: number;
+  comment?: string;
+  createdAt: string;
 };
 
 export type User = {

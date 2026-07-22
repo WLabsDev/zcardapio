@@ -3,10 +3,16 @@
  * usados pelo frontend (ids como string, centavos → reais).
  * Use em Server Components e Route Handlers.
  */
-import { desc, eq } from "drizzle-orm";
+import { avg, desc, eq } from "drizzle-orm";
 import { db } from "./index";
-import { deliveryZones, orders, restaurants } from "./schema";
-import type { DeliveryZone, Order, Product, Restaurant } from "@/lib/mock/types";
+import { deliveryZones, orders, restaurants, reviews } from "./schema";
+import type {
+  DeliveryZone,
+  Order,
+  Product,
+  Restaurant,
+  Review,
+} from "@/lib/mock/types";
 
 const centsToReais = (v: number) => v / 100;
 
@@ -144,6 +150,7 @@ type OrderRow = typeof orders.$inferSelect & {
     options: { groupName: string; name: string; priceCents: number }[];
   }[];
   restaurant?: { name: string; slug: string } | null;
+  review?: { id: number } | null;
 };
 
 export function mapOrder(o: OrderRow): Order {
@@ -184,12 +191,14 @@ export function mapOrder(o: OrderRow): Order {
     zoneName: o.zoneName || undefined,
     scheduledFor: o.scheduledFor ? o.scheduledFor.toISOString() : undefined,
     createdAt: o.createdAt.toISOString(),
+    reviewed: o.review !== undefined ? Boolean(o.review) : undefined,
   };
 }
 
 const orderWith = {
   items: { with: { options: true } },
   restaurant: { columns: { name: true, slug: true } },
+  review: { columns: { id: true } },
 } as const;
 
 export async function getOrdersByCustomer(customerId: number): Promise<Order[]> {
@@ -210,6 +219,66 @@ export async function getOrdersByRestaurant(
     orderBy: [desc(orders.createdAt)],
   });
   return rows.map(mapOrder);
+}
+
+export async function getOrderById(orderId: number): Promise<Order | null> {
+  const row = await db.query.orders.findFirst({
+    where: eq(orders.id, orderId),
+    with: orderWith,
+  });
+  return row ? mapOrder(row) : null;
+}
+
+/** Cria a avaliação de um pedido e recalcula a média (rating) do restaurante. */
+export async function createReview(input: {
+  restaurantId: number;
+  orderId: number;
+  customerId: number | null;
+  customerName: string;
+  rating: number;
+  comment: string;
+}) {
+  const [created] = await db
+    .insert(reviews)
+    .values({
+      restaurantId: input.restaurantId,
+      orderId: input.orderId,
+      customerId: input.customerId,
+      customerName: input.customerName,
+      rating: input.rating,
+      comment: input.comment,
+    })
+    .returning();
+
+  const [agg] = await db
+    .select({ avgRating: avg(reviews.rating) })
+    .from(reviews)
+    .where(eq(reviews.restaurantId, input.restaurantId));
+
+  await db
+    .update(restaurants)
+    .set({ rating: String(Number(agg?.avgRating ?? 0).toFixed(1)) })
+    .where(eq(restaurants.id, input.restaurantId));
+
+  return created;
+}
+
+export async function getReviewsByRestaurant(
+  restaurantId: number
+): Promise<Review[]> {
+  const rows = await db.query.reviews.findMany({
+    where: eq(reviews.restaurantId, restaurantId),
+    orderBy: [desc(reviews.createdAt)],
+  });
+  return rows.map((r) => ({
+    id: String(r.id),
+    restaurantId: String(r.restaurantId),
+    orderId: String(r.orderId),
+    customerName: r.customerName,
+    rating: r.rating,
+    comment: r.comment || undefined,
+    createdAt: r.createdAt.toISOString(),
+  }));
 }
 
 /** Restaurante do vendedor logado (primeiro por ownerId). */

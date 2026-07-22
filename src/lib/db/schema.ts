@@ -10,6 +10,7 @@ import {
   serial,
   text,
   timestamp,
+  unique,
   varchar,
 } from "drizzle-orm/pg-core";
 import type { DayHours, PaymentMethod } from "../mock/types";
@@ -291,6 +292,32 @@ export const coupons = pgTable(
   (t) => [index("coupons_restaurant_idx").on(t.restaurantId)]
 );
 
+export const reviews = pgTable(
+  "reviews",
+  {
+    id: serial("id").primaryKey(),
+    restaurantId: integer("restaurant_id")
+      .notNull()
+      .references(() => restaurants.id, { onDelete: "cascade" }),
+    orderId: integer("order_id")
+      .notNull()
+      .references(() => orders.id, { onDelete: "cascade" }),
+    customerId: integer("customer_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    customerName: varchar("customer_name", { length: 120 }).notNull(),
+    // 1 a 5 estrelas.
+    rating: integer("rating").notNull(),
+    comment: text("comment").notNull().default(""),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    // Um pedido só pode ser avaliado uma vez.
+    unique("reviews_order_unique").on(t.orderId),
+    index("reviews_restaurant_idx").on(t.restaurantId),
+  ]
+);
+
 // Relations (para queries aninhadas via db.query)
 export const plansRelations = relations(plans, ({ many }) => ({
   restaurants: many(restaurants),
@@ -310,6 +337,7 @@ export const restaurantsRelations = relations(restaurants, ({ one, many }) => ({
   orders: many(orders),
   deliveryZones: many(deliveryZones),
   coupons: many(coupons),
+  reviews: many(reviews),
 }));
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
@@ -354,6 +382,7 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   }),
   customer: one(users, { fields: [orders.customerId], references: [users.id] }),
   items: many(orderItems),
+  review: one(reviews, { fields: [orders.id], references: [reviews.orderId] }),
 }));
 
 export const orderItemsRelations = relations(orderItems, ({ one, many }) => ({
@@ -387,5 +416,17 @@ export const couponsRelations = relations(coupons, ({ one }) => ({
   restaurant: one(restaurants, {
     fields: [coupons.restaurantId],
     references: [restaurants.id],
+  }),
+}));
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [reviews.restaurantId],
+    references: [restaurants.id],
+  }),
+  order: one(orders, { fields: [reviews.orderId], references: [orders.id] }),
+  customer: one(users, {
+    fields: [reviews.customerId],
+    references: [users.id],
   }),
 }));

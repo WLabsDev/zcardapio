@@ -53,7 +53,12 @@ import {
   type SelectedOption,
 } from "@/components/cart/cart-context";
 import { useBackToClose } from "@/hooks/use-back-to-close";
-import { formatBRL, type Product, type Restaurant } from "@/lib/mock/types";
+import {
+  formatBRL,
+  type Product,
+  type Restaurant,
+  type Review,
+} from "@/lib/mock/types";
 import type { SessionRole } from "@/lib/session";
 import { isDarkTheme, restaurantThemeVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -135,12 +140,14 @@ export function MenuView({
   user,
   initiallyOpen,
   pauseMessage,
+  reviews = [],
 }: {
   restaurant: Restaurant;
   products: Product[];
   user: MenuUser;
   initiallyOpen: boolean;
   pauseMessage?: string;
+  reviews?: Review[];
 }) {
   const closed = !initiallyOpen;
   const [search, setSearch] = useState("");
@@ -378,6 +385,47 @@ export function MenuView({
             title="Nenhum produto encontrado"
             description={`Não encontramos nada para “${search}”. Tente buscar por outro nome.`}
           />
+        )}
+
+        {/* Avaliações */}
+        {reviews.length > 0 && (
+          <section>
+            <h2 className="mb-3 font-display text-lg font-bold">Avaliações</h2>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1 font-semibold text-foreground">
+                <Star className="size-4 fill-amber-400 text-amber-400" />
+                {restaurant.rating.toFixed(1)}
+              </span>
+              · {reviews.length}{" "}
+              {reviews.length === 1 ? "avaliação" : "avaliações"}
+            </div>
+            <div className="mt-3 space-y-3">
+              {reviews.slice(0, 5).map((r) => (
+                <div
+                  key={r.id}
+                  className="rounded-xl border-2 border-foreground/10 bg-card p-3"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold">{r.customerName}</p>
+                    <span className="flex items-center gap-1 text-xs font-semibold text-amber-500">
+                      <Star className="size-3.5 fill-amber-400 text-amber-400" />
+                      {r.rating}
+                    </span>
+                  </div>
+                  {r.comment && (
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {r.comment}
+                    </p>
+                  )}
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {new Date(r.createdAt).toLocaleDateString("pt-BR", {
+                      dateStyle: "medium",
+                    })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
       </div>
 

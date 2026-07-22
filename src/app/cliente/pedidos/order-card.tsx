@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { OrderReview } from "@/components/panel/order-review";
 import { OrderStatusBadge } from "@/components/panel/order-status-badge";
 import { OrderStatusTimeline } from "@/components/panel/order-status-timeline";
 import { formatBRL, type Order, type OrderStatus } from "@/lib/mock/types";
@@ -190,6 +191,12 @@ export function OrderCard({ order: o }: { order: Order }) {
                   <span>{formatBRL(o.total)}</span>
                 </div>
               </div>
+              {o.status === "entregue" && (
+                <OrderReview
+                  orderId={o.id}
+                  initiallyReviewed={Boolean(o.reviewed)}
+                />
+              )}
               {reorderButton && (
                 <div className="flex justify-end">{reorderButton}</div>
               )}
