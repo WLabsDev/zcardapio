@@ -27,12 +27,6 @@ export default async function VendedorLayout({
     : 0;
   const overLimit = isFree && monthlyOrderCount >= FREE_PLAN_MONTHLY_ORDER_LIMIT;
 
-  const plans = overLimit
-    ? await db.query.plans.findMany({
-        orderBy: (p, { asc }) => [asc(p.priceCents)],
-      })
-    : [];
-
   return (
     <VendedorShell
       userName={session.name}
@@ -41,18 +35,7 @@ export default async function VendedorLayout({
       impersonating={await isImpersonating()}
       orderLimitBanner={
         overLimit
-          ? {
-              monthlyOrderCount,
-              limit: FREE_PLAN_MONTHLY_ORDER_LIMIT,
-              plans: plans.map((p) => ({
-                id: p.id,
-                name: p.name,
-                priceCents: p.priceCents,
-                description: p.description,
-                features: p.features,
-                highlighted: p.highlighted,
-              })),
-            }
+          ? { monthlyOrderCount, limit: FREE_PLAN_MONTHLY_ORDER_LIMIT }
           : null
       }
     >

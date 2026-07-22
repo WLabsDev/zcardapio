@@ -12,15 +12,11 @@ import {
 } from "lucide-react";
 import { OrdersProvider, useOrders } from "@/components/panel/orders-provider";
 import { PanelShell, type NavItem } from "@/components/panel/panel-shell";
-import {
-  PlanLimitBanner,
-  type OrderLimitPlan,
-} from "@/components/panel/plan-limit-banner";
+import { PlanLimitBanner } from "@/components/panel/plan-limit-banner";
 
 type OrderLimitBanner = {
   monthlyOrderCount: number;
   limit: number;
-  plans: OrderLimitPlan[];
 };
 
 function Shell({
@@ -73,7 +69,6 @@ function Shell({
           <PlanLimitBanner
             monthlyOrderCount={orderLimitBanner.monthlyOrderCount}
             limit={orderLimitBanner.limit}
-            plans={orderLimitBanner.plans}
           />
         )
       }

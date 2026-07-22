@@ -20,6 +20,8 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarsChart, RankList } from "@/components/panel/charts";
 import { StatCard } from "@/components/panel/panel-shell";
+import { ProGate } from "@/components/panel/pro-gate";
+import { isFreePlan } from "@/lib/plan-limits";
 import { formatBRL, type ChartPoint, type ReportPeriod } from "@/lib/mock/types";
 
 type Report = {
@@ -35,6 +37,7 @@ type Report = {
 export default function RelatoriosPage() {
   const [period, setPeriod] = useState<ReportPeriod>("7d");
   const [snap, setSnap] = useState<Report | null>(null);
+  const [isFree, setIsFree] = useState<boolean | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,6 +51,13 @@ export default function RelatoriosPage() {
       cancelled = true;
     };
   }, [period]);
+
+  useEffect(() => {
+    fetch("/api/vendedor/restaurant")
+      .then((res) => res.json())
+      .then((data) => setIsFree(isFreePlan(data?.restaurant?.plan)))
+      .catch(() => setIsFree(false));
+  }, []);
 
   const peakHour =
     snap && snap.ordersByHour.some((h) => h.value > 0)
@@ -74,10 +84,10 @@ export default function RelatoriosPage() {
         </Tabs>
       </div>
 
-      {!snap ? (
+      {!snap || isFree === null ? (
         <p className="text-sm text-muted-foreground">Carregando relatórios...</p>
       ) : (
-        <>
+        <ProGate active={isFree}>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               label="Faturamento no período"
@@ -163,7 +173,7 @@ export default function RelatoriosPage() {
               )}
             </CardContent>
           </Card>
-        </>
+        </ProGate>
       )}
     </div>
   );
