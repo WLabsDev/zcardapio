@@ -12,18 +12,30 @@ import {
 } from "lucide-react";
 import { OrdersProvider, useOrders } from "@/components/panel/orders-provider";
 import { PanelShell, type NavItem } from "@/components/panel/panel-shell";
+import {
+  PlanLimitBanner,
+  type OrderLimitPlan,
+} from "@/components/panel/plan-limit-banner";
+
+type OrderLimitBanner = {
+  monthlyOrderCount: number;
+  limit: number;
+  plans: OrderLimitPlan[];
+};
 
 function Shell({
   userName,
   restaurantName,
   planName,
   impersonating,
+  orderLimitBanner,
   children,
 }: {
   userName: string;
   restaurantName: string;
   planName: string | null;
   impersonating?: boolean;
+  orderLimitBanner?: OrderLimitBanner | null;
   children: React.ReactNode;
 }) {
   const { pendingCount } = useOrders();
@@ -56,6 +68,15 @@ function Shell({
       userName={userName}
       userRole={planName ? `Restaurante · Plano ${planName}` : "Restaurante"}
       impersonating={impersonating}
+      banner={
+        orderLimitBanner && (
+          <PlanLimitBanner
+            monthlyOrderCount={orderLimitBanner.monthlyOrderCount}
+            limit={orderLimitBanner.limit}
+            plans={orderLimitBanner.plans}
+          />
+        )
+      }
     >
       {children}
     </PanelShell>
@@ -67,12 +88,14 @@ export function VendedorShell({
   restaurantName,
   planName,
   impersonating,
+  orderLimitBanner,
   children,
 }: {
   userName: string;
   restaurantName: string;
   planName: string | null;
   impersonating?: boolean;
+  orderLimitBanner?: OrderLimitBanner | null;
   children: React.ReactNode;
 }) {
   return (
@@ -82,6 +105,7 @@ export function VendedorShell({
         restaurantName={restaurantName}
         planName={planName}
         impersonating={impersonating}
+        orderLimitBanner={orderLimitBanner}
       >
         {children}
       </Shell>

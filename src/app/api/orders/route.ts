@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { coupons, deliveryZones, orderItemOptions, orderItems, orders, products, restaurants, users } from "@/lib/db/schema";
 import {
+  getMonthlyOrderCount,
   getOrdersByCustomer,
   getOrdersByRestaurant,
   getRestaurantByOwner,
@@ -11,6 +12,7 @@ import {
 } from "@/lib/db/queries";
 import { computeOpenState } from "@/lib/hours";
 import { normalizePhone } from "@/lib/phone";
+import { FREE_PLAN_MONTHLY_ORDER_LIMIT, isFreePlan } from "@/lib/plan-limits";
 import { publishOrderEvent } from "@/lib/realtime";
 
 const createOrderSchema = z.object({
@@ -63,12 +65,25 @@ export async function POST(request: Request) {
 
   const restaurant = await db.query.restaurants.findFirst({
     where: eq(restaurants.id, data.restaurantId),
+    with: { plan: { columns: { name: true } } },
   });
   if (!restaurant || restaurant.status !== "ativo") {
     return Response.json(
       { message: "Restaurante não encontrado." },
       { status: 404 }
     );
+  }
+  if (isFreePlan(restaurant.plan?.name)) {
+    const monthlyOrders = await getMonthlyOrderCount(restaurant.id);
+    if (monthlyOrders >= FREE_PLAN_MONTHLY_ORDER_LIMIT) {
+      return Response.json(
+        {
+          message:
+            "Este restaurante atingiu o limite de pedidos do plano grátis neste mês. Tente novamente mais tarde.",
+        },
+        { status: 409 }
+      );
+    }
   }
   const openState = computeOpenState(restaurant);
   if (!openState.open) {

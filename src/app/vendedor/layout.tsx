@@ -3,6 +3,8 @@ import { eq } from "drizzle-orm";
 import { getSession, isImpersonating } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { restaurants } from "@/lib/db/schema";
+import { getMonthlyOrderCount } from "@/lib/db/queries";
+import { FREE_PLAN_MONTHLY_ORDER_LIMIT, isFreePlan } from "@/lib/plan-limits";
 import { VendedorShell } from "@/components/panel/vendedor-shell";
 
 export default async function VendedorLayout({
@@ -19,12 +21,40 @@ export default async function VendedorLayout({
   });
   if (!restaurant) redirect("/login");
 
+  const isFree = isFreePlan(restaurant.plan?.name);
+  const monthlyOrderCount = isFree
+    ? await getMonthlyOrderCount(restaurant.id)
+    : 0;
+  const overLimit = isFree && monthlyOrderCount >= FREE_PLAN_MONTHLY_ORDER_LIMIT;
+
+  const plans = overLimit
+    ? await db.query.plans.findMany({
+        orderBy: (p, { asc }) => [asc(p.priceCents)],
+      })
+    : [];
+
   return (
     <VendedorShell
       userName={session.name}
       restaurantName={restaurant.name}
       planName={restaurant.plan?.name ?? null}
       impersonating={await isImpersonating()}
+      orderLimitBanner={
+        overLimit
+          ? {
+              monthlyOrderCount,
+              limit: FREE_PLAN_MONTHLY_ORDER_LIMIT,
+              plans: plans.map((p) => ({
+                id: p.id,
+                name: p.name,
+                priceCents: p.priceCents,
+                description: p.description,
+                features: p.features,
+                highlighted: p.highlighted,
+              })),
+            }
+          : null
+      }
     >
       {children}
     </VendedorShell>

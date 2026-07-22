@@ -44,6 +44,7 @@ export function PanelShell({
   userName,
   userRole,
   impersonating = false,
+  banner,
   children,
 }: {
   title: string;
@@ -52,6 +53,7 @@ export function PanelShell({
   userRole: string;
   /** true quando um admin está visualizando este painel como "ver como". */
   impersonating?: boolean;
+  banner?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -245,6 +247,7 @@ export function PanelShell({
 
         <main className="flex-1 bg-muted/30 p-4 md:p-6">
           <PanelUserContext.Provider value={{ name: userName }}>
+            {banner}
             {children}
           </PanelUserContext.Provider>
         </main>

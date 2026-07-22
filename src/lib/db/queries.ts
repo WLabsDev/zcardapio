@@ -3,7 +3,7 @@
  * usados pelo frontend (ids como string, centavos → reais).
  * Use em Server Components e Route Handlers.
  */
-import { and, avg, desc, eq } from "drizzle-orm";
+import { and, avg, count, desc, eq, gte, ne } from "drizzle-orm";
 import { db } from "./index";
 import { deliveryZones, orders, restaurants, reviewHides, reviews } from "./schema";
 import type {
@@ -381,6 +381,29 @@ export async function getRestaurantByOwner(ownerId: number) {
   return db.query.restaurants.findFirst({
     where: eq(restaurants.ownerId, ownerId),
   });
+}
+
+/** Pedidos do restaurante no mês corrente (não conta cancelados). */
+export async function getMonthlyOrderCount(
+  restaurantId: number,
+  reference: Date = new Date()
+): Promise<number> {
+  const monthStart = new Date(
+    reference.getFullYear(),
+    reference.getMonth(),
+    1
+  );
+  const [row] = await db
+    .select({ value: count() })
+    .from(orders)
+    .where(
+      and(
+        eq(orders.restaurantId, restaurantId),
+        gte(orders.createdAt, monthStart),
+        ne(orders.status, "cancelado")
+      )
+    );
+  return row?.value ?? 0;
 }
 
 export async function getRestaurantByOwnerMapped(
