@@ -3,7 +3,8 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LogOut, Menu, type LucideIcon } from "lucide-react";
+import { Eye, LogOut, Menu, type LucideIcon } from "lucide-react";
+import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,17 +43,35 @@ export function PanelShell({
   nav,
   userName,
   userRole,
+  impersonating = false,
   children,
 }: {
   title: string;
   nav: NavItem[];
   userName: string;
   userRole: string;
+  /** true quando um admin está visualizando este painel como "ver como". */
+  impersonating?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [endingImpersonation, setEndingImpersonation] = useState(false);
+
+  const backToAdmin = async () => {
+    setEndingImpersonation(true);
+    const res = await fetch("/api/admin/stop-impersonate", {
+      method: "POST",
+    }).catch(() => null);
+    setEndingImpersonation(false);
+    if (!res?.ok) {
+      toast.error("Não foi possível voltar ao admin.");
+      return;
+    }
+    router.push("/admin");
+    router.refresh();
+  };
 
   // No mobile, o botão "voltar" fecha o menu em vez de sair da página.
   useBackToClose(open, () => setOpen(false));
@@ -154,8 +173,27 @@ export function PanelShell({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
+        {impersonating && (
+          <div className="sticky top-0 z-40 flex items-center justify-center gap-2 bg-primary px-4 py-1.5 text-center text-xs font-semibold text-primary-foreground">
+            <Eye className="size-3.5 shrink-0" />
+            Você está vendo como {userRole.toLowerCase()} (modo admin)
+            <button
+              type="button"
+              onClick={backToAdmin}
+              disabled={endingImpersonation}
+              className="ml-1 underline underline-offset-2 disabled:opacity-60"
+            >
+              {endingImpersonation ? "Voltando..." : "Voltar ao admin"}
+            </button>
+          </div>
+        )}
         {/* Topbar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur">
+        <header
+          className={cn(
+            "sticky z-30 flex h-16 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur",
+            impersonating ? "top-7" : "top-0"
+          )}
+        >
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button size="icon" variant="ghost" className="lg:hidden">

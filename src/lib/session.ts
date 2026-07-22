@@ -7,6 +7,10 @@ import { SignJWT, jwtVerify } from "jose";
 export const SESSION_COOKIE = "zcardapio_session";
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 dias, em segundos
 
+/** Guarda a sessão original do admin enquanto ele visualiza como outro papel. */
+export const IMPERSONATE_RETURN_COOKIE = "zcardapio_admin_return";
+export const IMPERSONATE_MAX_AGE = 60 * 60; // 1 hora, em segundos
+
 export type SessionRole = "admin" | "restaurante" | "cliente";
 
 export type SessionPayload = {

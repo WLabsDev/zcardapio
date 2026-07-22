@@ -16,11 +16,13 @@ function Shell({
   userName,
   restaurantName,
   planName,
+  impersonating,
   children,
 }: {
   userName: string;
   restaurantName: string;
   planName: string | null;
+  impersonating?: boolean;
   children: React.ReactNode;
 }) {
   const { pendingCount } = useOrders();
@@ -51,6 +53,7 @@ function Shell({
       nav={nav}
       userName={userName}
       userRole={planName ? `Restaurante · Plano ${planName}` : "Restaurante"}
+      impersonating={impersonating}
     >
       {children}
     </PanelShell>
@@ -61,11 +64,13 @@ export function VendedorShell({
   userName,
   restaurantName,
   planName,
+  impersonating,
   children,
 }: {
   userName: string;
   restaurantName: string;
   planName: string | null;
+  impersonating?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -74,6 +79,7 @@ export function VendedorShell({
         userName={userName}
         restaurantName={restaurantName}
         planName={planName}
+        impersonating={impersonating}
       >
         {children}
       </Shell>

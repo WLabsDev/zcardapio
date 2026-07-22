@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
-import { getSession } from "@/lib/auth";
+import { getSession, isImpersonating } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { restaurants } from "@/lib/db/schema";
 import { VendedorShell } from "@/components/panel/vendedor-shell";
@@ -24,6 +24,7 @@ export default async function VendedorLayout({
       userName={session.name}
       restaurantName={restaurant.name}
       planName={restaurant.plan?.name ?? null}
+      impersonating={await isImpersonating()}
     >
       {children}
     </VendedorShell>

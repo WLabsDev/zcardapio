@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { getSession, isImpersonating } from "@/lib/auth";
 import { ClienteShell } from "@/components/panel/cliente-shell";
 
 export default async function ClienteLayout({
@@ -10,5 +10,9 @@ export default async function ClienteLayout({
   const session = await getSession();
   if (!session || session.role !== "cliente") redirect("/login");
 
-  return <ClienteShell userName={session.name}>{children}</ClienteShell>;
+  return (
+    <ClienteShell userName={session.name} impersonating={await isImpersonating()}>
+      {children}
+    </ClienteShell>
+  );
 }

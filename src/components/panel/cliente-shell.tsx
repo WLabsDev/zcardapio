@@ -11,13 +11,21 @@ const nav: NavItem[] = [
 
 export function ClienteShell({
   userName,
+  impersonating,
   children,
 }: {
   userName: string;
+  impersonating?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <PanelShell title="Minha conta" nav={nav} userName={userName} userRole="Cliente">
+    <PanelShell
+      title="Minha conta"
+      nav={nav}
+      userName={userName}
+      userRole="Cliente"
+      impersonating={impersonating}
+    >
       {children}
     </PanelShell>
   );

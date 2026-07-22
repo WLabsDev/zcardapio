@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Store, Users, DollarSign, ReceiptText } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Store, Users, DollarSign, ReceiptText, Eye } from "lucide-react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -38,8 +41,27 @@ const statusVariant = {
 } as const;
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [restaurants, setRestaurants] = useState<RecentRestaurant[]>([]);
+  const [viewingAsClient, setViewingAsClient] = useState(false);
+
+  const viewAsClient = async () => {
+    setViewingAsClient(true);
+    const res = await fetch("/api/admin/impersonate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target: "cliente" }),
+    }).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    setViewingAsClient(false);
+    if (!res?.ok || !data?.redirect) {
+      toast.error("Não foi possível entrar como cliente.");
+      return;
+    }
+    router.push(data.redirect);
+    router.refresh();
+  };
 
   useEffect(() => {
     fetch("/api/admin/metrics")
@@ -54,11 +76,22 @@ export default function AdminDashboard() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div>
-        <h2 className="font-display text-xl font-bold">Visão geral da plataforma</h2>
-        <p className="text-sm text-muted-foreground">
-          Acompanhe o crescimento do zCardapio.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-display text-xl font-bold">Visão geral da plataforma</h2>
+          <p className="text-sm text-muted-foreground">
+            Acompanhe o crescimento do zCardapio.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={viewingAsClient}
+          onClick={viewAsClient}
+        >
+          <Eye className="size-4" />
+          {viewingAsClient ? "Entrando..." : "Ver como cliente"}
+        </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

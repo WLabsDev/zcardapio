@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ExternalLink, Search, SearchX } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ExternalLink, Eye, Search, SearchX } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/panel/empty-state";
 import { Badge } from "@/components/ui/badge";
@@ -43,8 +44,10 @@ const statusVariant = {
 } as const;
 
 export default function AdminRestaurantesPage() {
+  const router = useRouter();
   const [restaurants, setRestaurants] = useState<AdminRestaurant[]>([]);
   const [search, setSearch] = useState("");
+  const [viewingAsId, setViewingAsId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/restaurants")
@@ -71,6 +74,23 @@ export default function AdminRestaurantesPage() {
       prev.map((r) => (r.id === id ? { ...r, status } : r))
     );
     toast.success("Status atualizado.");
+  };
+
+  const viewAsRestaurant = async (id: string) => {
+    setViewingAsId(id);
+    const res = await fetch("/api/admin/impersonate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target: "restaurante", restaurantId: Number(id) }),
+    }).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    setViewingAsId(null);
+    if (!res?.ok || !data?.redirect) {
+      toast.error(data?.message ?? "Não foi possível entrar como este restaurante.");
+      return;
+    }
+    router.push(data.redirect);
+    router.refresh();
   };
 
   return (
@@ -112,12 +132,18 @@ export default function AdminRestaurantesPage() {
                 >
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={r.logo}
-                        alt={r.name}
-                        className="size-9 rounded-lg"
-                      />
+                      {r.logo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={r.logo}
+                          alt={r.name}
+                          className="size-9 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted text-xs font-semibold text-muted-foreground">
+                          {r.name.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
                       <div>
                         <p className="font-medium">{r.name}</p>
                         <p className="text-xs text-muted-foreground">
@@ -152,6 +178,15 @@ export default function AdminRestaurantesPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          disabled={viewingAsId === r.id}
+                          onClick={() => viewAsRestaurant(r.id)}
+                        >
+                          <Eye className="size-4" />
+                          {viewingAsId === r.id
+                            ? "Entrando..."
+                            : "Ver como restaurante"}
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setStatus(r.id, "ativo")}>
                           Aprovar / Ativar
                         </DropdownMenuItem>
