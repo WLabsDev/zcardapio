@@ -11,6 +11,7 @@ import {
 } from "@/lib/db/queries";
 import { computeOpenState } from "@/lib/hours";
 import { normalizePhone } from "@/lib/phone";
+import { publishOrderEvent } from "@/lib/realtime";
 
 const createOrderSchema = z.object({
   restaurantId: z.coerce.number().int().positive(),
@@ -310,6 +311,13 @@ export async function POST(request: Request) {
     }
     return created;
   });
+
+  await publishOrderEvent({
+    type: "order_created",
+    orderId: order.id,
+    restaurantId: order.restaurantId,
+    customerId: order.customerId,
+  }).catch(() => {});
 
   return Response.json(
     {

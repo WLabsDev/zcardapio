@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { orders } from "@/lib/db/schema";
 import { getRestaurantByOwner, mapOrder } from "@/lib/db/queries";
+import { publishOrderEvent } from "@/lib/realtime";
 
 const patchSchema = z.object({
   status: z.enum([
@@ -87,11 +88,24 @@ export async function PATCH(
     .update(orders)
     .set({ status: parsed.data.status })
     .where(and(eq(orders.id, orderId), eq(orders.restaurantId, restaurant.id)))
-    .returning({ id: orders.id, status: orders.status });
+    .returning({
+      id: orders.id,
+      status: orders.status,
+      restaurantId: orders.restaurantId,
+      customerId: orders.customerId,
+    });
 
   if (!updated) {
     return Response.json({ message: "Pedido não encontrado." }, { status: 404 });
   }
+
+  await publishOrderEvent({
+    type: "order_updated",
+    orderId: updated.id,
+    restaurantId: updated.restaurantId,
+    customerId: updated.customerId,
+    status: updated.status,
+  }).catch(() => {});
 
   return Response.json({ order: updated });
 }
