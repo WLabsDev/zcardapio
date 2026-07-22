@@ -143,9 +143,18 @@ export default function FidelidadePage() {
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex min-w-0 items-center gap-2">
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent">
-                        <Icon className="size-4" />
-                      </span>
+                      {item.restaurantLogo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={item.restaurantLogo}
+                          alt={item.restaurantName}
+                          className="size-9 shrink-0 rounded-lg border object-cover"
+                        />
+                      ) : (
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent">
+                          <Icon className="size-4" />
+                        </span>
+                      )}
                       <p className="truncate font-semibold">{item.restaurantName}</p>
                     </div>
                     {item.eligible && (

@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { coupons, loyaltyProgress } from "@/lib/db/schema";
@@ -53,8 +53,10 @@ export async function GET() {
       };
     });
 
+  // Cupons já usados somem da lista — só mostra o que ainda pode ser aplicado
+  // (ou expirado/inativo, pra o cliente saber que perdeu a validade).
   const redeemedCoupons = await db.query.coupons.findMany({
-    where: eq(coupons.customerId, Number(session.sub)),
+    where: and(eq(coupons.customerId, Number(session.sub)), isNull(coupons.usedAt)),
     orderBy: [desc(coupons.createdAt)],
     with: { restaurant: { columns: { name: true, slug: true } } },
   });
