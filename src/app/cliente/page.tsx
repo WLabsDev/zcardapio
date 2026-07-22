@@ -4,6 +4,8 @@ import {
   Bike,
   CalendarClock,
   Clock,
+  Heart,
+  ShoppingBag,
   Star,
   Store,
   UtensilsCrossed,
@@ -15,7 +17,7 @@ import { OrderStatusBadge } from "@/components/panel/order-status-badge";
 import { OrderStatusTimeline } from "@/components/panel/order-status-timeline";
 import { getSession } from "@/lib/auth";
 import { getOrdersByCustomer, listActiveRestaurants } from "@/lib/db/queries";
-import { formatBRL } from "@/lib/mock/types";
+import { formatBRL, type Restaurant } from "@/lib/mock/types";
 
 export default async function ClienteHome() {
   const session = await getSession();
@@ -27,6 +29,66 @@ export default async function ClienteHome() {
     (o) => o.status !== "entregue" && o.status !== "cancelado"
   );
   const name = session?.name ?? "Visitante";
+
+  // Só conta pedidos que de fato viraram compra (ignora cancelados).
+  const validOrders = orders.filter((o) => o.status !== "cancelado");
+  const now = new Date();
+  const monthOrders = validOrders.filter((o) => {
+    const d = new Date(o.createdAt);
+    return (
+      d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+    );
+  });
+  const itemsThisMonth = monthOrders.reduce(
+    (acc, o) => acc + o.items.reduce((a, i) => a + i.quantity, 0),
+    0
+  );
+  const restaurantIdsThisMonth = new Set(monthOrders.map((o) => o.restaurantId));
+  const spentThisMonth = monthOrders.reduce((acc, o) => acc + o.total, 0);
+
+  // Restaurante favorito: o que mais se repete no histórico de pedidos.
+  const restaurantById = new Map(restaurants.map((r) => [r.id, r]));
+  const orderCountByRestaurant = new Map<string, number>();
+  for (const o of validOrders) {
+    orderCountByRestaurant.set(
+      o.restaurantId,
+      (orderCountByRestaurant.get(o.restaurantId) ?? 0) + 1
+    );
+  }
+  const favoriteEntry = [...orderCountByRestaurant.entries()].sort(
+    (a, b) => b[1] - a[1]
+  )[0];
+  const favoriteRestaurant = favoriteEntry
+    ? {
+        id: favoriteEntry[0],
+        count: favoriteEntry[1],
+        name:
+          restaurantById.get(favoriteEntry[0])?.name ??
+          validOrders.find((o) => o.restaurantId === favoriteEntry[0])
+            ?.restaurantName ??
+          "Restaurante",
+        slug:
+          restaurantById.get(favoriteEntry[0])?.slug ??
+          validOrders.find((o) => o.restaurantId === favoriteEntry[0])
+            ?.restaurantSlug,
+        cover: restaurantById.get(favoriteEntry[0])?.cover,
+      }
+    : null;
+
+  // "Peça de novo": restaurantes onde o cliente já comprou, mais recentes primeiro.
+  const orderedRestaurants: Restaurant[] = [];
+  const seen = new Set<string>();
+  for (const o of validOrders) {
+    if (seen.has(o.restaurantId)) continue;
+    const r = restaurantById.get(o.restaurantId);
+    if (r) {
+      seen.add(o.restaurantId);
+      orderedRestaurants.push(r);
+    }
+    if (orderedRestaurants.length >= 6) break;
+  }
+  const hasOrderHistory = orderedRestaurants.length > 0;
+  const restaurantsToShow = hasOrderHistory ? orderedRestaurants : restaurants;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -104,12 +166,95 @@ export default async function ClienteHome() {
         </Card>
       )}
 
+      {validOrders.length > 0 && (
+        <Card>
+          <CardContent className="grid gap-3 pt-5 sm:grid-cols-3">
+            <div className="flex items-center gap-3 rounded-xl border-2 border-foreground/10 bg-accent/40 p-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border-2 border-foreground/15 bg-background">
+                <ShoppingBag className="size-4 text-primary" />
+              </span>
+              <div className="min-w-0">
+                <p className="font-display text-lg font-bold leading-none">
+                  {itemsThisMonth}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {itemsThisMonth === 1 ? "item comido" : "itens comidos"} esse mês
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-xl border-2 border-foreground/10 bg-accent/40 p-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border-2 border-foreground/15 bg-background">
+                <Store className="size-4 text-primary" />
+              </span>
+              <div className="min-w-0">
+                <p className="font-display text-lg font-bold leading-none">
+                  {restaurantIdsThisMonth.size}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {restaurantIdsThisMonth.size === 1
+                    ? "restaurante esse mês"
+                    : "restaurantes esse mês"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-xl border-2 border-foreground/10 bg-accent/40 p-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border-2 border-foreground/15 bg-background">
+                <UtensilsCrossed className="size-4 text-primary" />
+              </span>
+              <div className="min-w-0">
+                <p className="font-display text-lg font-bold leading-none">
+                  {formatBRL(spentThisMonth)}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  gastos esse mês
+                </p>
+              </div>
+            </div>
+
+            {favoriteRestaurant && (
+              <Link
+                href={
+                  favoriteRestaurant.slug ? `/r/${favoriteRestaurant.slug}` : "#"
+                }
+                className="group flex items-center gap-3 rounded-xl border-2 border-primary/30 bg-primary/5 p-3 transition-colors hover:border-primary/60 sm:col-span-3"
+              >
+                {favoriteRestaurant.cover ? (
+                  <div
+                    className="size-10 shrink-0 rounded-lg border-2 border-foreground/15 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${favoriteRestaurant.cover})` }}
+                  />
+                ) : (
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border-2 border-foreground/15 bg-background">
+                    <Heart className="size-4 text-primary" />
+                  </span>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold uppercase tracking-wide text-primary">
+                    Seu favorito
+                  </p>
+                  <p className="truncate text-sm font-semibold">
+                    {favoriteRestaurant.name}
+                    <span className="ml-1.5 font-normal text-muted-foreground">
+                      · {favoriteRestaurant.count}{" "}
+                      {favoriteRestaurant.count === 1 ? "pedido" : "pedidos"}
+                    </span>
+                  </p>
+                </div>
+                <ArrowRight className="size-4 shrink-0 text-primary transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Peça de novo</CardTitle>
+          <CardTitle className="text-base">
+            {hasOrderHistory ? "Peça de novo" : "Descubra restaurantes"}
+          </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
-          {restaurants.map((r) => (
+          {restaurantsToShow.map((r) => (
             <Link
               key={r.id}
               href={`/r/${r.slug}`}
