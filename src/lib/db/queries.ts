@@ -3,7 +3,7 @@
  * usados pelo frontend (ids como string, centavos → reais).
  * Use em Server Components e Route Handlers.
  */
-import { avg, desc, eq } from "drizzle-orm";
+import { and, avg, desc, eq } from "drizzle-orm";
 import { db } from "./index";
 import { deliveryZones, orders, restaurants, reviewHides, reviews } from "./schema";
 import type {
@@ -229,6 +229,19 @@ export async function getOrderById(orderId: number): Promise<Order | null> {
   return row ? mapOrder(row) : null;
 }
 
+/** Recalcula a média (rating) do restaurante a partir das avaliações não ocultas. */
+async function recomputeRestaurantRating(restaurantId: number) {
+  const [agg] = await db
+    .select({ avgRating: avg(reviews.rating) })
+    .from(reviews)
+    .where(and(eq(reviews.restaurantId, restaurantId), eq(reviews.hidden, false)));
+
+  await db
+    .update(restaurants)
+    .set({ rating: String(Number(agg?.avgRating ?? 0).toFixed(1)) })
+    .where(eq(restaurants.id, restaurantId));
+}
+
 /** Cria a avaliação de um pedido e recalcula a média (rating) do restaurante. */
 export async function createReview(input: {
   restaurantId: number;
@@ -250,15 +263,7 @@ export async function createReview(input: {
     })
     .returning();
 
-  const [agg] = await db
-    .select({ avgRating: avg(reviews.rating) })
-    .from(reviews)
-    .where(eq(reviews.restaurantId, input.restaurantId));
-
-  await db
-    .update(restaurants)
-    .set({ rating: String(Number(agg?.avgRating ?? 0).toFixed(1)) })
-    .where(eq(restaurants.id, input.restaurantId));
+  await recomputeRestaurantRating(input.restaurantId);
 
   return created;
 }
@@ -363,6 +368,8 @@ export async function setReviewHidden(input: {
       .set({ hidden: false })
       .where(eq(reviews.id, input.reviewId));
   }
+
+  await recomputeRestaurantRating(input.restaurantId);
 
   return { ok: true };
 }

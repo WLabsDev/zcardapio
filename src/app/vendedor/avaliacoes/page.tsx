@@ -48,9 +48,11 @@ export default function AvaliacoesPage() {
     load();
   };
 
+  // A nota exibida no cardápio público considera só avaliações visíveis.
+  const visibleReviews = reviews.filter((r) => !r.hidden);
   const avg =
-    reviews.length > 0
-      ? reviews.reduce((a, r) => a + r.rating, 0) / reviews.length
+    visibleReviews.length > 0
+      ? visibleReviews.reduce((a, r) => a + r.rating, 0) / visibleReviews.length
       : 0;
 
   return (
