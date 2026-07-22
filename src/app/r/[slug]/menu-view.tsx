@@ -199,6 +199,9 @@ export function MenuView({
     );
   }, [products, search]);
 
+  // Conta só as avaliações realmente públicas (a própria, mesmo oculta, some da contagem).
+  const visibleReviewCount = reviews.filter((r) => !r.hidden).length;
+
   const byCategory = (categoryId: string) =>
     filtered.filter((p) => p.categoryId === categoryId);
 
@@ -396,8 +399,8 @@ export function MenuView({
                 <Star className="size-4 fill-amber-400 text-amber-400" />
                 {restaurant.rating.toFixed(1)}
               </span>
-              · {reviews.length}{" "}
-              {reviews.length === 1 ? "avaliação" : "avaliações"}
+              · {visibleReviewCount}{" "}
+              {visibleReviewCount === 1 ? "avaliação" : "avaliações"}
             </div>
             <div className="mt-3 space-y-3">
               {reviews.slice(0, 5).map((r) => (
