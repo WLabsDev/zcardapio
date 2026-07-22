@@ -159,56 +159,53 @@ export default function AvaliacoesPage() {
           description="Quando clientes avaliarem pedidos entregues, elas aparecem aqui."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {reviews.map((r) => (
             <Card
               key={r.id}
-              className={cn(r.hidden && "border-dashed opacity-70")}
+              className={cn("py-3", r.hidden && "border-dashed opacity-70")}
             >
-              <CardContent className="space-y-2">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="flex items-center gap-1.5 font-semibold">
-                      {r.customerName}
-                      {r.hidden && (
-                        <Badge variant="outline" className="text-[10px]">
-                          Oculta
-                        </Badge>
-                      )}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(r.createdAt).toLocaleString("pt-BR", {
-                        dateStyle: "short",
-                        timeStyle: "short",
-                      })}
-                    </p>
-                  </div>
-                  <span className="flex shrink-0 items-center gap-1 font-semibold text-amber-500">
-                    <Star className="size-4 fill-amber-400 text-amber-400" />
-                    {r.rating}
-                  </span>
-                </div>
-                {r.comment && <p className="text-sm">{r.comment}</p>}
-                <div className="flex justify-end pt-1">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={updatingId === r.id}
-                    onClick={() => toggleHidden(r)}
-                  >
-                    {r.hidden ? (
-                      <Eye className="size-3.5" />
-                    ) : (
-                      <EyeOff className="size-3.5" />
+              <CardContent className="space-y-1 px-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="flex min-w-0 items-baseline gap-1.5 truncate text-sm font-semibold">
+                    <span className="truncate">{r.customerName}</span>
+                    <span className="shrink-0 text-xs font-normal text-muted-foreground">
+                      {new Date(r.createdAt).toLocaleDateString("pt-BR")}
+                    </span>
+                    {r.hidden && (
+                      <Badge variant="outline" className="shrink-0 text-[10px]">
+                        Oculta
+                      </Badge>
                     )}
-                    {updatingId === r.id
-                      ? "Salvando..."
-                      : r.hidden
-                        ? "Reexibir"
-                        : "Ocultar"}
-                  </Button>
+                  </p>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="flex items-center gap-1 text-sm font-semibold text-amber-500">
+                      <Star className="size-3.5 fill-amber-400 text-amber-400" />
+                      {r.rating}
+                    </span>
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant="outline"
+                      disabled={updatingId === r.id}
+                      onClick={() => toggleHidden(r)}
+                    >
+                      {r.hidden ? (
+                        <Eye className="size-3" />
+                      ) : (
+                        <EyeOff className="size-3" />
+                      )}
+                      {updatingId === r.id
+                        ? "Salvando..."
+                        : r.hidden
+                          ? "Reexibir"
+                          : "Ocultar"}
+                    </Button>
+                  </div>
                 </div>
+                {r.comment && (
+                  <p className="text-sm text-muted-foreground">{r.comment}</p>
+                )}
               </CardContent>
             </Card>
           ))}
