@@ -62,6 +62,7 @@ function mapRestaurant(r: RestaurantRow): Restaurant {
     badgeTextColor: r.badgeTextColor,
     acceptsScheduled: r.acceptsScheduled,
     reviewsEnabled: r.reviewsEnabled,
+    pixKey: r.pixKey,
   };
 }
 

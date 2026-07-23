@@ -7,6 +7,7 @@ import {
   Bike,
   Check,
   CheckCircle2,
+  Copy,
   MapPin,
   MessageCircle,
   Plus,
@@ -61,6 +62,11 @@ export function CheckoutView({
     "entrega"
   );
   const [done, setDone] = useState(false);
+  const [orderResult, setOrderResult] = useState<{
+    code: string;
+    total: number;
+    pix: { brCode: string; qrImage: string } | null;
+  } | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [street, setStreet] = useState("");
@@ -205,6 +211,11 @@ export function CheckoutView({
     }
 
     cart.clear();
+    setOrderResult({
+      code: data.order.code,
+      total: data.order.total,
+      pix: data.pix ?? null,
+    });
     setDone(true);
     toast.success(`Pedido ${data.order.code} enviado ao restaurante!`);
   }
@@ -221,8 +232,51 @@ export function CheckoutView({
             {restaurant.confirmMessage?.trim() ||
               `O ${restaurant.name} recebeu seu pedido e vai confirmar em instantes. Você pode acompanhar o status no seu painel.`}
           </p>
+
+          {orderResult?.pix && (
+            <Card className="w-full max-w-sm text-left">
+              <CardContent className="flex flex-col items-center gap-3">
+                <p className="text-sm font-semibold">
+                  Pague {formatBRL(orderResult.total)} com Pix
+                </p>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={orderResult.pix.qrImage}
+                  alt="QR Code Pix"
+                  className="size-48 rounded-lg border-2 border-foreground/10"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    navigator.clipboard.writeText(orderResult.pix!.brCode).catch(() => {});
+                    toast.success("Código Pix copiado!");
+                  }}
+                >
+                  <Copy className="size-4" />
+                  Pix copia e cola
+                </Button>
+                {restaurant.whatsapp?.trim() && (
+                  <Button className="w-full rounded-full font-semibold shadow-offset-sm" asChild>
+                    <a
+                      href={`https://wa.me/55${restaurant.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(
+                        `Olá! Segue o comprovante do pedido ${orderResult.code} no valor de ${formatBRL(orderResult.total)}.`
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <MessageCircle className="size-4" />
+                      Enviar comprovante no WhatsApp
+                    </a>
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           <div className="flex flex-wrap justify-center gap-3">
-            {restaurant.whatsapp?.trim() && (
+            {!orderResult?.pix && restaurant.whatsapp?.trim() && (
               <Button className="rounded-full font-semibold shadow-offset-sm" asChild>
                 <a
                   href={`https://wa.me/55${restaurant.whatsapp.replace(/\D/g, "")}`}

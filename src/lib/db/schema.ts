@@ -123,6 +123,9 @@ export const restaurants = pgTable(
     acceptsScheduled: boolean("accepts_scheduled").notNull().default(false),
     // Desativar avaliações é recurso de plano pro+ (ver requireProPlan em lib/vendedor.ts).
     reviewsEnabled: boolean("reviews_enabled").notNull().default(true),
+    // Chave Pix pra gerar o QR Code estático no checkout — o dinheiro cai direto
+    // na conta do restaurante, a plataforma nunca chega a tocar no valor.
+    pixKey: varchar("pix_key", { length: 140 }).notNull().default(""),
     status: restaurantStatusEnum("status").notNull().default("pendente"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },

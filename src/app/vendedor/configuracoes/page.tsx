@@ -154,6 +154,7 @@ type Settings = {
   confirmMessage: string;
   paymentMethods: PaymentMethod[];
   acceptsScheduled: boolean;
+  pixKey: string;
 };
 
 export default function ConfiguracoesPage() {
@@ -184,6 +185,7 @@ export default function ConfiguracoesPage() {
           paymentMethods:
             r.paymentMethods?.length ? r.paymentMethods : [...ALL_PAYMENTS],
           acceptsScheduled: r.acceptsScheduled ?? false,
+          pixKey: r.pixKey ?? "",
         });
       })
       .catch(() => toast.error("Não foi possível carregar as configurações."));
@@ -241,6 +243,7 @@ export default function ConfiguracoesPage() {
         confirmMessage: form.confirmMessage.trim(),
         paymentMethods: form.paymentMethods,
         acceptsScheduled: form.acceptsScheduled,
+        pixKey: form.pixKey.trim(),
       }),
     }).catch(() => null);
     const data = await res?.json().catch(() => null);
@@ -475,6 +478,21 @@ export default function ConfiguracoesPage() {
               />
             </div>
           ))}
+          {form.paymentMethods.includes("pix") && (
+            <div className="grid gap-2 rounded-lg border p-3">
+              <Label htmlFor="pixKey">Chave Pix</Label>
+              <Input
+                id="pixKey"
+                value={form.pixKey}
+                onChange={(e) => set("pixKey", e.target.value)}
+                placeholder="CPF/CNPJ, e-mail, telefone ou chave aleatória"
+              />
+              <p className="text-xs text-muted-foreground">
+                Gera um QR Code Pix real no checkout. O dinheiro cai direto na
+                sua conta — o zCardápio nunca recebe nem repassa o pagamento.
+              </p>
+            </div>
+          )}
       </SettingsSection>
 
       <SettingsSection

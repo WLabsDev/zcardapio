@@ -1,0 +1,1 @@
+ALTER TABLE "restaurants" ADD COLUMN "pix_key" varchar(140) DEFAULT '' NOT NULL;

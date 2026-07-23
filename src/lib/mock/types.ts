@@ -143,6 +143,8 @@ export type Restaurant = {
   acceptsScheduled?: boolean;
   /** clientes podem avaliar pedidos entregues (desativar é recurso pro+) */
   reviewsEnabled?: boolean;
+  /** chave Pix para gerar o QR Code estático no checkout */
+  pixKey?: string;
 };
 
 export type OrderStatus =

@@ -23,6 +23,7 @@ import {
 import { computeOpenState } from "@/lib/hours";
 import { formatBRL, isAvailable } from "@/lib/mock/types";
 import { normalizePhone } from "@/lib/phone";
+import { generateOrderPix } from "@/lib/pix";
 import { FREE_PLAN_MONTHLY_ORDER_LIMIT, isFreePlan } from "@/lib/plan-limits";
 import { publishOrderEvent } from "@/lib/realtime";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
@@ -442,6 +443,16 @@ export async function POST(request: Request) {
     );
   }
 
+  const pix =
+    data.paymentMethod === "pix"
+      ? await generateOrderPix({
+          pixKey: restaurant.pixKey,
+          restaurantName: restaurant.name,
+          amountCents: totalCents,
+          orderCode: orderCode(order.id),
+        }).catch(() => null)
+      : null;
+
   return Response.json(
     {
       order: {
@@ -449,6 +460,7 @@ export async function POST(request: Request) {
         code: orderCode(order.id),
         total: totalCents / 100,
       },
+      pix,
     },
     { status: 201 }
   );

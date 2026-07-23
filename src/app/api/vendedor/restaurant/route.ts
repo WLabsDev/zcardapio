@@ -61,6 +61,7 @@ const putSchema = z.object({
   bannerText: z.string().max(200).optional(),
   whatsapp: z.string().max(20).optional(),
   confirmMessage: z.string().max(300).optional(),
+  pixKey: z.string().max(140).optional(),
   // Pagamentos
   paymentMethods: z.array(z.enum(["pix", "cartao", "dinheiro"])).min(1).optional(),
   // Aparência avançada
@@ -156,6 +157,7 @@ export async function PUT(request: Request) {
       ...(d.bannerText !== undefined && { bannerText: d.bannerText }),
       ...(d.whatsapp !== undefined && { whatsapp: d.whatsapp }),
       ...(d.confirmMessage !== undefined && { confirmMessage: d.confirmMessage }),
+      ...(d.pixKey !== undefined && { pixKey: d.pixKey }),
       ...(d.paymentMethods !== undefined && { paymentMethods: d.paymentMethods }),
       ...(d.theme !== undefined && { theme: d.theme }),
       ...(d.font !== undefined && { font: d.font }),
