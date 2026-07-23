@@ -141,7 +141,7 @@ export default async function LandingPage() {
             </p>
           </div>
 
-          <PhoneMockup />
+          <PhoneMockup compact />
         </div>
       </section>
 

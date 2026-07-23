@@ -1,16 +1,22 @@
 /** Mockup ilustrativo do cardápio no celular — mesmo usado no hero da landing page. */
-export function PhoneMockup() {
+export function PhoneMockup({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="relative mx-auto w-full max-w-[290px]">
+    <div
+      className={
+        compact
+          ? "relative mx-auto w-full max-w-[290px]"
+          : "relative mx-auto w-full max-w-[240px]"
+      }
+    >
       <span
         aria-hidden
-        className="absolute -left-10 top-8 hidden -rotate-12 rounded-lg border-2 border-foreground bg-background px-3 py-1.5 font-display text-sm font-bold shadow-offset-sm md:block"
+        className="absolute -left-6 top-4 z-20 hidden -rotate-12 rounded-lg border-2 border-foreground bg-background px-2.5 py-1 font-display text-xs font-bold shadow-offset-sm md:block"
       >
         pedido novo! 🔔
       </span>
       <span
         aria-hidden
-        className="absolute -right-8 bottom-24 z-20 hidden rotate-6 rounded-lg border-2 border-foreground bg-primary px-3 py-1.5 font-display text-sm font-bold text-primary-foreground shadow-offset-sm md:block"
+        className="absolute -right-6 bottom-20 z-20 hidden rotate-6 rounded-lg border-2 border-foreground bg-primary px-2.5 py-1 font-display text-xs font-bold text-primary-foreground shadow-offset-sm md:block"
       >
         + R$ 88,70
       </span>
