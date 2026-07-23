@@ -266,24 +266,13 @@ export function LoginForm() {
           </form>
         </Form>
         <p className="mt-4 text-center text-sm text-muted-foreground">
-          {isWhatsapp ? (
-            <>
-              Sua conta é criada automaticamente no primeiro pedido.{" "}
-              <Link href="/cadastro" className="text-primary hover:underline">
-                Prefiro criar agora
-              </Link>
-            </>
-          ) : (
-            <>
-              Não tem conta?{" "}
-              <Link
-                href="/cadastro-restaurante"
-                className="text-primary hover:underline"
-              >
-                Cadastrar restaurante
-              </Link>
-            </>
-          )}
+          Não tem conta?{" "}
+          <Link
+            href="/cadastro-restaurante"
+            className="text-primary hover:underline"
+          >
+            Cadastrar restaurante
+          </Link>
         </p>
       </CardContent>
     </Card>
