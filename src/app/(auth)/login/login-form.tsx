@@ -42,29 +42,32 @@ const roleHome: Record<string, string> = {
 
 export function LoginForm() {
   const router = useRouter();
-  const [profile, setProfile] = useState("cliente");
+  // "cliente" = entra por WhatsApp; "restaurante" = entra por e-mail (cobre
+  // restaurante e admin — ver src/app/api/auth/login/route.ts). O usuário só
+  // escolhe o método de entrada, não precisa saber/declarar qual é o perfil.
+  const [method, setMethod] = useState<"cliente" | "restaurante">("cliente");
   const [step, setStep] = useState<"login" | "set-password">("login");
   const [setupPhone, setSetupPhone] = useState("");
   const [newPass, setNewPass] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
   const [settingPass, setSettingPass] = useState(false);
 
-  const isCliente = profile === "cliente";
+  const isWhatsapp = method === "cliente";
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { identifier: "", senha: "" },
   });
 
-  function changeProfile(next: string) {
-    setProfile(next);
+  function changeMethod(next: string) {
+    setMethod(next as "cliente" | "restaurante");
     form.reset({ identifier: "", senha: "" });
   }
 
   async function onSubmit(values: LoginValues) {
-    const payload = isCliente
-      ? { phone: values.identifier, senha: values.senha, profile }
-      : { email: values.identifier, senha: values.senha, profile };
+    const payload = isWhatsapp
+      ? { phone: values.identifier, senha: values.senha, profile: method }
+      : { email: values.identifier, senha: values.senha, profile: method };
 
     const res = await fetch("/api/auth/login", {
       method: "POST",
@@ -194,13 +197,13 @@ export function LoginForm() {
     <Card className="w-full max-w-md border-2 border-foreground shadow-offset">
       <CardHeader>
         <CardTitle className="text-2xl">Bem-vindo de volta 👋</CardTitle>
-        <CardDescription>Acesse sua conta do zCardapio.</CardDescription>
+        <CardDescription>Como você quer entrar?</CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs value={profile} onValueChange={changeProfile} className="mb-4">
+        <Tabs value={method} onValueChange={changeMethod} className="mb-4">
           <TabsList className="w-full">
-            <TabsTrigger value="cliente" className="flex-1">Cliente</TabsTrigger>
-            <TabsTrigger value="restaurante" className="flex-1">Restaurante</TabsTrigger>
+            <TabsTrigger value="cliente" className="flex-1">WhatsApp</TabsTrigger>
+            <TabsTrigger value="restaurante" className="flex-1">E-mail</TabsTrigger>
           </TabsList>
         </Tabs>
         <Form {...form}>
@@ -214,12 +217,12 @@ export function LoginForm() {
               name="identifier"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{isCliente ? "WhatsApp" : "E-mail"}</FormLabel>
+                  <FormLabel>{isWhatsapp ? "WhatsApp" : "E-mail"}</FormLabel>
                   <FormControl>
                     <Input
-                      type={isCliente ? "tel" : "email"}
-                      placeholder={isCliente ? "(11) 99999-1234" : "voce@email.com"}
-                      autoComplete={isCliente ? "tel" : "email"}
+                      type={isWhatsapp ? "tel" : "email"}
+                      placeholder={isWhatsapp ? "(11) 99999-1234" : "voce@email.com"}
+                      autoComplete={isWhatsapp ? "tel" : "email"}
                       {...field}
                     />
                   </FormControl>
@@ -235,7 +238,7 @@ export function LoginForm() {
                   <div className="flex items-center justify-between">
                     <FormLabel>Senha</FormLabel>
                     <Link
-                      href={isCliente ? "/recuperar-senha-cliente" : "/recuperar-senha"}
+                      href={isWhatsapp ? "/recuperar-senha-cliente" : "/recuperar-senha"}
                       className="text-xs text-primary hover:underline"
                     >
                       Esqueci minha senha
@@ -263,7 +266,7 @@ export function LoginForm() {
           </form>
         </Form>
         <p className="mt-4 text-center text-sm text-muted-foreground">
-          {isCliente ? (
+          {isWhatsapp ? (
             <>
               Sua conta é criada automaticamente no primeiro pedido.{" "}
               <Link href="/cadastro" className="text-primary hover:underline">
