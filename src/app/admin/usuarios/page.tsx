@@ -1,11 +1,35 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Search, SearchX } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Plus, Search, SearchX } from "lucide-react";
 import { EmptyState } from "@/components/panel/empty-state";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -14,7 +38,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useBackToClose } from "@/hooks/use-back-to-close";
 import { toast } from "sonner";
 
 type AdminUser = {
@@ -32,16 +56,44 @@ const roleLabel = {
   cliente: "Cliente",
 } as const;
 
+type UserForm = {
+  name: string;
+  email: string;
+  phone: string;
+  role: "admin" | "restaurante" | "cliente";
+  senha: string;
+};
+
+const emptyForm: UserForm = {
+  name: "",
+  email: "",
+  phone: "",
+  role: "cliente",
+  senha: "",
+};
+
 export default function AdminUsuariosPage() {
   const [search, setSearch] = useState("");
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [editing, setEditing] = useState<AdminUser | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [form, setForm] = useState<UserForm>(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<AdminUser | null>(null);
+
+  useBackToClose(dialogOpen, () => setDialogOpen(false));
+  useBackToClose(!!deleting, () => setDeleting(null));
+
+  const load = useCallback(async () => {
+    const res = await fetch("/api/admin/users").catch(() => null);
+    const data = await res?.json().catch(() => null);
+    if (res?.ok && data) setUsers(data.users);
+    else toast.error("Não foi possível carregar os usuários.");
+  }, []);
 
   useEffect(() => {
-    fetch("/api/admin/users")
-      .then((res) => res.json())
-      .then((data) => setUsers(data?.users ?? []))
-      .catch(() => toast.error("Não foi possível carregar os usuários."));
-  }, []);
+    load();
+  }, [load]);
 
   const filtered = users.filter(
     (u) =>
@@ -50,13 +102,80 @@ export default function AdminUsuariosPage() {
       (u.phone ?? "").includes(search)
   );
 
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyForm);
+    setDialogOpen(true);
+  };
+
+  const openEdit = (u: AdminUser) => {
+    setEditing(u);
+    setForm({
+      name: u.name,
+      email: u.email ?? "",
+      phone: u.phone ?? "",
+      role: u.role,
+      senha: "",
+    });
+    setDialogOpen(true);
+  };
+
+  const save = async () => {
+    setSaving(true);
+    const res = await fetch(
+      editing ? `/api/admin/users/${editing.id}` : "/api/admin/users",
+      {
+        method: editing ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          phone: form.phone.trim(),
+          role: form.role,
+          senha: form.senha,
+        }),
+      }
+    ).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    setSaving(false);
+    if (!res?.ok) {
+      toast.error(data?.message ?? "Não foi possível salvar.");
+      return;
+    }
+    setDialogOpen(false);
+    toast.success(editing ? "Usuário atualizado!" : "Usuário criado!");
+    load();
+  };
+
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    const res = await fetch(`/api/admin/users/${deleting.id}`, {
+      method: "DELETE",
+    }).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    if (!res?.ok) {
+      toast.error(data?.message ?? "Não foi possível excluir.");
+      setDeleting(null);
+      return;
+    }
+    setUsers((prev) => prev.filter((u) => u.id !== deleting.id));
+    setDeleting(null);
+    toast.success("Usuário excluído.");
+  };
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div>
-        <h2 className="font-display text-xl font-bold">Usuários</h2>
-        <p className="text-sm text-muted-foreground">
-          Todos os usuários cadastrados na plataforma.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-display text-xl font-bold">Usuários</h2>
+          <p className="text-sm text-muted-foreground">
+            Todos os usuários cadastrados na plataforma.
+          </p>
+        </div>
+        <Button onClick={openCreate}>
+          <Plus className="size-4" />
+          Novo usuário
+        </Button>
       </div>
 
       <div className="relative max-w-sm">
@@ -78,6 +197,7 @@ export default function AdminUsuariosPage() {
                 <TableHead className="hidden sm:table-cell">E-mail</TableHead>
                 <TableHead>Perfil</TableHead>
                 <TableHead className="hidden sm:table-cell">Cadastro</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -108,11 +228,31 @@ export default function AdminUsuariosPage() {
                   <TableCell className="hidden sm:table-cell">
                     {new Date(u.createdAt).toLocaleDateString("pt-BR")}
                   </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          Gerenciar
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openEdit(u)}>
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          variant="destructive"
+                          onClick={() => setDeleting(u)}
+                        >
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               ))}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4}>
+                  <TableCell colSpan={5}>
                     <EmptyState
                       compact
                       icon={SearchX}
@@ -126,6 +266,98 @@ export default function AdminUsuariosPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editing ? "Editar usuário" : "Novo usuário"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="uname">Nome</Label>
+              <Input
+                id="uname"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="uemail">E-mail</Label>
+                <Input
+                  id="uemail"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="uphone">Telefone</Label>
+                <Input
+                  id="uphone"
+                  value={form.phone}
+                  onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label>Perfil</Label>
+              <Select
+                value={form.role}
+                onValueChange={(v: UserForm["role"]) =>
+                  setForm((f) => ({ ...f, role: v }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cliente">Cliente</SelectItem>
+                  <SelectItem value="restaurante">Restaurante</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="usenha">
+                {editing ? "Nova senha (opcional)" : "Senha (opcional)"}
+              </Label>
+              <Input
+                id="usenha"
+                type="password"
+                placeholder={editing ? "Deixe em branco para manter" : "••••••••"}
+                value={form.senha}
+                onChange={(e) => setForm((f) => ({ ...f, senha: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={save} disabled={saving}>
+              {saving ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deleting} onOpenChange={(o: boolean) => !o && setDeleting(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir usuário?</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir <strong>{deleting?.name}</strong>? Essa
+              ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleting(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

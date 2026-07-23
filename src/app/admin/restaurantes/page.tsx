@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ExternalLink, Eye, Search, SearchX } from "lucide-react";
@@ -9,7 +9,23 @@ import { EmptyState } from "@/components/panel/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +40,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useBackToClose } from "@/hooks/use-back-to-close";
 import { cn } from "@/lib/utils";
 
 type AdminRestaurant = {
@@ -31,11 +48,16 @@ type AdminRestaurant = {
   slug: string;
   name: string;
   segment: string;
+  address: string;
+  phone: string;
   logo: string;
   plan: string;
+  planId: number | null;
   status: "ativo" | "pendente" | "bloqueado";
   createdAt: string;
 };
+
+type AdminPlan = { id: string; name: string };
 
 const statusVariant = {
   ativo: "default",
@@ -43,18 +65,44 @@ const statusVariant = {
   bloqueado: "destructive",
 } as const;
 
+type RestaurantForm = {
+  name: string;
+  slug: string;
+  segment: string;
+  address: string;
+  phone: string;
+  status: AdminRestaurant["status"];
+  planId: string;
+};
+
 export default function AdminRestaurantesPage() {
   const router = useRouter();
   const [restaurants, setRestaurants] = useState<AdminRestaurant[]>([]);
+  const [plans, setPlans] = useState<AdminPlan[]>([]);
   const [search, setSearch] = useState("");
   const [viewingAsId, setViewingAsId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<AdminRestaurant | null>(null);
+  const [form, setForm] = useState<RestaurantForm | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<AdminRestaurant | null>(null);
+
+  useBackToClose(!!editing, () => setEditing(null));
+  useBackToClose(!!deleting, () => setDeleting(null));
+
+  const load = useCallback(async () => {
+    const res = await fetch("/api/admin/restaurants").catch(() => null);
+    const data = await res?.json().catch(() => null);
+    if (res?.ok && data) setRestaurants(data.restaurants);
+    else toast.error("Não foi possível carregar os restaurantes.");
+  }, []);
 
   useEffect(() => {
-    fetch("/api/admin/restaurants")
+    load();
+    fetch("/api/admin/plans")
       .then((res) => res.json())
-      .then((data) => setRestaurants(data?.restaurants ?? []))
-      .catch(() => toast.error("Não foi possível carregar os restaurantes."));
-  }, []);
+      .then((data) => setPlans(data?.plans ?? []))
+      .catch(() => {});
+  }, [load]);
 
   const filtered = restaurants.filter((r) =>
     r.name.toLowerCase().includes(search.toLowerCase())
@@ -91,6 +139,62 @@ export default function AdminRestaurantesPage() {
     }
     router.push(data.redirect);
     router.refresh();
+  };
+
+  const openEdit = (r: AdminRestaurant) => {
+    setEditing(r);
+    setForm({
+      name: r.name,
+      slug: r.slug,
+      segment: r.segment,
+      address: r.address,
+      phone: r.phone,
+      status: r.status,
+      planId: r.planId ? String(r.planId) : "",
+    });
+  };
+
+  const save = async () => {
+    if (!editing || !form) return;
+    setSaving(true);
+    const res = await fetch(`/api/admin/restaurants/${editing.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: form.name.trim(),
+        slug: form.slug.trim(),
+        segment: form.segment.trim(),
+        address: form.address.trim(),
+        phone: form.phone.trim(),
+        status: form.status,
+        planId: form.planId ? Number(form.planId) : null,
+      }),
+    }).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    setSaving(false);
+    if (!res?.ok) {
+      toast.error(data?.message ?? "Não foi possível salvar.");
+      return;
+    }
+    setEditing(null);
+    toast.success("Restaurante atualizado!");
+    load();
+  };
+
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    const res = await fetch(`/api/admin/restaurants/${deleting.id}`, {
+      method: "DELETE",
+    }).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    if (!res?.ok) {
+      toast.error(data?.message ?? "Não foi possível excluir.");
+      setDeleting(null);
+      return;
+    }
+    setRestaurants((prev) => prev.filter((r) => r.id !== deleting.id));
+    setDeleting(null);
+    toast.success("Restaurante excluído.");
   };
 
   return (
@@ -187,6 +291,9 @@ export default function AdminRestaurantesPage() {
                             ? "Entrando..."
                             : "Ver como restaurante"}
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openEdit(r)}>
+                          Editar
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setStatus(r.id, "ativo")}>
                           Aprovar / Ativar
                         </DropdownMenuItem>
@@ -195,6 +302,12 @@ export default function AdminRestaurantesPage() {
                           onClick={() => setStatus(r.id, "bloqueado")}
                         >
                           Bloquear
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          variant="destructive"
+                          onClick={() => setDeleting(r)}
+                        >
+                          Excluir
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -217,6 +330,129 @@ export default function AdminRestaurantesPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!editing} onOpenChange={(o: boolean) => !o && setEditing(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar restaurante</DialogTitle>
+          </DialogHeader>
+          {form && (
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="rname">Nome</Label>
+                <Input
+                  id="rname"
+                  value={form.name}
+                  onChange={(e) => setForm((f) => f && { ...f, name: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="rslug">Endereço do cardápio</Label>
+                <Input
+                  id="rslug"
+                  value={form.slug}
+                  onChange={(e) => setForm((f) => f && { ...f, slug: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="rsegment">Segmento</Label>
+                  <Input
+                    id="rsegment"
+                    value={form.segment}
+                    onChange={(e) =>
+                      setForm((f) => f && { ...f, segment: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="rphone">Telefone</Label>
+                  <Input
+                    id="rphone"
+                    value={form.phone}
+                    onChange={(e) => setForm((f) => f && { ...f, phone: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="raddress">Endereço</Label>
+                <Input
+                  id="raddress"
+                  value={form.address}
+                  onChange={(e) =>
+                    setForm((f) => f && { ...f, address: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Plano</Label>
+                  <Select
+                    value={form.planId}
+                    onValueChange={(v: string) =>
+                      setForm((f) => f && { ...f, planId: v })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {plans.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Status</Label>
+                  <Select
+                    value={form.status}
+                    onValueChange={(v: AdminRestaurant["status"]) =>
+                      setForm((f) => f && { ...f, status: v })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ativo">Ativo</SelectItem>
+                      <SelectItem value="pendente">Pendente</SelectItem>
+                      <SelectItem value="bloqueado">Bloqueado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={save} disabled={saving}>
+              {saving ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deleting} onOpenChange={(o: boolean) => !o && setDeleting(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir restaurante?</DialogTitle>
+            <DialogDescription>
+              Isso apaga <strong>{deleting?.name}</strong> e todos os pedidos,
+              produtos e dados relacionados, permanentemente.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleting(null)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

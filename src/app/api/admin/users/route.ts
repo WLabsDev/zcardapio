@@ -1,4 +1,6 @@
-import { ilike, or } from "drizzle-orm";
+import { hash } from "bcryptjs";
+import { eq, ilike, or } from "drizzle-orm";
+import { z } from "zod";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/admin";
@@ -34,4 +36,55 @@ export async function GET(request: Request) {
       createdAt: u.createdAt.toISOString(),
     })),
   });
+}
+
+const postSchema = z.object({
+  name: z.string().min(2, "Informe o nome.").max(120),
+  email: z.union([z.email("E-mail inválido."), z.literal("")]).default(""),
+  phone: z.string().max(20).default(""),
+  role: z.enum(["admin", "restaurante", "cliente"]),
+  senha: z.union([z.string().min(8, "Mínimo de 8 caracteres."), z.literal("")]).default(""),
+});
+
+export async function POST(request: Request) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
+  const body = await request.json().catch(() => null);
+  const parsed = postSchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json(
+      { message: parsed.error.issues[0]?.message ?? "Dados inválidos." },
+      { status: 400 }
+    );
+  }
+  const d = parsed.data;
+  const email = d.email.trim().toLowerCase();
+  const phone = d.phone.trim();
+
+  if (email) {
+    const taken = await db.query.users.findFirst({ where: eq(users.email, email) });
+    if (taken) {
+      return Response.json({ message: "Este e-mail já está em uso." }, { status: 409 });
+    }
+  }
+  if (phone) {
+    const taken = await db.query.users.findFirst({ where: eq(users.phone, phone) });
+    if (taken) {
+      return Response.json({ message: "Este telefone já está em uso." }, { status: 409 });
+    }
+  }
+
+  const [created] = await db
+    .insert(users)
+    .values({
+      name: d.name.trim(),
+      email: email || null,
+      phone: phone || null,
+      role: d.role,
+      passwordHash: d.senha ? await hash(d.senha, 10) : null,
+    })
+    .returning({ id: users.id });
+
+  return Response.json({ id: String(created.id) }, { status: 201 });
 }
