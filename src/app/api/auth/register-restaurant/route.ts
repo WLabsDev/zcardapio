@@ -16,7 +16,9 @@ const registerRestaurantSchema = z.object({
     .min(3, "Escolha o endereço do seu cardápio.")
     .regex(/^[a-z0-9-]+$/, "Use apenas letras minúsculas, números e hífens."),
   segmento: z.string().min(1, "Selecione o segmento."),
+  endereco: z.string().min(5, "Informe o endereço."),
   cidade: z.string().min(2, "Informe a cidade."),
+  estado: z.string().length(2, "Selecione o estado."),
   plano: z.enum(["gratis", "pro", "premium"]).optional(),
 });
 
@@ -44,9 +46,12 @@ export async function POST(request: Request) {
     restauranteNome,
     slug,
     segmento,
+    endereco,
     cidade,
+    estado,
     plano,
   } = parsed.data;
+  const address = `${endereco.trim()} — ${cidade.trim()}/${estado}`;
   const normalizedEmail = email.toLowerCase();
 
   const existingEmail = await db.query.users.findFirst({
@@ -97,7 +102,7 @@ export async function POST(request: Request) {
         slug,
         name: restauranteNome,
         segment: segmento,
-        address: cidade,
+        address,
         phone: telefone,
         // Novo restaurante já entra no ar — a promessa é "no ar em uma noite".
         status: "ativo",

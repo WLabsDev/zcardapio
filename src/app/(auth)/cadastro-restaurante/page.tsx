@@ -37,6 +37,12 @@ import { cn } from "@/lib/utils";
 
 const steps = ["Seus dados", "Restaurante", "Plano"];
 
+const UFS = [
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO",
+  "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI",
+  "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
+];
+
 const cadastroRestauranteSchema = z.object({
   nome: z.string().min(3, "Informe seu nome completo."),
   email: z.email("Informe um e-mail válido."),
@@ -48,7 +54,9 @@ const cadastroRestauranteSchema = z.object({
     .min(3, "Escolha o endereço do seu cardápio.")
     .regex(/^[a-z0-9-]+$/, "Use apenas letras minúsculas, números e hífens."),
   segmento: z.string().min(1, "Selecione o segmento."),
+  endereco: z.string().min(5, "Informe o endereço."),
   cidade: z.string().min(2, "Informe a cidade."),
+  estado: z.string().length(2, "Selecione o estado."),
 });
 
 type CadastroRestauranteValues = z.infer<typeof cadastroRestauranteSchema>;
@@ -58,7 +66,7 @@ const stepFields: Record<
   (keyof CadastroRestauranteValues)[]
 > = {
   0: ["nome", "email", "telefone", "senha"],
-  1: ["restauranteNome", "slug", "segmento", "cidade"],
+  1: ["restauranteNome", "slug", "segmento", "endereco", "cidade", "estado"],
   2: [],
 };
 
@@ -77,7 +85,9 @@ export default function CadastroRestaurantePage() {
       restauranteNome: "",
       slug: "",
       segmento: "",
+      endereco: "",
       cidade: "",
+      estado: "",
     },
   });
 
@@ -282,35 +292,48 @@ export default function CadastroRestaurantePage() {
                       </FormItem>
                     )}
                   />
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="segmento"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Segmento</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            value={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="hamburgueria">Hamburgueria</SelectItem>
-                              <SelectItem value="pizzaria">Pizzaria</SelectItem>
-                              <SelectItem value="japonesa">Japonesa</SelectItem>
-                              <SelectItem value="brasileira">Brasileira</SelectItem>
-                              <SelectItem value="doceria">Doceria</SelectItem>
-                              <SelectItem value="outro">Outro</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={form.control}
+                    name="segmento"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Segmento</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="hamburgueria">Hamburgueria</SelectItem>
+                            <SelectItem value="pizzaria">Pizzaria</SelectItem>
+                            <SelectItem value="japonesa">Japonesa</SelectItem>
+                            <SelectItem value="brasileira">Brasileira</SelectItem>
+                            <SelectItem value="doceria">Doceria</SelectItem>
+                            <SelectItem value="outro">Outro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="endereco"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Endereço</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Rua das Flores, 123 — Centro" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="grid grid-cols-[1fr_120px] gap-4">
                     <FormField
                       control={form.control}
                       name="cidade"
@@ -318,8 +341,35 @@ export default function CadastroRestaurantePage() {
                         <FormItem>
                           <FormLabel>Cidade</FormLabel>
                           <FormControl>
-                            <Input placeholder="São Paulo/SP" {...field} />
+                            <Input placeholder="São Paulo" {...field} />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="estado"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Estado</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="UF" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {UFS.map((uf) => (
+                                <SelectItem key={uf} value={uf}>
+                                  {uf}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
