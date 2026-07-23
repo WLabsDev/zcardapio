@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Mail, MessageCircle } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SetPasswordForm } from "@/components/set-password-form";
 import { formatPhone } from "@/lib/phone";
 import { roleHome, safeRedirectPath } from "@/lib/routes";
 import type { SessionRole } from "@/lib/session";
@@ -47,9 +48,6 @@ export function LoginForm() {
   const [loggingIn, setLoggingIn] = useState(false);
   const [showSenha, setShowSenha] = useState(false);
   const [setupPhone, setSetupPhone] = useState("");
-  const [newPass, setNewPass] = useState("");
-  const [confirmPass, setConfirmPass] = useState("");
-  const [settingPass, setSettingPass] = useState(false);
 
   const isWhatsapp = method === "cliente";
 
@@ -94,8 +92,6 @@ export function LoginForm() {
     // Conta criada no pedido ainda sem senha → definir senha no 1º acesso.
     if (data.needsPassword) {
       setSetupPhone(data.phone);
-      setNewPass("");
-      setConfirmPass("");
       setStep("set-password");
       return;
     }
@@ -104,35 +100,10 @@ export function LoginForm() {
     redirectAfter(data.user.role as SessionRole);
   }
 
-  async function submitPassword() {
-    if (newPass.length < 8) {
-      toast.error("A senha precisa de pelo menos 8 caracteres.");
-      return;
-    }
-    if (newPass !== confirmPass) {
-      toast.error("As senhas não conferem.");
-      return;
-    }
-    setSettingPass(true);
-    const res = await fetch("/api/auth/set-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: setupPhone, senha: newPass }),
-    });
-    const data = await res.json().catch(() => null);
-    setSettingPass(false);
-    if (!res.ok || !data?.user) {
-      toast.error(data?.message ?? "Não foi possível definir a senha.");
-      return;
-    }
-    toast.success(`Senha definida! Bem-vindo(a), ${data.user.name.split(" ")[0]}!`);
-    redirectAfter(data.user.role as SessionRole, "/cliente");
-  }
-
   // ---- Primeiro acesso: definir senha ----
   if (step === "set-password") {
     return (
-      <Card className="w-full max-w-md border-2 border-foreground shadow-offset">
+      <Card className="w-full max-w-md animate-in fade-in-0 slide-in-from-bottom-4 border-2 border-foreground shadow-offset duration-300">
         <CardHeader>
           <CardTitle className="text-2xl">Crie sua senha 🔑</CardTitle>
           <CardDescription>
@@ -142,58 +113,11 @@ export function LoginForm() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              submitPassword();
-            }}
-            className="grid gap-4"
-          >
-          <div className="grid gap-2">
-            <label className="text-sm font-medium" htmlFor="nova-senha">
-              Nova senha
-            </label>
-            <Input
-              id="nova-senha"
-              type="password"
-              placeholder="••••••••"
-              value={newPass}
-              onChange={(e) => setNewPass(e.target.value)}
-              autoComplete="new-password"
-            />
-          </div>
-          <div className="grid gap-2">
-            <label className="text-sm font-medium" htmlFor="confirmar-senha">
-              Confirmar senha
-            </label>
-            <Input
-              id="confirmar-senha"
-              type="password"
-              placeholder="••••••••"
-              value={confirmPass}
-              onChange={(e) => setConfirmPass(e.target.value)}
-              autoComplete="new-password"
-            />
-          </div>
-          <Button
-            type="submit"
-            size="lg"
-            disabled={settingPass}
-            className="rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
-          >
-            {settingPass ? "Salvando..." : "Definir senha e entrar"}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="mx-auto text-muted-foreground"
-            onClick={() => setStep("login")}
-          >
-            <ArrowLeft className="size-4" />
-            Voltar
-          </Button>
-          </form>
+          <SetPasswordForm
+            phone={setupPhone}
+            onBack={() => setStep("login")}
+            onSuccess={(user) => redirectAfter(user.role as SessionRole, "/cliente")}
+          />
         </CardContent>
       </Card>
     );
@@ -201,7 +125,7 @@ export function LoginForm() {
 
   // ---- Login ----
   return (
-    <Card className="w-full max-w-md border-2 border-foreground shadow-offset">
+    <Card className="w-full max-w-md animate-in fade-in-0 slide-in-from-bottom-4 border-2 border-foreground shadow-offset duration-300">
       <CardHeader>
         <CardTitle className="text-2xl">Bem-vindo de volta 👋</CardTitle>
         <CardDescription>Como você quer entrar?</CardDescription>
@@ -209,8 +133,14 @@ export function LoginForm() {
       <CardContent>
         <Tabs value={method} onValueChange={changeMethod} className="mb-4">
           <TabsList className="w-full">
-            <TabsTrigger value="cliente" className="flex-1">WhatsApp</TabsTrigger>
-            <TabsTrigger value="restaurante" className="flex-1">E-mail</TabsTrigger>
+            <TabsTrigger value="cliente" className="flex-1">
+              <MessageCircle className="size-4" />
+              WhatsApp
+            </TabsTrigger>
+            <TabsTrigger value="restaurante" className="flex-1">
+              <Mail className="size-4" />
+              E-mail
+            </TabsTrigger>
           </TabsList>
         </Tabs>
         <Form {...form}>

@@ -24,6 +24,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { SetPasswordForm } from "@/components/set-password-form";
 import type { Restaurant } from "@/lib/mock/types";
 import { normalizePhone, formatPhone } from "@/lib/phone";
 import { isDarkTheme, restaurantThemeVars } from "@/lib/theme";
@@ -63,9 +64,6 @@ export function LoginDialog({
   const [loggingIn, setLoggingIn] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [setupPhone, setSetupPhone] = useState("");
-  const [newPass, setNewPass] = useState("");
-  const [confirmPass, setConfirmPass] = useState("");
-  const [settingPass, setSettingPass] = useState(false);
 
   const loginForm = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -80,8 +78,6 @@ export function LoginDialog({
   function reset() {
     setStep("login");
     setSetupPhone("");
-    setNewPass("");
-    setConfirmPass("");
     loginForm.reset({ whatsapp: "", senha: "" });
     registerForm.reset({ nome: "", whatsapp: "", senha: "" });
   }
@@ -107,8 +103,6 @@ export function LoginDialog({
 
     if (data.needsPassword) {
       setSetupPhone(data.phone);
-      setNewPass("");
-      setConfirmPass("");
       setStep("set-password");
       return;
     }
@@ -144,33 +138,6 @@ export function LoginDialog({
     router.refresh();
   }
 
-  async function submitPassword() {
-    if (newPass.length < 8) {
-      toast.error("A senha precisa de pelo menos 8 caracteres.");
-      return;
-    }
-    if (newPass !== confirmPass) {
-      toast.error("As senhas não conferem.");
-      return;
-    }
-    setSettingPass(true);
-    const res = await fetch("/api/auth/set-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: setupPhone, senha: newPass }),
-    });
-    const data = await res.json().catch(() => null);
-    setSettingPass(false);
-    if (!res.ok || !data?.user) {
-      toast.error(data?.message ?? "Não foi possível definir a senha.");
-      return;
-    }
-    toast.success(`Senha definida! Bem-vindo(a), ${data.user.name.split(" ")[0]}!`);
-    onOpenChange(false);
-    reset();
-    router.refresh();
-  }
-
   return (
     <Dialog
       open={open}
@@ -197,56 +164,15 @@ export function LoginDialog({
                 uma senha para acompanhar seus pedidos.
               </DialogDescription>
             </DialogHeader>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                submitPassword();
+            <SetPasswordForm
+              phone={setupPhone}
+              onBack={() => setStep("login")}
+              onSuccess={() => {
+                onOpenChange(false);
+                reset();
+                router.refresh();
               }}
-              className="grid gap-4"
-            >
-              <div className="grid gap-2">
-                <label className="text-sm font-medium" htmlFor="nova-senha">
-                  Nova senha
-                </label>
-                <Input
-                  id="nova-senha"
-                  type="password"
-                  placeholder="••••••••"
-                  value={newPass}
-                  onChange={(e) => setNewPass(e.target.value)}
-                  autoComplete="new-password"
-                />
-              </div>
-              <div className="grid gap-2">
-                <label className="text-sm font-medium" htmlFor="confirmar-senha">
-                  Confirmar senha
-                </label>
-                <Input
-                  id="confirmar-senha"
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirmPass}
-                  onChange={(e) => setConfirmPass(e.target.value)}
-                  autoComplete="new-password"
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={settingPass}
-                className="rounded-full font-semibold shadow-offset-sm"
-              >
-                {settingPass ? "Salvando..." : "Definir senha e entrar"}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="mx-auto text-muted-foreground"
-                onClick={() => setStep("login")}
-              >
-                Voltar
-              </Button>
-            </form>
+            />
           </>
         ) : step === "register" ? (
           <>
