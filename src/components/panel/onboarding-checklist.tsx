@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -13,35 +13,20 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const baseSteps = [
-  {
-    icon: BookOpen,
-    title: "Adicione seus produtos",
-    description: "8 produtos cadastrados no seu cardápio.",
-    href: "/vendedor/cardapio",
-    done: true,
-  },
-  {
-    icon: Palette,
-    title: "Deixe com a sua cara",
-    description: "Logo, capa e cor principal configurados.",
-    href: "/vendedor/aparencia",
-    done: true,
-  },
-  {
-    icon: QrCode,
-    title: "Imprima o QR code",
-    description: "Cole nas mesas e o cliente pede sozinho.",
-    href: "/vendedor/qrcode",
-  },
-  {
-    icon: Settings2,
-    title: "Ajuste a entrega",
-    description: "Taxa, pedido mínimo e horários de funcionamento.",
-    href: "/vendedor/configuracoes",
-    done: false,
-  },
-];
+type Step = {
+  icon: typeof BookOpen;
+  title: string;
+  description: string;
+  href: string;
+  done: boolean;
+};
+
+/** Estado real do restaurante usado para marcar cada passo como concluído. */
+type Status = {
+  productCount: number;
+  appearanceDone: boolean;
+  deliveryDone: boolean;
+};
 
 const STORAGE_KEY = "zcardapio:onboarding-dismissed";
 const QR_DOWNLOADED_KEY = "zcardapio:qrcode-downloaded";
@@ -69,12 +54,87 @@ export function OnboardingChecklist() {
     getQrDoneServerSnapshot
   );
   const [justDismissed, setJustDismissed] = useState(false);
+  const [status, setStatus] = useState<Status | null>(null);
+
+  // Busca o estado real do restaurante (produtos, aparência, entrega) para o
+  // checklist refletir o progresso de verdade, não valores fixos.
+  useEffect(() => {
+    if (storedDismissed) return;
+    let active = true;
+    Promise.all([
+      fetch("/api/vendedor/products")
+        .then((r) => r.json())
+        .catch(() => null),
+      fetch("/api/vendedor/restaurant")
+        .then((r) => r.json())
+        .catch(() => null),
+      fetch("/api/vendedor/delivery-zones")
+        .then((r) => r.json())
+        .catch(() => null),
+    ]).then(([productsData, restaurantData, zonesData]) => {
+      if (!active) return;
+      setStatus({
+        productCount: productsData?.products?.length ?? 0,
+        // primaryColor só é gravado quando o vendedor salva a aparência.
+        appearanceDone: !!restaurantData?.restaurant?.primaryColor,
+        deliveryDone: (zonesData?.zones?.length ?? 0) > 0,
+      });
+    });
+    return () => {
+      active = false;
+    };
+  }, [storedDismissed]);
 
   if (storedDismissed || justDismissed) return null;
 
-  const steps = baseSteps.map((s) =>
-    s.href === "/vendedor/qrcode" ? { ...s, done: qrDone } : s
-  );
+  if (!status) {
+    return (
+      <div className="rounded-2xl border-2 border-foreground bg-card p-5 shadow-offset">
+        <p className="text-sm text-muted-foreground">
+          Carregando seu progresso...
+        </p>
+      </div>
+    );
+  }
+
+  const steps: Step[] = [
+    {
+      icon: BookOpen,
+      title: "Adicione seus produtos",
+      description:
+        status.productCount > 0
+          ? `${status.productCount} produto${status.productCount === 1 ? "" : "s"} cadastrado${status.productCount === 1 ? "" : "s"} no seu cardápio.`
+          : "Cadastre os produtos do seu cardápio.",
+      href: "/vendedor/cardapio",
+      done: status.productCount > 0,
+    },
+    {
+      icon: Palette,
+      title: "Deixe com a sua cara",
+      description: status.appearanceDone
+        ? "Logo, capa e cores personalizadas."
+        : "Personalize logo, capa e cor principal.",
+      href: "/vendedor/aparencia",
+      done: status.appearanceDone,
+    },
+    {
+      icon: QrCode,
+      title: "Imprima o QR code",
+      description: "Cole nas mesas e o cliente pede sozinho.",
+      href: "/vendedor/qrcode",
+      done: qrDone,
+    },
+    {
+      icon: Settings2,
+      title: "Ajuste a entrega",
+      description: status.deliveryDone
+        ? "Regiões e taxas de entrega configuradas."
+        : "Configure regiões, taxa e pedido mínimo.",
+      href: "/vendedor/configuracoes",
+      done: status.deliveryDone,
+    },
+  ];
+
   const doneCount = steps.filter((s) => s.done).length;
   const pct = Math.round((doneCount / steps.length) * 100);
 
