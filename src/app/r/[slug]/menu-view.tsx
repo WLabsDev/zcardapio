@@ -19,6 +19,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { EmptyState } from "@/components/panel/empty-state";
+import { LoginDialog } from "./login-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,22 +73,34 @@ const roleHome: Record<SessionRole, string> = {
   cliente: "/cliente",
 };
 
-function AccountButton({ user, slug }: { user: MenuUser; slug: string }) {
+function AccountButton({
+  user,
+  restaurant,
+}: {
+  user: MenuUser;
+  restaurant: Restaurant;
+}) {
   const router = useRouter();
+  const [loginOpen, setLoginOpen] = useState(false);
 
   if (!user) {
     return (
-      <Button
-        size="sm"
-        variant="secondary"
-        className="rounded-full border-2 border-foreground font-semibold shadow-offset-sm"
-        asChild
-      >
-        <Link href={`/login?next=/r/${slug}`}>
+      <>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="rounded-full border-2 border-foreground font-semibold shadow-offset-sm"
+          onClick={() => setLoginOpen(true)}
+        >
           <CircleUserRound className="size-4" />
           Entrar
-        </Link>
-      </Button>
+        </Button>
+        <LoginDialog
+          restaurant={restaurant}
+          open={loginOpen}
+          onOpenChange={setLoginOpen}
+        />
+      </>
     );
   }
 
@@ -238,7 +251,7 @@ export function MenuView({
           style={{ backgroundImage: `url(${restaurant.cover})` }}
         >
         <div className="absolute right-4 top-4">
-          <AccountButton user={user} slug={restaurant.slug} />
+          <AccountButton user={user} restaurant={restaurant} />
         </div>
       </div>
 
