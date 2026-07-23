@@ -39,6 +39,7 @@ type FormState = {
   price: string;
   categoryId: string;
   image: string;
+  popular: boolean;
   trackStock: boolean;
   stock: string;
 };
@@ -49,6 +50,7 @@ const emptyForm: FormState = {
   price: "",
   categoryId: "",
   image: "",
+  popular: false,
   trackStock: false,
   stock: "",
 };
@@ -78,19 +80,20 @@ export default function CardapioPage() {
   useBackToClose(dialogOpen, () => setDialogOpen(false));
   useBackToClose(categoryDialogOpen, () => setCategoryDialogOpen(false));
 
-  const load = useCallback(async () => {
-    const res = await fetch("/api/vendedor/products").catch(() => null);
-    const data = await res?.json().catch(() => null);
-    if (res?.ok && data) {
-      setItems(data.products);
-      setCategories(data.categories);
-    }
-    setLoading(false);
+  const load = useCallback(() => {
+    fetch("/api/vendedor/products")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setItems(data.products);
+          setCategories(data.categories);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(load, [load]);
 
   const openDialog = (product: Product | null) => {
     setEditing(product);
@@ -102,6 +105,7 @@ export default function CardapioPage() {
             price: String(product.price),
             categoryId: product.categoryId,
             image: product.image,
+            popular: !!product.popular,
             trackStock: !!product.trackStock,
             stock: product.stock != null ? String(product.stock) : "",
           }
@@ -125,6 +129,7 @@ export default function CardapioPage() {
           price,
           categoryId: form.categoryId,
           image: form.image.trim(),
+          popular: form.popular,
           trackStock: form.trackStock,
           stock: form.trackStock ? stock : null,
         }),
@@ -360,6 +365,20 @@ export default function CardapioPage() {
                     <Upload className="size-4" />
                   </Button>
                 </div>
+              </div>
+              <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium">Produto popular</p>
+                  <p className="text-xs text-muted-foreground">
+                    Ganha o selo “Popular” e aparece com destaque no cardápio.
+                  </p>
+                </div>
+                <Switch
+                  checked={form.popular}
+                  onCheckedChange={(v: boolean) =>
+                    setForm((f) => ({ ...f, popular: v }))
+                  }
+                />
               </div>
               <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
                 <div className="space-y-0.5">

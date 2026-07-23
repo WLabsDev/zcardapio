@@ -381,6 +381,70 @@ export default function AparenciaPage() {
 
           <Card>
             <CardHeader>
+              <CardTitle className="text-base">Tipografia e botões</CardTitle>
+              <CardDescription>
+                Fonte dos títulos e formato dos botões do cardápio.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label>Fonte dos títulos</Label>
+                <div className="flex flex-wrap gap-2">
+                  {(
+                    [
+                      { id: "bricolage", name: "Bricolage" },
+                      { id: "jakarta", name: "Jakarta" },
+                      { id: "mono", name: "Mono" },
+                    ] as const
+                  ).map((f) => (
+                    <button
+                      type="button"
+                      key={f.id}
+                      onClick={() => set("font", f.id)}
+                      style={{ fontFamily: FONT_DISPLAY[f.id] }}
+                      className={cn(
+                        "rounded-lg border-2 px-3 py-1.5 text-sm transition-all",
+                        form.font === f.id
+                          ? "border-foreground bg-accent font-semibold"
+                          : "border-foreground/15 hover:border-foreground"
+                      )}
+                    >
+                      {f.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label>Formato dos botões</Label>
+                <div className="flex flex-wrap gap-2">
+                  {(
+                    [
+                      { id: "arredondado", name: "Arredondado" },
+                      { id: "reto", name: "Reto" },
+                    ] as const
+                  ).map((b) => (
+                    <button
+                      type="button"
+                      key={b.id}
+                      onClick={() => set("buttonStyle", b.id)}
+                      className={cn(
+                        "border-2 px-4 py-1.5 text-sm transition-all",
+                        b.id === "arredondado" ? "rounded-full" : "rounded-md",
+                        form.buttonStyle === b.id
+                          ? "border-foreground bg-accent font-semibold"
+                          : "border-foreground/15 hover:border-foreground"
+                      )}
+                    >
+                      {b.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle className="text-base">Paleta de cores</CardTitle>
               <CardDescription>
                 Escolha um estilo pronto ou ajuste cada cor individualmente.
