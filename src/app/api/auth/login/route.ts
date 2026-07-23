@@ -1,5 +1,5 @@
 import { compare } from "bcryptjs";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { setSession } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -7,17 +7,13 @@ import { users } from "@/lib/db/schema";
 import { normalizePhone } from "@/lib/phone";
 
 const loginSchema = z.object({
-  profile: z.enum(["admin", "restaurante", "cliente"]).default("cliente"),
+  // "cliente" = entra por WhatsApp; "restaurante" = entra por e-mail (cobre
+  // tanto contas de restaurante quanto de admin, já que as duas usam e-mail).
+  profile: z.enum(["restaurante", "cliente"]).default("cliente"),
   senha: z.string().optional(),
   email: z.string().optional(),
   phone: z.string().optional(),
 });
-
-const roleLabel: Record<string, string> = {
-  admin: "administrador",
-  restaurante: "restaurante",
-  cliente: "cliente",
-};
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -30,7 +26,9 @@ export async function POST(request: Request) {
   }
   const { profile, senha } = parsed.data;
 
-  // Cliente entra com o WhatsApp; vendedor/admin entram com e-mail.
+  // Cliente entra com o WhatsApp — vale pra qualquer conta que tenha esse
+  // número cadastrado, não só perfil "cliente" (ex.: admin que prefira entrar
+  // por WhatsApp no futuro).
   if (profile === "cliente") {
     const phone = normalizePhone(parsed.data.phone ?? "");
     if (phone.length < 10) {
@@ -41,7 +39,7 @@ export async function POST(request: Request) {
     }
 
     const user = await db.query.users.findFirst({
-      where: and(eq(users.phone, phone), eq(users.role, "cliente")),
+      where: eq(users.phone, phone),
     });
     if (!user) {
       return Response.json(
@@ -53,7 +51,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Conta criada no checkout ainda não tem senha → manda definir uma.
+    // Conta criada no pedido ainda não tem senha → manda definir uma.
     if (!user.passwordHash) {
       return Response.json({ needsPassword: true, phone });
     }
@@ -68,7 +66,7 @@ export async function POST(request: Request) {
     });
   }
 
-  // Vendedor / Admin — e-mail obrigatório.
+  // Restaurante / Admin — os dois entram por e-mail, sem aba separada.
   const email = (parsed.data.email ?? "").trim().toLowerCase();
   if (!email) {
     return Response.json({ message: "Informe seu e-mail." }, { status: 400 });
@@ -90,10 +88,10 @@ export async function POST(request: Request) {
   const passwordOk = await compare(senha, user.passwordHash);
   if (!passwordOk) return invalid;
 
-  if (profile !== user.role) {
+  if (user.role === "cliente") {
     return Response.json(
       {
-        message: `Esta conta é do perfil ${roleLabel[user.role]}. Entre pela aba correspondente.`,
+        message: "Esta conta é de cliente. Entre pela aba Cliente com seu WhatsApp.",
       },
       { status: 403 }
     );

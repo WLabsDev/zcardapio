@@ -201,7 +201,7 @@ export function LoginForm() {
         <p>
           <strong>Cliente (WhatsApp):</strong> 11999991234 ·{" "}
           <strong>Restaurante:</strong> ze@burguerdoze.com.br ·{" "}
-          <strong>Admin:</strong> admin@zcardapio.com.br
+          <strong>Admin (aba Restaurante):</strong> admin@zcardapio.com.br
         </p>
         <p className="mt-1">
           Senha: <code className="font-bold text-primary">12345678</code>
@@ -212,7 +212,6 @@ export function LoginForm() {
           <TabsList className="w-full">
             <TabsTrigger value="cliente" className="flex-1">Cliente</TabsTrigger>
             <TabsTrigger value="restaurante" className="flex-1">Restaurante</TabsTrigger>
-            <TabsTrigger value="admin" className="flex-1">Admin</TabsTrigger>
           </TabsList>
         </Tabs>
         <Form {...form}>
