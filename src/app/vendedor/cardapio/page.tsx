@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BookOpen, FolderPlus, ListPlus, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, FolderPlus, ListPlus, Pencil, Plus, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/panel/empty-state";
 import { OptionGroupsDialog } from "@/components/panel/option-groups-dialog";
@@ -176,6 +176,55 @@ export default function CardapioPage() {
       toast.error(err instanceof Error ? err.message : "Falha no upload.");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const moveCategory = async (index: number, dir: -1 | 1) => {
+    const target = index + dir;
+    if (target < 0 || target >= categories.length) return;
+    const next = [...categories];
+    [next[index], next[target]] = [next[target], next[index]];
+    setCategories(next);
+    const res = await fetch("/api/vendedor/categories/reorder", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: next.map((c) => c.id) }),
+    }).catch(() => null);
+    if (!res?.ok) {
+      toast.error("Não foi possível reordenar as categorias.");
+      load();
+    }
+  };
+
+  const moveProduct = async (
+    categoryId: string,
+    productId: string,
+    dir: -1 | 1
+  ) => {
+    const catIds = items
+      .filter((p) => p.categoryId === categoryId)
+      .map((p) => p.id);
+    const idx = catIds.indexOf(productId);
+    const target = idx + dir;
+    if (target < 0 || target >= catIds.length) return;
+    [catIds[idx], catIds[target]] = [catIds[target], catIds[idx]];
+    const orderMap = new Map(catIds.map((id, i) => [id, i]));
+    setItems((prev) =>
+      [...prev].sort((a, b) => {
+        if (a.categoryId === categoryId && b.categoryId === categoryId) {
+          return (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0);
+        }
+        return 0;
+      })
+    );
+    const res = await fetch("/api/vendedor/products/reorder", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ categoryId, ids: catIds }),
+    }).catch(() => null);
+    if (!res?.ok) {
+      toast.error("Não foi possível reordenar os produtos.");
+      load();
     }
   };
 
@@ -463,7 +512,7 @@ export default function CardapioPage() {
           }
         />
       ) : (
-        categories.map((cat) => {
+        categories.map((cat, catIndex) => {
         const catItems = items.filter((p) => p.categoryId === cat.id);
         return (
           <Card key={cat.id}>
@@ -476,6 +525,24 @@ export default function CardapioPage() {
                 </span>
               </CardTitle>
               <div className="flex gap-1">
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  onClick={() => moveCategory(catIndex, -1)}
+                  disabled={catIndex === 0}
+                  aria-label="Mover categoria para cima"
+                >
+                  <ChevronUp className="size-4" />
+                </Button>
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  onClick={() => moveCategory(catIndex, 1)}
+                  disabled={catIndex === categories.length - 1}
+                  aria-label="Mover categoria para baixo"
+                >
+                  <ChevronDown className="size-4" />
+                </Button>
                 <Button
                   size="icon-sm"
                   variant="ghost"
@@ -502,7 +569,7 @@ export default function CardapioPage() {
                   Nenhum produto nesta categoria.
                 </p>
               )}
-              {catItems.map((p) => (
+              {catItems.map((p, pIndex) => (
                 <div
                   key={p.id}
                   className={cn(
@@ -514,6 +581,26 @@ export default function CardapioPage() {
                 >
                   {/* Produto: imagem + infos + disponibilidade */}
                   <div className="flex items-center gap-3 md:min-w-0 md:flex-1">
+                    <div className="flex shrink-0 flex-col gap-0.5">
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        onClick={() => moveProduct(cat.id, p.id, -1)}
+                        disabled={pIndex === 0}
+                        aria-label="Mover produto para cima"
+                      >
+                        <ChevronUp className="size-4" />
+                      </Button>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        onClick={() => moveProduct(cat.id, p.id, 1)}
+                        disabled={pIndex === catItems.length - 1}
+                        aria-label="Mover produto para baixo"
+                      >
+                        <ChevronDown className="size-4" />
+                      </Button>
+                    </div>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={p.image}

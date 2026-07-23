@@ -164,6 +164,8 @@ export const products = pgTable(
     // Estoque automático — opcional (trackStock=false = ilimitado, comportamento padrão).
     trackStock: boolean("track_stock").notNull().default(false),
     stock: integer("stock"),
+    // Ordem manual do produto dentro da categoria (0 = padrão, ordenado por id).
+    position: integer("position").notNull().default(0),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (t) => [

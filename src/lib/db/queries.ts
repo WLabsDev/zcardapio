@@ -95,7 +95,7 @@ export async function getProductsByRestaurantDb(
   const rows = await db.query.products.findMany({
     where: (p, { eq }) => eq(p.restaurantId, restaurantId),
     with: { optionGroups: { with: { options: true } } },
-    orderBy: (p, { asc }) => [asc(p.id)],
+    orderBy: (p, { asc }) => [asc(p.position), asc(p.id)],
   });
   return rows.map((p) => ({
     id: String(p.id),
