@@ -19,7 +19,11 @@ export default async function VendedorLayout({
     where: eq(restaurants.ownerId, Number(session.sub)),
     with: { plan: true },
   });
-  if (!restaurant) redirect("/login");
+  // Sessão de restaurante sem restaurante (ex.: excluído pelo admin) — limpar a
+  // sessão antes de mandar pro /login. Só usar redirect("/login") aqui criaria
+  // um loop infinito: a sessão de "restaurante" continua válida, então /login
+  // mandaria de volta pra /vendedor, que mandaria de volta pra /login...
+  if (!restaurant) redirect("/api/auth/logout?next=/login");
 
   const isFree = isFreePlan(restaurant.plan?.name);
   const monthlyOrderCount = isFree
