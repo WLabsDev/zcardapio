@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Search, SearchX } from "lucide-react";
+import { Plus, Search, SearchX, Trash2 } from "lucide-react";
 import { EmptyState } from "@/components/panel/empty-state";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -80,9 +81,13 @@ export default function AdminUsuariosPage() {
   const [form, setForm] = useState<UserForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<AdminUser | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkConfirm, setBulkConfirm] = useState(false);
 
   useBackToClose(dialogOpen, () => setDialogOpen(false));
   useBackToClose(!!deleting, () => setDeleting(null));
+  useBackToClose(bulkConfirm, () => setBulkConfirm(false));
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/users").catch(() => null);
@@ -163,6 +168,60 @@ export default function AdminUsuariosPage() {
     toast.success("Usuário excluído.");
   };
 
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const allFilteredSelected =
+    filtered.length > 0 && filtered.every((u) => selected.has(u.id));
+
+  const toggleSelectAll = () => {
+    setSelected((prev) => {
+      if (allFilteredSelected) {
+        const next = new Set(prev);
+        filtered.forEach((u) => next.delete(u.id));
+        return next;
+      }
+      const next = new Set(prev);
+      filtered.forEach((u) => next.add(u.id));
+      return next;
+    });
+  };
+
+  const confirmBulkDelete = async () => {
+    setBulkDeleting(true);
+    const ids = Array.from(selected);
+    const results = await Promise.all(
+      ids.map(async (id) => {
+        const res = await fetch(`/api/admin/users/${id}`, {
+          method: "DELETE",
+        }).catch(() => null);
+        return { id, ok: !!res?.ok };
+      })
+    );
+    setBulkDeleting(false);
+    setBulkConfirm(false);
+    const okIds = new Set(results.filter((r) => r.ok).map((r) => r.id));
+    const failCount = results.length - okIds.size;
+    setUsers((prev) => prev.filter((u) => !okIds.has(u.id)));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      okIds.forEach((id) => next.delete(id));
+      return next;
+    });
+    if (okIds.size > 0) toast.success(`${okIds.size} usuário(s) excluído(s).`);
+    if (failCount > 0) {
+      toast.error(
+        `${failCount} usuário(s) não puderam ser excluídos (provavelmente donos de restaurante).`
+      );
+    }
+  };
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -178,14 +237,22 @@ export default function AdminUsuariosPage() {
         </Button>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nome ou e-mail..."
-          className="pl-9"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome ou e-mail..."
+            className="pl-9"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        {selected.size > 0 && (
+          <Button variant="destructive" onClick={() => setBulkConfirm(true)}>
+            <Trash2 className="size-4" />
+            Excluir selecionados ({selected.size})
+          </Button>
+        )}
       </div>
 
       <Card>
@@ -193,6 +260,13 @@ export default function AdminUsuariosPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={allFilteredSelected}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Selecionar todos"
+                  />
+                </TableHead>
                 <TableHead>Usuário</TableHead>
                 <TableHead className="hidden sm:table-cell">E-mail</TableHead>
                 <TableHead>Perfil</TableHead>
@@ -202,7 +276,14 @@ export default function AdminUsuariosPage() {
             </TableHeader>
             <TableBody>
               {filtered.map((u) => (
-                <TableRow key={u.id}>
+                <TableRow key={u.id} data-state={selected.has(u.id) ? "selected" : undefined}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selected.has(u.id)}
+                      onCheckedChange={() => toggleSelect(u.id)}
+                      aria-label={`Selecionar ${u.name}`}
+                    />
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="size-8">
@@ -252,7 +333,7 @@ export default function AdminUsuariosPage() {
               ))}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5}>
+                  <TableCell colSpan={6}>
                     <EmptyState
                       compact
                       icon={SearchX}
@@ -354,6 +435,30 @@ export default function AdminUsuariosPage() {
             </Button>
             <Button variant="destructive" onClick={confirmDelete}>
               Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={bulkConfirm} onOpenChange={setBulkConfirm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Excluir {selected.size} usuário(s)?</DialogTitle>
+            <DialogDescription>
+              Essa ação não pode ser desfeita. Usuários donos de restaurante não
+              serão excluídos.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkConfirm(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmBulkDelete}
+              disabled={bulkDeleting}
+            >
+              {bulkDeleting ? "Excluindo..." : "Excluir"}
             </Button>
           </DialogFooter>
         </DialogContent>
