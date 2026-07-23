@@ -58,13 +58,24 @@ export async function PUT(
     }
   }
 
+  // Não faz sentido manter o perfil "restaurante" pra quem não tem restaurante —
+  // evita contas órfãs (e o loop de redirecionamento que isso causava).
+  let role = d.role;
+  if (role === "restaurante") {
+    const ownsRestaurant = await db.query.restaurants.findFirst({
+      where: eq(restaurants.ownerId, userId),
+      columns: { id: true },
+    });
+    if (!ownsRestaurant) role = "cliente";
+  }
+
   const [updated] = await db
     .update(users)
     .set({
       ...(d.name !== undefined && { name: d.name }),
       ...(email !== undefined && { email: email || null }),
       ...(phone !== undefined && { phone: phone || null }),
-      ...(d.role !== undefined && { role: d.role }),
+      ...(role !== undefined && { role }),
       ...(d.senha && { passwordHash: await hash(d.senha, 10) }),
     })
     .where(eq(users.id, userId))

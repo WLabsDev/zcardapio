@@ -1,7 +1,7 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { restaurants } from "@/lib/db/schema";
+import { restaurants, users } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/admin";
 
 const patchSchema = z.object({
@@ -124,10 +124,24 @@ export async function DELETE(
   const [deleted] = await db
     .delete(restaurants)
     .where(eq(restaurants.id, restaurantId))
-    .returning({ id: restaurants.id });
+    .returning({ id: restaurants.id, ownerId: restaurants.ownerId });
 
   if (!deleted) {
     return Response.json({ message: "Restaurante não encontrado." }, { status: 404 });
   }
+
+  // Sem restaurante, "restaurante" não é mais um perfil válido pro dono — evita
+  // deixar a conta órfã (e o loop de redirecionamento que isso causava).
+  const stillOwnsOne = await db.query.restaurants.findFirst({
+    where: eq(restaurants.ownerId, deleted.ownerId),
+    columns: { id: true },
+  });
+  if (!stillOwnsOne) {
+    await db
+      .update(users)
+      .set({ role: "cliente" })
+      .where(and(eq(users.id, deleted.ownerId), eq(users.role, "restaurante")));
+  }
+
   return Response.json({ ok: true });
 }
