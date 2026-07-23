@@ -1,7 +1,7 @@
-import { eq } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { plans } from "@/lib/db/schema";
+import { plans, restaurants } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/admin";
 
 const putSchema = z.object({
@@ -47,6 +47,45 @@ export async function PUT(
     .returning({ id: plans.id });
 
   if (!updated) {
+    return Response.json({ message: "Plano não encontrado." }, { status: 404 });
+  }
+  return Response.json({ ok: true });
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
+  const { id } = await params;
+  const planId = Number(id);
+  if (!Number.isInteger(planId)) {
+    return Response.json({ message: "Plano inválido." }, { status: 400 });
+  }
+
+  // A FK restaurants.plan_id impede a exclusão; bloqueia antes com uma mensagem
+  // clara se houver restaurantes (de qualquer status) nesse plano.
+  const [sub] = await db
+    .select({ value: count() })
+    .from(restaurants)
+    .where(eq(restaurants.planId, planId));
+  if ((sub?.value ?? 0) > 0) {
+    return Response.json(
+      {
+        message:
+          "Este plano tem restaurantes assinantes e não pode ser excluído.",
+      },
+      { status: 409 }
+    );
+  }
+
+  const [deleted] = await db
+    .delete(plans)
+    .where(eq(plans.id, planId))
+    .returning({ id: plans.id });
+  if (!deleted) {
     return Response.json({ message: "Plano não encontrado." }, { status: 404 });
   }
   return Response.json({ ok: true });
