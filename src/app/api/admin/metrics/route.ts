@@ -2,6 +2,7 @@ import { and, count, eq, gte, isNotNull, sum } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { orders, plans, restaurants, users } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/admin";
+import { isWhatsAppConfigured } from "@/lib/whatsapp";
 
 export async function GET() {
   const denied = await requireAdmin();
@@ -35,5 +36,6 @@ export async function GET() {
       monthOrders: monthOrders.value,
       mrr: Number(mrrRows[0]?.value ?? 0) / 100,
     },
+    whatsappConfigured: isWhatsAppConfigured(),
   });
 }

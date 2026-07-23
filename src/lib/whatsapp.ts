@@ -19,6 +19,13 @@ function normalizeForWhatsApp(phone: string) {
   return digits.startsWith("55") ? digits : `55${digits}`;
 }
 
+/** True quando a Evolution API está configurada (envio de WhatsApp ativo). */
+export function isWhatsAppConfigured() {
+  const { EVOLUTION_API_URL, EVOLUTION_API_KEY, EVOLUTION_INSTANCE } =
+    process.env;
+  return Boolean(EVOLUTION_API_URL && EVOLUTION_API_KEY && EVOLUTION_INSTANCE);
+}
+
 export async function sendWhatsAppMessage(phone: string, text: string) {
   const { EVOLUTION_API_URL, EVOLUTION_API_KEY, EVOLUTION_INSTANCE } = process.env;
   if (!EVOLUTION_API_URL || !EVOLUTION_API_KEY || !EVOLUTION_INSTANCE) {

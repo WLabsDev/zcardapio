@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Store, Users, DollarSign, ReceiptText, Eye } from "lucide-react";
+import { Store, Users, DollarSign, ReceiptText, Eye, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +45,8 @@ export default function AdminDashboard() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [restaurants, setRestaurants] = useState<RecentRestaurant[]>([]);
   const [viewingAsClient, setViewingAsClient] = useState(false);
+  // true por padrão para não piscar o aviso antes da resposta da API.
+  const [whatsappConfigured, setWhatsappConfigured] = useState(true);
 
   const viewAsClient = async () => {
     setViewingAsClient(true);
@@ -66,7 +68,10 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetch("/api/admin/metrics")
       .then((res) => res.json())
-      .then((data) => setMetrics(data?.metrics ?? null))
+      .then((data) => {
+        setMetrics(data?.metrics ?? null);
+        setWhatsappConfigured(data?.whatsappConfigured ?? true);
+      })
       .catch(() => {});
     fetch("/api/admin/restaurants")
       .then((res) => res.json())
@@ -93,6 +98,32 @@ export default function AdminDashboard() {
           {viewingAsClient ? "Entrando..." : "Ver como cliente"}
         </Button>
       </div>
+
+      {!whatsappConfigured && (
+        <div className="flex items-start gap-3 rounded-xl border-2 border-amber-500/60 bg-amber-500/10 p-4 text-sm">
+          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400" />
+          <div className="space-y-0.5">
+            <p className="font-semibold">WhatsApp não configurado</p>
+            <p className="text-muted-foreground">
+              Códigos de recuperação de senha e avisos de novo pedido não estão
+              sendo enviados — as mensagens aparecem apenas no log do servidor.
+              Configure{" "}
+              <code className="rounded bg-foreground/10 px-1 font-mono text-xs">
+                EVOLUTION_API_URL
+              </code>
+              ,{" "}
+              <code className="rounded bg-foreground/10 px-1 font-mono text-xs">
+                EVOLUTION_API_KEY
+              </code>{" "}
+              e{" "}
+              <code className="rounded bg-foreground/10 px-1 font-mono text-xs">
+                EVOLUTION_INSTANCE
+              </code>{" "}
+              no servidor.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
