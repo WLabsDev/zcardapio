@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AuthSplitShell } from "@/components/auth-split-shell";
 import { getSession } from "@/lib/auth";
 import { LoginForm } from "./login-form";
 
@@ -15,5 +16,9 @@ export default async function LoginPage() {
     redirect(roleHome[session.role] ?? "/");
   }
 
-  return <LoginForm />;
+  return (
+    <AuthSplitShell>
+      <LoginForm />
+    </AuthSplitShell>
+  );
 }

@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
+import { AuthSplitShell } from "@/components/auth-split-shell";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -114,6 +115,7 @@ export default function CadastroRestaurantePage() {
   }
 
   return (
+    <AuthSplitShell>
     <div className="w-full max-w-2xl">
       {/* Stepper */}
       <div className="mb-6 flex items-center justify-center gap-2">
@@ -438,5 +440,6 @@ export default function CadastroRestaurantePage() {
         </CardContent>
       </Card>
     </div>
+    </AuthSplitShell>
   );
 }
