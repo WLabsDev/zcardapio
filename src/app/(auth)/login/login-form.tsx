@@ -196,17 +196,6 @@ export function LoginForm() {
         <CardTitle className="text-2xl">Bem-vindo de volta 👋</CardTitle>
         <CardDescription>Acesse sua conta do zCardapio.</CardDescription>
       </CardHeader>
-      <div className="mx-6 mb-2 rounded-lg border-2 border-dashed border-foreground/20 bg-muted/40 p-3 text-xs text-muted-foreground">
-        <p className="mb-1 font-semibold text-foreground">Contas de demonstração</p>
-        <p>
-          <strong>Cliente (WhatsApp):</strong> 11999991234 ·{" "}
-          <strong>Restaurante:</strong> ze@burguerdoze.com.br ·{" "}
-          <strong>Admin (aba Restaurante):</strong> admin@zcardapio.com.br
-        </p>
-        <p className="mt-1">
-          Senha: <code className="font-bold text-primary">12345678</code>
-        </p>
-      </div>
       <CardContent>
         <Tabs value={profile} onValueChange={changeProfile} className="mb-4">
           <TabsList className="w-full">
