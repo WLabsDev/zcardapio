@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatPhone } from "@/lib/phone";
+import { roleHome, safeRedirectPath } from "@/lib/routes";
+import type { SessionRole } from "@/lib/session";
 
 const loginSchema = z.object({
   identifier: z.string().min(1, "Informe este campo."),
@@ -34,12 +37,6 @@ const loginSchema = z.object({
 
 type LoginValues = z.infer<typeof loginSchema>;
 
-const roleHome: Record<string, string> = {
-  admin: "/admin",
-  restaurante: "/vendedor",
-  cliente: "/cliente",
-};
-
 export function LoginForm() {
   const router = useRouter();
   // "cliente" = entra por WhatsApp; "restaurante" = entra por e-mail (cobre
@@ -47,6 +44,8 @@ export function LoginForm() {
   // escolhe o método de entrada, não precisa saber/declarar qual é o perfil.
   const [method, setMethod] = useState<"cliente" | "restaurante">("cliente");
   const [step, setStep] = useState<"login" | "set-password">("login");
+  const [loggingIn, setLoggingIn] = useState(false);
+  const [showSenha, setShowSenha] = useState(false);
   const [setupPhone, setSetupPhone] = useState("");
   const [newPass, setNewPass] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
@@ -61,7 +60,16 @@ export function LoginForm() {
 
   function changeMethod(next: string) {
     setMethod(next as "cliente" | "restaurante");
+    setShowSenha(false);
     form.reset({ identifier: "", senha: "" });
+  }
+
+  // Destino pós-login: ?next= (se for caminho interno) ou o painel do perfil.
+  function redirectAfter(role: SessionRole, fallback = "/") {
+    const next = safeRedirectPath(
+      new URLSearchParams(window.location.search).get("next")
+    );
+    router.push(next ?? roleHome[role] ?? fallback);
   }
 
   async function onSubmit(values: LoginValues) {
@@ -69,12 +77,14 @@ export function LoginForm() {
       ? { phone: values.identifier, senha: values.senha, profile: method }
       : { email: values.identifier, senha: values.senha, profile: method };
 
+    setLoggingIn(true);
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
     const data = await res.json().catch(() => null);
+    setLoggingIn(false);
 
     if (!res.ok || (!data?.user && !data?.needsPassword)) {
       toast.error(data?.message ?? "Não foi possível entrar.");
@@ -91,10 +101,7 @@ export function LoginForm() {
     }
 
     toast.success(`Bem-vindo(a), ${data.user.name.split(" ")[0]}!`);
-    const next = new URLSearchParams(window.location.search).get("next");
-    router.push(
-      next?.startsWith("/") ? next : roleHome[data.user.role as string] ?? "/"
-    );
+    redirectAfter(data.user.role as SessionRole);
   }
 
   async function submitPassword() {
@@ -119,7 +126,7 @@ export function LoginForm() {
       return;
     }
     toast.success(`Senha definida! Bem-vindo(a), ${data.user.name.split(" ")[0]}!`);
-    router.push(roleHome[data.user.role as string] ?? "/cliente");
+    redirectAfter(data.user.role as SessionRole, "/cliente");
   }
 
   // ---- Primeiro acesso: definir senha ----
@@ -224,6 +231,11 @@ export function LoginForm() {
                       placeholder={isWhatsapp ? "(11) 99999-1234" : "voce@email.com"}
                       autoComplete={isWhatsapp ? "tel" : "email"}
                       {...field}
+                      onChange={
+                        isWhatsapp
+                          ? (e) => field.onChange(formatPhone(e.target.value))
+                          : field.onChange
+                      }
                     />
                   </FormControl>
                   <FormMessage />
@@ -244,14 +256,29 @@ export function LoginForm() {
                       Esqueci minha senha
                     </Link>
                   </div>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      autoComplete="current-password"
-                      {...field}
-                    />
-                  </FormControl>
+                  <div className="relative">
+                    <FormControl>
+                      <Input
+                        type={showSenha ? "text" : "password"}
+                        placeholder="••••••••"
+                        autoComplete="current-password"
+                        className="pr-10"
+                        {...field}
+                      />
+                    </FormControl>
+                    <button
+                      type="button"
+                      onClick={() => setShowSenha((v) => !v)}
+                      aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      {showSenha ? (
+                        <EyeOff className="size-4" />
+                      ) : (
+                        <Eye className="size-4" />
+                      )}
+                    </button>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -259,9 +286,10 @@ export function LoginForm() {
             <Button
               type="submit"
               size="lg"
+              disabled={loggingIn}
               className="rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
             >
-              Entrar
+              {loggingIn ? "Entrando..." : "Entrar"}
             </Button>
           </form>
         </Form>

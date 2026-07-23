@@ -62,16 +62,11 @@ import {
   type Review,
 } from "@/lib/mock/types";
 import type { SessionRole } from "@/lib/session";
+import { roleHome } from "@/lib/routes";
 import { isDarkTheme, restaurantThemeVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 type MenuUser = { name: string; role: SessionRole } | null;
-
-const roleHome: Record<SessionRole, string> = {
-  admin: "/admin",
-  restaurante: "/vendedor",
-  cliente: "/cliente",
-};
 
 function AccountButton({
   user,
