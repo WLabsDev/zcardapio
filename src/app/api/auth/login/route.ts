@@ -51,9 +51,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // Conta criada no pedido ainda não tem senha → manda definir uma.
+    // Conta de cliente criada no pedido ainda não tem senha → manda definir
+    // uma. Outros perfis sem senha (ex.: criados pelo admin sem senha) não
+    // passam por esse fluxo — não faz sentido pra eles e o set-password é
+    // cliente-only mesmo.
     if (!user.passwordHash) {
-      return Response.json({ needsPassword: true, phone });
+      if (user.role === "cliente") {
+        return Response.json({ needsPassword: true, phone });
+      }
+      return Response.json(
+        {
+          message:
+            "Esta conta ainda não tem senha definida. Peça para o administrador configurar uma senha.",
+        },
+        { status: 401 }
+      );
     }
 
     if (!senha || !(await compare(senha, user.passwordHash))) {
@@ -91,7 +103,7 @@ export async function POST(request: Request) {
   if (user.role === "cliente") {
     return Response.json(
       {
-        message: "Esta conta é de cliente. Entre pela aba Cliente com seu WhatsApp.",
+        message: "Esta conta é de cliente. Entre pela aba WhatsApp com seu número.",
       },
       { status: 403 }
     );
