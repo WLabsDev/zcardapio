@@ -30,6 +30,11 @@ export default function ClientePerfilPage() {
   const [email, setEmail] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
 
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Address | null>(null);
@@ -56,8 +61,13 @@ export default function ClientePerfilPage() {
         }
       })
       .catch(() => toast.error("Não foi possível carregar o perfil."));
-    loadAddresses();
-  }, [loadAddresses]);
+    fetch("/api/me/addresses")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.addresses) setAddresses(data.addresses);
+      })
+      .catch(() => {});
+  }, []);
 
   const saveProfile = async () => {
     setSavingProfile(true);
@@ -77,6 +87,33 @@ export default function ClientePerfilPage() {
       return;
     }
     toast.success("Dados atualizados!");
+  };
+
+  const savePassword = async () => {
+    if (newPassword.length < 8) {
+      toast.error("A nova senha precisa de pelo menos 8 caracteres.");
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      toast.error("As senhas não conferem.");
+      return;
+    }
+    setSavingPassword(true);
+    const res = await fetch("/api/me/password", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }).catch(() => null);
+    const data = await res?.json().catch(() => null);
+    setSavingPassword(false);
+    if (!res?.ok) {
+      toast.error(data?.message ?? "Não foi possível alterar a senha.");
+      return;
+    }
+    toast.success("Senha alterada com sucesso!");
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmNewPassword("");
   };
 
   const openAddressDialog = (address: Address | null) => {
@@ -178,6 +215,58 @@ export default function ClientePerfilPage() {
           <Button type="submit" className="w-fit" disabled={savingProfile}>
             {savingProfile ? "Salvando..." : "Salvar"}
           </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Segurança</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              savePassword();
+            }}
+            className="grid gap-4"
+          >
+            <div className="grid gap-2">
+              <Label htmlFor="senha-atual">Senha atual</Label>
+              <Input
+                id="senha-atual"
+                type="password"
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="nova-senha">Nova senha</Label>
+                <Input
+                  id="nova-senha"
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Mínimo 8 caracteres"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="confirmar-senha">Confirmar nova senha</Label>
+                <Input
+                  id="confirmar-senha"
+                  type="password"
+                  autoComplete="new-password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                />
+              </div>
+            </div>
+            <Button type="submit" className="w-fit" disabled={savingPassword}>
+              {savingPassword ? "Salvando..." : "Alterar senha"}
+            </Button>
           </form>
         </CardContent>
       </Card>

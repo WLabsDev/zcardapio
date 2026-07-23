@@ -1,6 +1,6 @@
 import { and, eq, gt, gte, inArray, isNull, or, sql } from "drizzle-orm";
 import { z } from "zod";
-import { getSession } from "@/lib/auth";
+import { getSession, setSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import {
   coupons,
@@ -295,10 +295,14 @@ export async function POST(request: Request) {
   const session = await getSession();
 
   let order: typeof orders.$inferSelect;
+  let createdAccountId: number | null = null;
   try {
-    order = await db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx) => {
       // Dono do pedido: cliente logado ou conta criada/vinculada pelo WhatsApp.
       let customerId: number | null = null;
+      // Id da conta quando ela é criada agora (1º pedido do visitante) — usado
+      // para logar o cliente automaticamente e ele acompanhar o pedido.
+      let newlyCreatedId: number | null = null;
       if (session?.role === "cliente") {
         const account = await tx.query.users.findFirst({
           where: eq(users.id, Number(session.sub)),
@@ -320,6 +324,7 @@ export async function POST(request: Request) {
               .insert(users)
               .values({ name: data.customerName, phone, role: "cliente" })
               .returning({ id: users.id });
+            newlyCreatedId = account.id;
           }
           customerId = account.id;
         }
@@ -413,8 +418,10 @@ export async function POST(request: Request) {
           .where(and(eq(coupons.id, appliedCouponId), eq(coupons.singleUse, true)));
       }
 
-      return created;
+      return { order: created, newlyCreatedId };
     });
+    order = result.order;
+    createdAccountId = result.newlyCreatedId;
   } catch (e) {
     if (e instanceof OutOfStockError) {
       return Response.json({ message: e.message }, { status: 409 });
@@ -428,6 +435,19 @@ export async function POST(request: Request) {
     restaurantId: order.restaurantId,
     customerId: order.customerId,
   }).catch(() => {});
+
+  // Visitante que acabou de criar a conta pelo 1º pedido: loga automaticamente
+  // para conseguir acompanhar o pedido em /cliente/pedidos. Só vale para conta
+  // recém-criada — conta já existente exige login próprio (evita assumir a conta
+  // de alguém apenas por saber o número de telefone).
+  if (createdAccountId !== null && session?.role !== "cliente") {
+    await setSession({
+      id: createdAccountId,
+      name: data.customerName,
+      email: null,
+      role: "cliente",
+    });
+  }
 
   if (restaurant.whatsapp) {
     // Sem detalhes do pedido de propósito — só o suficiente pra avisar, o
