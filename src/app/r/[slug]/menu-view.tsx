@@ -379,12 +379,14 @@ export function MenuView({
                         <p className="text-xs text-destructive">Indisponível</p>
                       )}
                     </div>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={p.image}
-                      alt={p.name}
-                      className="size-24 shrink-0 rounded-lg object-cover"
-                    />
+                    {p.image && (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        className="size-24 shrink-0 rounded-lg object-cover"
+                      />
+                    )}
                   </button>
                   );
                 })}
@@ -454,12 +456,14 @@ export function MenuView({
         >
           {selected && (
             <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={selected.image}
-                alt={selected.name}
-                className="h-44 w-full rounded-lg object-cover"
-              />
+              {selected.image && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={selected.image}
+                  alt={selected.name}
+                  className="h-44 w-full rounded-lg object-cover"
+                />
+              )}
               <DialogHeader>
                 <DialogTitle className="text-product-title">
                   {selected.name}
@@ -597,12 +601,14 @@ export function MenuView({
                 <div className="flex-1 space-y-4 overflow-y-auto px-4">
                   {cart.items.map((item) => (
                     <div key={item.key} className="flex gap-3">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.product.image}
-                        alt={item.product.name}
-                        className="size-16 rounded-lg object-cover"
-                      />
+                      {item.product.image && (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={item.product.image}
+                          alt={item.product.name}
+                          className="size-16 shrink-0 rounded-lg object-cover"
+                        />
+                      )}
                       <div className="flex-1">
                         <p className="text-sm font-semibold">
                           {item.product.name}

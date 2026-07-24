@@ -638,15 +638,19 @@ export default function CardapioPage() {
                         <ChevronDown className="size-4" />
                       </Button>
                     </div>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={p.image}
-                      alt={p.name}
-                      className={cn(
-                        "size-14 shrink-0 rounded-lg border-2 border-foreground/10 object-cover",
-                        !p.available && "opacity-50 grayscale"
-                      )}
-                    />
+                    {p.image ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        className={cn(
+                          "size-14 shrink-0 rounded-lg border-2 border-foreground/10 object-cover",
+                          !p.available && "opacity-50 grayscale"
+                        )}
+                      />
+                    ) : (
+                      <div className="size-14 shrink-0 rounded-lg border-2 border-foreground/10 bg-muted" />
+                    )}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <p className="truncate font-semibold">{p.name}</p>
