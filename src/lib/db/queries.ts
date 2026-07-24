@@ -333,16 +333,20 @@ export async function getReviewsForOwner(
 
 const FREE_PLAN_MONTHLY_HIDE_LIMIT = 2;
 
-/** Quantas vezes o restaurante já ocultou avaliações neste mês (calendário). */
+/**
+ * Quantas avaliações distintas o restaurante ocultou neste mês (calendário).
+ * Conta por reviewId para que ocultar → reexibir → ocultar a mesma avaliação
+ * consuma a cota apenas uma vez.
+ */
 export async function getMonthlyHideCount(restaurantId: number) {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const rows = await db.query.reviewHides.findMany({
     where: (h, { and, eq, gte }) =>
       and(eq(h.restaurantId, restaurantId), gte(h.createdAt, monthStart)),
-    columns: { id: true },
+    columns: { reviewId: true },
   });
-  return rows.length;
+  return new Set(rows.map((r) => r.reviewId)).size;
 }
 
 /**
