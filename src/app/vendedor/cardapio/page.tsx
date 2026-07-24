@@ -179,77 +179,90 @@ export default function CardapioPage() {
     }
   };
 
-  // Trava por chave (categoria, ou "__categories__" para a ordem das categorias):
-  // impede cliques concorrentes na mesma lista — que causariam deadlock no banco
-  // e erro 500 — mas permite reordenar listas diferentes sem travar a UI.
-  const reorderingRef = useRef<Set<string>>(new Set());
+  // Refs espelhando o estado: cliques rápidos acontecem antes do re-render, então
+  // calcular a nova ordem a partir do closure ficaria stale. O ref tem sempre o
+  // valor mais recente (atualizado no handler e sincronizado após cada render).
+  const itemsRef = useRef(items);
+  const categoriesRef = useRef(categories);
+  useEffect(() => {
+    itemsRef.current = items;
+    categoriesRef.current = categories;
+  }, [items, categories]);
 
-  const moveCategory = async (index: number, dir: -1 | 1) => {
-    const KEY = "__categories__";
-    if (reorderingRef.current.has(KEY)) return;
-    const target = index + dir;
-    if (target < 0 || target >= categories.length) return;
-    const next = [...categories];
-    [next[index], next[target]] = [next[target], next[index]];
-    setCategories(next);
-    reorderingRef.current.add(KEY);
-    try {
-      const res = await fetch("/api/vendedor/categories/reorder", {
+  // A UI reordena na hora (otimista) e a sincronização com o servidor é
+  // debounced: só uma requisição é enviada com a ordem final quando o usuário
+  // para de clicar. Isso tira o delay dos cliques e evita requisições
+  // concorrentes na mesma lista (que causariam deadlock no banco).
+  const reorderTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const scheduleReorder = (
+    key: string,
+    url: string,
+    body: unknown,
+    errorMsg: string
+  ) => {
+    const existing = reorderTimersRef.current[key];
+    if (existing) clearTimeout(existing);
+    reorderTimersRef.current[key] = setTimeout(async () => {
+      delete reorderTimersRef.current[key];
+      const res = await fetch(url, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: next.map((c) => c.id) }),
+        body: JSON.stringify(body),
       }).catch(() => null);
       if (!res?.ok) {
-        toast.error("Não foi possível reordenar as categorias.");
+        toast.error(errorMsg);
         load();
       }
-    } finally {
-      reorderingRef.current.delete(KEY);
-    }
+    }, 350);
   };
 
-  const moveProduct = async (
-    categoryId: string,
-    productId: string,
-    dir: -1 | 1
-  ) => {
-    if (reorderingRef.current.has(categoryId)) return;
-    const catIds = items
+  const moveCategory = (index: number, dir: -1 | 1) => {
+    const current = categoriesRef.current;
+    const target = index + dir;
+    if (target < 0 || target >= current.length) return;
+    const next = [...current];
+    [next[index], next[target]] = [next[target], next[index]];
+    categoriesRef.current = next;
+    setCategories(next);
+    scheduleReorder(
+      "__categories__",
+      "/api/vendedor/categories/reorder",
+      { ids: next.map((c) => c.id) },
+      "Não foi possível reordenar as categorias."
+    );
+  };
+
+  const moveProduct = (categoryId: string, productId: string, dir: -1 | 1) => {
+    const currentItems = itemsRef.current;
+    const catIds = currentItems
       .filter((p) => p.categoryId === categoryId)
       .map((p) => p.id);
     const idx = catIds.indexOf(productId);
     const target = idx + dir;
     if (target < 0 || target >= catIds.length) return;
     [catIds[idx], catIds[target]] = [catIds[target], catIds[idx]];
-    setItems((prev) => {
-      // Produtos da categoria já na nova ordem (catIds).
-      const byId = new Map(
-        prev.filter((p) => p.categoryId === categoryId).map((p) => [p.id, p])
-      );
-      const reordered = catIds
-        .map((id) => byId.get(id))
-        .filter((p): p is Product => !!p);
-      // Reconstrói o array trocando apenas os produtos da categoria de lugar,
-      // mantendo os demais nas posições relativas. (Não usar sort aqui: um
-      // comparador que ignora pares de outras categorias viola a transitividade
-      // e produz ordem indefinida — só a última categoria "funcionava".)
-      let ri = 0;
-      return prev.map((p) => (p.categoryId === categoryId ? reordered[ri++] : p));
-    });
-    reorderingRef.current.add(categoryId);
-    try {
-      const res = await fetch("/api/vendedor/products/reorder", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ categoryId, ids: catIds }),
-      }).catch(() => null);
-      if (!res?.ok) {
-        toast.error("Não foi possível reordenar os produtos.");
-        load();
-      }
-    } finally {
-      reorderingRef.current.delete(categoryId);
-    }
+    // Reconstrói o array trocando apenas os produtos da categoria de lugar,
+    // mantendo os demais nas posições relativas. (Não usar sort: um comparador
+    // que ignora pares de outras categorias viola a transitividade e produz
+    // ordem indefinida — só a última categoria "funcionava".)
+    const byId = new Map(
+      currentItems.filter((p) => p.categoryId === categoryId).map((p) => [p.id, p])
+    );
+    const reordered = catIds
+      .map((id) => byId.get(id))
+      .filter((p): p is Product => !!p);
+    let ri = 0;
+    const next = currentItems.map((p) =>
+      p.categoryId === categoryId ? reordered[ri++] : p
+    );
+    itemsRef.current = next;
+    setItems(next);
+    scheduleReorder(
+      `prod_${categoryId}`,
+      "/api/vendedor/products/reorder",
+      { categoryId, ids: catIds },
+      "Não foi possível reordenar os produtos."
+    );
   };
 
   const openCategoryDialog = (category: Category | null) => {
