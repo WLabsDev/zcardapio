@@ -1,0 +1,27 @@
+# Dependências e build (regenerados na imagem)
+node_modules
+.next
+
+# Uploads são dados de runtime (volume persistente em produção)
+public/uploads
+
+# Segredos locais — nunca assar o .env na imagem (as vars vêm do Easypanel)
+.env
+.env.local
+.env.*.local
+
+# Controle de versão e configs de ferramentas
+.git
+.gitignore
+.qwen
+.claude
+
+# Logs e artefatos temporários
+npm-debug.log*
+*.log
+**/*.tsbuildinfo
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
