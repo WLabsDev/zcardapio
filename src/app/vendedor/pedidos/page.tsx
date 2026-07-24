@@ -60,13 +60,13 @@ import { normalizePhone } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 
 const tabs: { value: string; label: string }[] = [
-  { value: "todos", label: "Todos" },
   { value: "pendente", label: "Pendentes" },
   { value: "confirmado", label: "Confirmados" },
   { value: "preparando", label: "Em preparo" },
   { value: "saiu_para_entrega", label: "Saiu p/ entrega" },
   { value: "entregue", label: "Concluídos" },
   { value: "cancelado", label: "Cancelados" },
+  { value: "todos", label: "Todos" },
 ];
 
 /** Barra lateral de cor por status, para bater o olho e saber a situação. */
@@ -91,7 +91,7 @@ function timeAgo(iso: string): string {
 
 export default function PedidosPage() {
   const { orders, updateStatus } = useOrders();
-  const [tab, setTab] = useState("todos");
+  const [tab, setTab] = useState("pendente");
   const [slideDir, setSlideDir] = useState<1 | -1>(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
