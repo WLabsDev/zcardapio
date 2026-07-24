@@ -55,6 +55,8 @@ export default function QrcodePage() {
     slug: "",
   });
   const [tableCount, setTableCount] = useState(10);
+  // Só renderiza o portal de impressão no cliente (document não existe no SSR).
+  const mounted = useSyncExternalStore(subscribeNoop, () => true, () => false);
   const liveOrigin = useSyncExternalStore(subscribeNoop, origin, () => fallbackOrigin);
   const menuUrl = `${liveOrigin}/r/${restaurant.slug}`;
   const tableNumbers = Array.from({ length: tableCount }, (_, i) => i + 1);
@@ -290,35 +292,36 @@ export default function QrcodePage() {
       </Card>
 
       {/* Impressão dos QR codes das mesas — visível só ao imprimir */}
-      {createPortal(
-        <div id="print-tables" className="hidden print:block">
-          <div className="p-2 text-black">
-            <p className="mb-3 text-center text-lg font-extrabold uppercase tracking-wide">
-              {restaurant.name} — QR codes das mesas
-            </p>
-            <div className="grid grid-cols-3 gap-3">
-              {tableNumbers.map((n) => (
-                <div
-                  key={n}
-                  className="flex break-inside-avoid flex-col items-center gap-2 border-2 border-black p-3"
-                >
-                  <QRCode
-                    value={tableUrl(n)}
-                    size={150}
-                    fgColor="#000000"
-                    bgColor="#ffffff"
-                  />
-                  <p className="text-xl font-extrabold">Mesa {n}</p>
-                  <p className="text-center text-[11px]">
-                    Aponte a câmera e faça seu pedido
-                  </p>
-                </div>
-              ))}
+      {mounted &&
+        createPortal(
+          <div id="print-tables" className="hidden print:block">
+            <div className="p-2 text-black">
+              <p className="mb-3 text-center text-lg font-extrabold uppercase tracking-wide">
+                {restaurant.name} — QR codes das mesas
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                {tableNumbers.map((n) => (
+                  <div
+                    key={n}
+                    className="flex break-inside-avoid flex-col items-center gap-2 border-2 border-black p-3"
+                  >
+                    <QRCode
+                      value={tableUrl(n)}
+                      size={150}
+                      fgColor="#000000"
+                      bgColor="#ffffff"
+                    />
+                    <p className="text-xl font-extrabold">Mesa {n}</p>
+                    <p className="text-center text-[11px]">
+                      Aponte a câmera e faça seu pedido
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
