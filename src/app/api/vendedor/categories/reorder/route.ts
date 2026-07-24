@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
 const reorderSchema = z.object({
   ids: z
@@ -10,7 +11,7 @@ const reorderSchema = z.object({
     .min(1, "Informe as categorias."),
 });
 
-export async function PATCH(request: Request) {
+export const PATCH = apiHandler(async (request: Request) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -53,4 +54,4 @@ export async function PATCH(request: Request) {
   });
 
   return Response.json({ ok: true });
-}
+});

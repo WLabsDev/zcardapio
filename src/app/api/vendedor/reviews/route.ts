@@ -6,10 +6,11 @@ import {
   getReviewsForOwner,
 } from "@/lib/db/queries";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
 const FREE_PLAN_MONTHLY_HIDE_LIMIT = 2;
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -39,4 +40,4 @@ export async function GET() {
       canToggle: !isFree,
     },
   });
-}
+});

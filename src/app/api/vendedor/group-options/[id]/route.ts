@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { groupOptions } from "@/lib/db/schema";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
 const reaisToCents = (v: number) => Math.round(v * 100);
 
@@ -28,7 +29,7 @@ async function getOptionWithOwnership(optionId: number, restaurantId: number) {
   return option;
 }
 
-export async function PUT(request: Request, { params }: Ctx) {
+export const PUT = apiHandler(async (request: Request, { params }: Ctx) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -65,9 +66,9 @@ export async function PUT(request: Request, { params }: Ctx) {
     .where(eq(groupOptions.id, optionId));
 
   return Response.json({ ok: true });
-}
+});
 
-export async function DELETE(_request: Request, { params }: Ctx) {
+export const DELETE = apiHandler(async (_request: Request, { params }: Ctx) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -85,4 +86,4 @@ export async function DELETE(_request: Request, { params }: Ctx) {
   await db.delete(groupOptions).where(eq(groupOptions.id, optionId));
 
   return Response.json({ ok: true });
-}
+});

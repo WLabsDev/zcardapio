@@ -3,15 +3,16 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { restaurants, users } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/admin";
+import { apiHandler } from "@/lib/api";
 
 const patchSchema = z.object({
   status: z.enum(["ativo", "pendente", "bloqueado"]),
 });
 
-export async function PATCH(
+export const PATCH = apiHandler(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const denied = await requireAdmin();
   if (denied) return denied;
 
@@ -36,7 +37,7 @@ export async function PATCH(
     return Response.json({ message: "Restaurante não encontrado." }, { status: 404 });
   }
   return Response.json({ restaurant: updated });
-}
+});
 
 const putSchema = z.object({
   name: z.string().min(2).max(120).optional(),
@@ -53,10 +54,10 @@ const putSchema = z.object({
   planId: z.number().int().positive().nullable().optional(),
 });
 
-export async function PUT(
+export const PUT = apiHandler(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const denied = await requireAdmin();
   if (denied) return denied;
 
@@ -106,12 +107,12 @@ export async function PUT(
     return Response.json({ message: "Restaurante não encontrado." }, { status: 404 });
   }
   return Response.json({ ok: true });
-}
+});
 
-export async function DELETE(
+export const DELETE = apiHandler(async (
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const denied = await requireAdmin();
   if (denied) return denied;
 
@@ -144,4 +145,4 @@ export async function DELETE(
   }
 
   return Response.json({ ok: true });
-}
+});

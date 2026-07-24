@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { coupons, loyaltyPrograms, loyaltyProgress } from "@/lib/db/schema";
+import { apiHandler } from "@/lib/api";
 
 const schema = z.object({
   restaurantId: z.coerce.number().int().positive(),
@@ -12,7 +13,7 @@ function generateCode() {
   return `FID-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 }
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const session = await getSession();
   if (!session || session.role !== "cliente") {
     return Response.json({ message: "Faça login para continuar." }, { status: 401 });
@@ -113,4 +114,4 @@ export async function POST(request: Request) {
   });
 
   return Response.json({ code });
-}
+});

@@ -4,13 +4,14 @@ import { db } from "@/lib/db";
 import { plans } from "@/lib/db/schema";
 import { setReviewHidden } from "@/lib/db/queries";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
 const bodySchema = z.object({ hidden: z.boolean() });
 
-export async function PATCH(
+export const PATCH = apiHandler(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -44,4 +45,4 @@ export async function PATCH(
     return Response.json({ message: result.message }, { status: 403 });
   }
   return Response.json({ ok: true });
-}
+});

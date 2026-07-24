@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { restaurants, users } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/admin";
+import { apiHandler } from "@/lib/api";
 
 const putSchema = z.object({
   name: z.string().min(2).max(120).optional(),
@@ -15,10 +16,10 @@ const putSchema = z.object({
     .optional(),
 });
 
-export async function PUT(
+export const PUT = apiHandler(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const denied = await requireAdmin();
   if (denied) return denied;
 
@@ -85,12 +86,12 @@ export async function PUT(
     return Response.json({ message: "Usuário não encontrado." }, { status: 404 });
   }
   return Response.json({ ok: true });
-}
+});
 
-export async function DELETE(
+export const DELETE = apiHandler(async (
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const denied = await requireAdmin();
   if (denied) return denied;
 
@@ -122,4 +123,4 @@ export async function DELETE(
     return Response.json({ message: "Usuário não encontrado." }, { status: 404 });
   }
   return Response.json({ ok: true });
-}
+});

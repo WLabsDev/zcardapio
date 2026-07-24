@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
+import { apiHandler } from "@/lib/api";
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const rows = await db.query.plans.findMany({
     orderBy: (p, { asc }) => [asc(p.priceCents)],
   });
@@ -14,4 +15,4 @@ export async function GET() {
       highlighted: p.highlighted,
     })),
   });
-}
+});

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { optionGroups } from "@/lib/db/schema";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
 const putSchema = z.object({
   name: z.string().min(2, "Informe o nome do grupo.").max(80),
@@ -21,7 +22,7 @@ async function getGroupWithOwnership(groupId: number, restaurantId: number) {
   return group;
 }
 
-export async function PUT(request: Request, { params }: Ctx) {
+export const PUT = apiHandler(async (request: Request, { params }: Ctx) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -55,9 +56,9 @@ export async function PUT(request: Request, { params }: Ctx) {
     .where(eq(optionGroups.id, groupId));
 
   return Response.json({ ok: true });
-}
+});
 
-export async function DELETE(_request: Request, { params }: Ctx) {
+export const DELETE = apiHandler(async (_request: Request, { params }: Ctx) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -76,4 +77,4 @@ export async function DELETE(_request: Request, { params }: Ctx) {
   await db.delete(optionGroups).where(eq(optionGroups.id, groupId));
 
   return Response.json({ ok: true });
-}
+});

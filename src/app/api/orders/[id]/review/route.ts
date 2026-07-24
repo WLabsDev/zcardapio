@@ -4,16 +4,17 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { orders, restaurants } from "@/lib/db/schema";
 import { createReview, getOrderById } from "@/lib/db/queries";
+import { apiHandler } from "@/lib/api";
 
 const bodySchema = z.object({
   rating: z.number().int().min(1).max(5),
   comment: z.string().max(500).optional(),
 });
 
-export async function POST(
+export const POST = apiHandler(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const session = await getSession();
   if (!session || session.role !== "cliente") {
     return Response.json({ message: "Faça login para avaliar." }, { status: 401 });
@@ -84,4 +85,4 @@ export async function POST(
   }
 
   return Response.json({ ok: true });
-}
+});

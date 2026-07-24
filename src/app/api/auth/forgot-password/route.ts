@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { passwordResetTokens, users } from "@/lib/db/schema";
 import { sendPasswordResetEmail } from "@/lib/mailer";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { apiHandler } from "@/lib/api";
 
 const schema = z.object({
   email: z.email("Informe um e-mail válido."),
@@ -13,7 +14,7 @@ const schema = z.object({
 const TOKEN_TTL_MS = 30 * 60 * 1000;
 
 /** Recuperação de senha de vendedor/admin (login por e-mail) via link enviado por SMTP. */
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   // Proteção contra abuso/força bruta: no máx. 5 solicitações/hora por IP.
   const rl = rateLimit(`forgot:${clientIp(request)}`, 5, 60 * 60 * 1000);
   if (!rl.ok) {
@@ -64,4 +65,4 @@ export async function POST(request: Request) {
     message:
       "Se existir uma conta com esse e-mail, você receberá um link para redefinir sua senha.",
   });
-}
+});

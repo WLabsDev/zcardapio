@@ -3,12 +3,13 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { plans, restaurants } from "@/lib/db/schema";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
 const schema = z.object({
   planId: z.coerce.number().int().positive(),
 });
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -32,4 +33,4 @@ export async function POST(request: Request) {
     .where(eq(restaurants.id, restaurant.id));
 
   return Response.json({ ok: true, planName: plan.name });
-}
+});

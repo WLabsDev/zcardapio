@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { categories, products } from "@/lib/db/schema";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
 const reaisToCents = (v: number) => Math.round(v * 100);
 
@@ -29,7 +30,7 @@ async function parseProductId(params: Promise<{ id: string }>) {
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export async function PUT(request: Request, { params }: Ctx) {
+export const PUT = apiHandler(async (request: Request, { params }: Ctx) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
   const productId = await parseProductId(params);
@@ -78,9 +79,9 @@ export async function PUT(request: Request, { params }: Ctx) {
     return Response.json({ message: "Produto não encontrado." }, { status: 404 });
   }
   return Response.json({ ok: true });
-}
+});
 
-export async function PATCH(request: Request, { params }: Ctx) {
+export const PATCH = apiHandler(async (request: Request, { params }: Ctx) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
   const productId = await parseProductId(params);
@@ -106,9 +107,9 @@ export async function PATCH(request: Request, { params }: Ctx) {
     return Response.json({ message: "Produto não encontrado." }, { status: 404 });
   }
   return Response.json({ ok: true });
-}
+});
 
-export async function DELETE(_request: Request, { params }: Ctx) {
+export const DELETE = apiHandler(async (_request: Request, { params }: Ctx) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
   const productId = await parseProductId(params);
@@ -127,4 +128,4 @@ export async function DELETE(_request: Request, { params }: Ctx) {
     return Response.json({ message: "Produto não encontrado." }, { status: 404 });
   }
   return Response.json({ ok: true });
-}
+});

@@ -3,12 +3,13 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
 const postSchema = z.object({
   name: z.string().min(2, "Informe o nome da categoria.").max(80),
 });
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -35,4 +36,4 @@ export async function POST(request: Request) {
     .returning({ id: categories.id });
 
   return Response.json({ id: String(created.id) }, { status: 201 });
-}
+});

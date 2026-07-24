@@ -4,8 +4,9 @@ import { getSession, setSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { normalizePhone } from "@/lib/phone";
+import { apiHandler } from "@/lib/api";
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const session = await getSession();
   if (!session) {
     return Response.json({ message: "Faça login para continuar." }, { status: 401 });
@@ -18,7 +19,7 @@ export async function GET() {
     return Response.json({ message: "Usuário não encontrado." }, { status: 404 });
   }
   return Response.json({ user: { ...user, id: String(user.id) } });
-}
+});
 
 const putSchema = z.object({
   name: z.string().min(2, "Informe seu nome.").max(120),
@@ -26,7 +27,7 @@ const putSchema = z.object({
   email: z.union([z.email("Informe um e-mail válido."), z.literal("")]).default(""),
 });
 
-export async function PUT(request: Request) {
+export const PUT = apiHandler(async (request: Request) => {
   const session = await getSession();
   if (!session) {
     return Response.json({ message: "Faça login para continuar." }, { status: 401 });
@@ -67,4 +68,4 @@ export async function PUT(request: Request) {
   // Renova o cookie para o nome novo aparecer nos painéis.
   await setSession(updated);
   return Response.json({ ok: true });
-}
+});

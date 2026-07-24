@@ -2,8 +2,9 @@ import { and, eq, gte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { orders } from "@/lib/db/schema";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
-export async function GET(request: Request) {
+export const GET = apiHandler(async (request: Request) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -85,4 +86,4 @@ export async function GET(request: Request) {
       topProducts,
     },
   });
-}
+});

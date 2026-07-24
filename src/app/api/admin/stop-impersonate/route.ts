@@ -1,6 +1,7 @@
 import { stopImpersonation } from "@/lib/auth";
+import { apiHandler } from "@/lib/api";
 
-export async function POST() {
+export const POST = apiHandler(async () => {
   const restored = await stopImpersonation();
   if (!restored) {
     return Response.json(
@@ -9,4 +10,4 @@ export async function POST() {
     );
   }
   return Response.json({ ok: true });
-}
+});

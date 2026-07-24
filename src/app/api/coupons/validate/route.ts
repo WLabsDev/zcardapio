@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { coupons } from "@/lib/db/schema";
+import { apiHandler } from "@/lib/api";
 
 const validateSchema = z.object({
   restaurantId: z.coerce.number().int().positive(),
@@ -12,7 +13,7 @@ const validateSchema = z.object({
  * Valida um cupom para exibição no checkout. O desconto real é sempre
  * recalculado no servidor ao criar o pedido (nunca confie no cliente).
  */
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const body = await request.json().catch(() => null);
   const parsed = validateSchema.safeParse(body);
   if (!parsed.success) {
@@ -37,4 +38,4 @@ export async function POST(request: Request) {
     type: coupon.type,
     value: coupon.type === "fixed" ? coupon.value / 100 : coupon.value,
   });
-}
+});

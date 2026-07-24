@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { categories, products } from "@/lib/db/schema";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
 const putSchema = z.object({
   name: z.string().min(2, "Informe o nome da categoria.").max(80),
@@ -16,7 +17,7 @@ async function parseCategoryId(params: Ctx["params"]) {
   return Number.isInteger(categoryId) ? categoryId : null;
 }
 
-export async function PUT(request: Request, { params }: Ctx) {
+export const PUT = apiHandler(async (request: Request, { params }: Ctx) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
   const categoryId = await parseCategoryId(params);
@@ -47,9 +48,9 @@ export async function PUT(request: Request, { params }: Ctx) {
     return Response.json({ message: "Categoria não encontrada." }, { status: 404 });
   }
   return Response.json({ ok: true });
-}
+});
 
-export async function DELETE(_request: Request, { params }: Ctx) {
+export const DELETE = apiHandler(async (_request: Request, { params }: Ctx) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
   const categoryId = await parseCategoryId(params);
@@ -85,4 +86,4 @@ export async function DELETE(_request: Request, { params }: Ctx) {
     return Response.json({ message: "Categoria não encontrada." }, { status: 404 });
   }
   return Response.json({ ok: true });
-}
+});

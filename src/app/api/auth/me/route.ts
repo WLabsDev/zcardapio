@@ -1,6 +1,7 @@
 import { getSession } from "@/lib/auth";
+import { apiHandler } from "@/lib/api";
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const session = await getSession();
   if (!session) {
     return Response.json({ message: "Não autenticado." }, { status: 401 });
@@ -13,4 +14,4 @@ export async function GET() {
       role: session.role,
     },
   });
-}
+});

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { phoneOtpCodes, users } from "@/lib/db/schema";
 import { normalizePhone } from "@/lib/phone";
+import { apiHandler } from "@/lib/api";
 
 const schema = z.object({
   phone: z.string().min(10, "Informe um WhatsApp válido com DDD."),
@@ -15,7 +16,7 @@ const schema = z.object({
 const MAX_ATTEMPTS = 5;
 
 /** Verifica o código de WhatsApp e define a nova senha do cliente. */
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
@@ -65,4 +66,4 @@ export async function POST(request: Request) {
   });
 
   return Response.json({ ok: true });
-}
+});

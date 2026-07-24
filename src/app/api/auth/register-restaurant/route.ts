@@ -4,6 +4,7 @@ import { z } from "zod";
 import { setSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { plans, restaurants, users } from "@/lib/db/schema";
+import { apiHandler } from "@/lib/api";
 
 const registerRestaurantSchema = z.object({
   nome: z.string().min(3, "Informe seu nome completo."),
@@ -28,7 +29,7 @@ const PLAN_NAME_BY_KEY: Record<string, string> = {
   premium: "Premium",
 };
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const body = await request.json().catch(() => null);
   const parsed = registerRestaurantSchema.safeParse(body);
   if (!parsed.success) {
@@ -131,4 +132,4 @@ export async function POST(request: Request) {
     },
     { status: 201 }
   );
-}
+});

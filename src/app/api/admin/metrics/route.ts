@@ -3,8 +3,9 @@ import { db } from "@/lib/db";
 import { orders, plans, restaurants, users } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/admin";
 import { isWhatsAppConfigured } from "@/lib/whatsapp";
+import { apiHandler } from "@/lib/api";
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const denied = await requireAdmin();
   if (denied) return denied;
 
@@ -38,4 +39,4 @@ export async function GET() {
     },
     whatsappConfigured: isWhatsAppConfigured(),
   });
-}
+});

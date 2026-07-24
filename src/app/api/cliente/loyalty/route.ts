@@ -2,8 +2,9 @@ import { and, desc, eq, isNull } from "drizzle-orm";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { coupons, loyaltyProgress } from "@/lib/db/schema";
+import { apiHandler } from "@/lib/api";
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const session = await getSession();
   if (!session || session.role !== "cliente") {
     return Response.json({ message: "Faça login para continuar." }, { status: 401 });
@@ -74,4 +75,4 @@ export async function GET() {
   }));
 
   return Response.json({ items, coupons: mappedCoupons });
-}
+});

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { loyaltyPrograms } from "@/lib/db/schema";
 import { isFreePlan } from "@/lib/plan-limits";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
 const putSchema = z.object({
   mechanic: z.enum(["none", "points", "cashback", "stamps"]),
@@ -25,7 +26,7 @@ async function getPlanName(restaurantId: number) {
   return row?.plan?.name ?? null;
 }
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -47,9 +48,9 @@ export async function GET() {
     },
     isFree: isFreePlan(await getPlanName(restaurant.id)),
   });
-}
+});
 
-export async function PUT(request: Request) {
+export const PUT = apiHandler(async (request: Request) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -112,4 +113,4 @@ export async function PUT(request: Request) {
   }
 
   return Response.json({ ok: true });
-}
+});

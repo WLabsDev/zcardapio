@@ -5,6 +5,7 @@ import { setSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { normalizePhone } from "@/lib/phone";
+import { apiHandler } from "@/lib/api";
 
 const schema = z.object({
   phone: z.string().min(10, "Informe um WhatsApp válido com DDD."),
@@ -19,7 +20,7 @@ const schema = z.object({
  * (OTP via WhatsApp/SMS) antes de permitir definir a senha. Nesta demo a
  * validação é apenas pelo número.
  */
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
@@ -61,4 +62,4 @@ export async function POST(request: Request) {
       role: updated.role,
     },
   });
-}
+});

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { coupons } from "@/lib/db/schema";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
 const postSchema = z.object({
   code: z
@@ -16,7 +17,7 @@ const postSchema = z.object({
   active: z.boolean().default(true),
 });
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -33,9 +34,9 @@ export async function GET() {
       active: c.active,
     })),
   });
-}
+});
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -83,4 +84,4 @@ export async function POST(request: Request) {
     .returning({ id: coupons.id });
 
   return Response.json({ id: String(created.id) }, { status: 201 });
-}
+});

@@ -1,9 +1,10 @@
 import { clearSession } from "@/lib/auth";
+import { apiHandler } from "@/lib/api";
 
-export async function POST() {
+export const POST = apiHandler(async () => {
   await clearSession();
   return Response.json({ ok: true });
-}
+});
 
 /**
  * Variante por GET, pensada para ser usada como alvo de `redirect()` em
@@ -12,8 +13,8 @@ export async function POST() {
  * sessão aponta para algo que não existe mais (ex.: restaurante excluído),
  * evitando um loop de redirecionamento entre a página protegida e /login.
  */
-export async function GET(request: Request) {
+export const GET = apiHandler(async (request: Request) => {
   await clearSession();
   const next = new URL(request.url).searchParams.get("next") || "/login";
   return Response.redirect(new URL(next, request.url));
-}
+});

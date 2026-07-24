@@ -4,13 +4,14 @@ import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
+import { apiHandler } from "@/lib/api";
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, "Informe a senha atual."),
   newPassword: z.string().min(8, "A nova senha precisa ter pelo menos 8 caracteres."),
 });
 
-export async function PUT(request: Request) {
+export const PUT = apiHandler(async (request: Request) => {
   const session = await getSession();
   if (!session) {
     return Response.json({ message: "Faça login para continuar." }, { status: 401 });
@@ -50,4 +51,4 @@ export async function PUT(request: Request) {
     .where(eq(users.id, user.id));
 
   return Response.json({ ok: true });
-}
+});

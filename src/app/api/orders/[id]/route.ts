@@ -13,6 +13,7 @@ import {
 import { mapOrder } from "@/lib/db/queries";
 import { isFreePlan } from "@/lib/plan-limits";
 import { publishOrderEvent } from "@/lib/realtime";
+import { apiHandler } from "@/lib/api";
 
 const patchSchema = z.object({
   status: z.enum([
@@ -25,10 +26,10 @@ const patchSchema = z.object({
   ]),
 });
 
-export async function GET(
+export const GET = apiHandler(async (
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const session = await getSession();
   if (!session) {
     return Response.json({ message: "Faça login para continuar." }, { status: 401 });
@@ -64,12 +65,12 @@ export async function GET(
   }
 
   return Response.json({ order: mapOrder(order) });
-}
+});
 
-export async function PATCH(
+export const PATCH = apiHandler(async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-) {
+) => {
   const session = await getSession();
   if (!session || session.role !== "restaurante") {
     return Response.json({ message: "Acesso negado." }, { status: 403 });
@@ -250,4 +251,4 @@ export async function PATCH(
   }).catch(() => {});
 
   return Response.json({ order: updated });
-}
+});

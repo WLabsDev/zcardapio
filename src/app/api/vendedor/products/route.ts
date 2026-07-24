@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { categories, products } from "@/lib/db/schema";
 import { getProductsByRestaurantDb } from "@/lib/db/queries";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
 const reaisToCents = (v: number) => Math.round(v * 100);
 
@@ -21,7 +22,7 @@ const productSchema = z.object({
   stock: z.number().int().min(0).nullable().optional(),
 });
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -36,9 +37,9 @@ export async function GET() {
     products: items,
     categories: cats.map((c) => ({ id: String(c.id), name: c.name })),
   });
-}
+});
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -79,4 +80,4 @@ export async function POST(request: Request) {
     .returning({ id: products.id });
 
   return Response.json({ id: String(created.id) }, { status: 201 });
-}
+});

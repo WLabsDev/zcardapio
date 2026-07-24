@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { deliveryZones } from "@/lib/db/schema";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
 const reaisToCents = (v: number) => Math.round(v * 100);
 
@@ -11,7 +12,7 @@ const postSchema = z.object({
   fee: z.number().min(0, "Taxa inválida."),
 });
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -26,9 +27,9 @@ export async function GET() {
       fee: z.feeCents / 100,
     })),
   });
-}
+});
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -51,4 +52,4 @@ export async function POST(request: Request) {
     .returning({ id: deliveryZones.id });
 
   return Response.json({ id: String(created.id) }, { status: 201 });
-}
+});

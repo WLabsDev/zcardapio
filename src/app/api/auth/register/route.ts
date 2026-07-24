@@ -5,6 +5,7 @@ import { setSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { normalizePhone } from "@/lib/phone";
+import { apiHandler } from "@/lib/api";
 
 const registerSchema = z.object({
   nome: z.string().min(3, "Informe seu nome completo."),
@@ -13,7 +14,7 @@ const registerSchema = z.object({
   email: z.string().email("E-mail inválido.").optional().or(z.literal("")),
 });
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const body = await request.json().catch(() => null);
   const parsed = registerSchema.safeParse(body);
   if (!parsed.success) {
@@ -55,4 +56,4 @@ export async function POST(request: Request) {
     { user: { id: user.id, name: user.name, email: user.email, role: user.role } },
     { status: 201 }
   );
-}
+});

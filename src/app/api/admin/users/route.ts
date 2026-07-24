@@ -4,8 +4,9 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/admin";
+import { apiHandler } from "@/lib/api";
 
-export async function GET(request: Request) {
+export const GET = apiHandler(async (request: Request) => {
   const denied = await requireAdmin();
   if (denied) return denied;
 
@@ -36,7 +37,7 @@ export async function GET(request: Request) {
       createdAt: u.createdAt.toISOString(),
     })),
   });
-}
+});
 
 const postSchema = z.object({
   name: z.string().min(2, "Informe o nome.").max(120),
@@ -46,7 +47,7 @@ const postSchema = z.object({
   senha: z.union([z.string().min(8, "Mínimo de 8 caracteres."), z.literal("")]).default(""),
 });
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const denied = await requireAdmin();
   if (denied) return denied;
 
@@ -87,4 +88,4 @@ export async function POST(request: Request) {
     .returning({ id: users.id });
 
   return Response.json({ id: String(created.id) }, { status: 201 });
-}
+});

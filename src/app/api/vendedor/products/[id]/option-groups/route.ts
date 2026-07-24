@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { optionGroups, products } from "@/lib/db/schema";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
 const postSchema = z.object({
   name: z.string().min(2, "Informe o nome do grupo.").max(80),
@@ -12,7 +13,7 @@ const postSchema = z.object({
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export async function POST(request: Request, { params }: Ctx) {
+export const POST = apiHandler(async (request: Request, { params }: Ctx) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -53,4 +54,4 @@ export async function POST(request: Request, { params }: Ctx) {
     .returning({ id: optionGroups.id });
 
   return Response.json({ id: String(created.id) }, { status: 201 });
-}
+});

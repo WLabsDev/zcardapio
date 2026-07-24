@@ -2,6 +2,7 @@ import { getSession } from "@/lib/auth";
 import { getOrderById } from "@/lib/db/queries";
 import { subscribeToOrderEvents } from "@/lib/realtime";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
 // Precisa do runtime Node (não edge) pra manter a conexão Postgres de LISTEN.
 export const runtime = "nodejs";
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 const HEARTBEAT_MS = 25_000;
 
-export async function GET(request: Request) {
+export const GET = apiHandler(async (request: Request) => {
   const session = await getSession();
   if (!session) {
     return Response.json({ message: "Faça login para continuar." }, { status: 401 });
@@ -67,4 +68,4 @@ export async function GET(request: Request) {
       "X-Accel-Buffering": "no",
     },
   });
-}
+});

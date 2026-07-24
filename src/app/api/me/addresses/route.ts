@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { addresses } from "@/lib/db/schema";
+import { apiHandler } from "@/lib/api";
 
 const addressSchema = z.object({
   label: z.string().min(1, "Dê um nome ao endereço.").max(40),
@@ -10,7 +11,7 @@ const addressSchema = z.object({
   isMain: z.boolean().optional(),
 });
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const session = await getSession();
   if (!session) {
     return Response.json({ message: "Faça login para continuar." }, { status: 401 });
@@ -22,9 +23,9 @@ export async function GET() {
   return Response.json({
     addresses: rows.map((a) => ({ ...a, id: String(a.id) })),
   });
-}
+});
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const session = await getSession();
   if (!session) {
     return Response.json({ message: "Faça login para continuar." }, { status: 401 });
@@ -46,4 +47,4 @@ export async function POST(request: Request) {
     .values({ userId, ...parsed.data, isMain: parsed.data.isMain ?? false })
     .returning({ id: addresses.id });
   return Response.json({ id: String(created.id) }, { status: 201 });
-}
+});

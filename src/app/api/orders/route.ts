@@ -27,6 +27,7 @@ import { generateOrderPix } from "@/lib/pix";
 import { FREE_PLAN_MONTHLY_ORDER_LIMIT, isFreePlan } from "@/lib/plan-limits";
 import { publishOrderEvent } from "@/lib/realtime";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
+import { apiHandler } from "@/lib/api";
 
 /** Lançado dentro da transação quando o estoque acabou entre a validação e o commit. */
 class OutOfStockError extends Error {}
@@ -61,7 +62,7 @@ const PAYMENT_LABEL: Record<string, string> = {
   dinheiro: "Dinheiro",
 };
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const body = await request.json().catch(() => null);
   const parsed = createOrderSchema.safeParse(body);
   if (!parsed.success) {
@@ -496,9 +497,9 @@ export async function POST(request: Request) {
     },
     { status: 201 }
   );
-}
+});
 
-export async function GET(request: Request) {
+export const GET = apiHandler(async (request: Request) => {
   const session = await getSession();
   if (!session) {
     return Response.json({ message: "Faça login para continuar." }, { status: 401 });
@@ -520,4 +521,4 @@ export async function GET(request: Request) {
   return Response.json({
     orders: await getOrdersByCustomer(Number(session.sub)),
   });
-}
+});

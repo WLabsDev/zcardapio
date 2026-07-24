@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { normalizePhone } from "@/lib/phone";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { apiHandler } from "@/lib/api";
 
 const loginSchema = z.object({
   // "cliente" = entra por WhatsApp; "restaurante" = entra por e-mail (cobre
@@ -16,7 +17,7 @@ const loginSchema = z.object({
   phone: z.string().optional(),
 });
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   // Proteção contra força bruta: no máx. 10 tentativas/minuto por IP.
   const rl = rateLimit(`login:${clientIp(request)}`, 10, 60_000);
   if (!rl.ok) {
@@ -123,4 +124,4 @@ export async function POST(request: Request) {
   return Response.json({
     user: { id: user.id, name: user.name, email: user.email, role: user.role },
   });
-}
+});

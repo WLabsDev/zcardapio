@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { deliveryZones } from "@/lib/db/schema";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
 const reaisToCents = (v: number) => Math.round(v * 100);
 
@@ -19,7 +20,7 @@ async function parseId(params: Ctx["params"]) {
   return Number.isInteger(zoneId) ? zoneId : null;
 }
 
-export async function PUT(request: Request, { params }: Ctx) {
+export const PUT = apiHandler(async (request: Request, { params }: Ctx) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
   const zoneId = await parseId(params);
@@ -51,9 +52,9 @@ export async function PUT(request: Request, { params }: Ctx) {
     return Response.json({ message: "Região não encontrada." }, { status: 404 });
   }
   return Response.json({ ok: true });
-}
+});
 
-export async function DELETE(_request: Request, { params }: Ctx) {
+export const DELETE = apiHandler(async (_request: Request, { params }: Ctx) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
   const zoneId = await parseId(params);
@@ -75,4 +76,4 @@ export async function DELETE(_request: Request, { params }: Ctx) {
     return Response.json({ message: "Região não encontrada." }, { status: 404 });
   }
   return Response.json({ ok: true });
-}
+});

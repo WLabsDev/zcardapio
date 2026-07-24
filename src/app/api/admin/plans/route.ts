@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { plans, restaurants } from "@/lib/db/schema";
 import { requireAdmin } from "@/lib/admin";
+import { apiHandler } from "@/lib/api";
 
 const postSchema = z.object({
   name: z.string().min(2, "Informe o nome do plano.").max(50),
@@ -12,7 +13,7 @@ const postSchema = z.object({
   highlighted: z.boolean().default(false),
 });
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const denied = await requireAdmin();
   if (denied) return denied;
 
@@ -38,9 +39,9 @@ export async function POST(request: Request) {
     .returning({ id: plans.id });
 
   return Response.json({ id: String(created.id) }, { status: 201 });
-}
+});
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const denied = await requireAdmin();
   if (denied) return denied;
 
@@ -65,4 +66,4 @@ export async function GET() {
       subscribers: countByPlan.get(p.id) ?? 0,
     })),
   });
-}
+});

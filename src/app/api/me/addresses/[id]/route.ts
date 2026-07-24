@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { addresses } from "@/lib/db/schema";
+import { apiHandler } from "@/lib/api";
 
 const putSchema = z.object({
   label: z.string().min(1, "Dê um nome ao endereço.").max(40),
@@ -19,7 +20,7 @@ async function ownedWhere(params: Ctx["params"], userId: number) {
   return and(eq(addresses.id, addressId), eq(addresses.userId, userId));
 }
 
-export async function PUT(request: Request, { params }: Ctx) {
+export const PUT = apiHandler(async (request: Request, { params }: Ctx) => {
   const session = await getSession();
   if (!session) {
     return Response.json({ message: "Faça login para continuar." }, { status: 401 });
@@ -51,9 +52,9 @@ export async function PUT(request: Request, { params }: Ctx) {
     return Response.json({ message: "Endereço não encontrado." }, { status: 404 });
   }
   return Response.json({ ok: true });
-}
+});
 
-export async function DELETE(_request: Request, { params }: Ctx) {
+export const DELETE = apiHandler(async (_request: Request, { params }: Ctx) => {
   const session = await getSession();
   if (!session) {
     return Response.json({ message: "Faça login para continuar." }, { status: 401 });
@@ -70,4 +71,4 @@ export async function DELETE(_request: Request, { params }: Ctx) {
     return Response.json({ message: "Endereço não encontrado." }, { status: 404 });
   }
   return Response.json({ ok: true });
-}
+});

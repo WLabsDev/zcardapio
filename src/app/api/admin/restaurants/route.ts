@@ -1,7 +1,8 @@
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
+import { apiHandler } from "@/lib/api";
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const denied = await requireAdmin();
   if (denied) return denied;
 
@@ -24,4 +25,4 @@ export async function GET() {
       createdAt: r.createdAt.toISOString(),
     })),
   });
-}
+});

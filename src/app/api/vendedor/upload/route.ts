@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { apiHandler } from "@/lib/api";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -50,7 +51,7 @@ function detectImageType(bytes: Uint8Array): "jpeg" | "png" | "webp" | null {
   return null;
 }
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const { error } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -92,4 +93,4 @@ export async function POST(request: Request) {
   await writeFile(path.join(dir, name), buffer);
 
   return Response.json({ url: `/uploads/${name}` }, { status: 201 });
-}
+});

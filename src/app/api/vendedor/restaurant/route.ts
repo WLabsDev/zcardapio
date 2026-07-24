@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { plans, restaurants } from "@/lib/db/schema";
 import { getRestaurantByOwnerMapped } from "@/lib/db/queries";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { apiHandler } from "@/lib/api";
 
 const reaisToCents = (v: number) => Math.round(v * 100);
 
@@ -74,7 +75,7 @@ const putSchema = z.object({
   reviewsEnabled: z.boolean().optional(),
 });
 
-export async function GET() {
+export const GET = apiHandler(async () => {
   const session = await getSession();
   if (!session || session.role !== "restaurante") {
     return Response.json({ message: "Acesso negado." }, { status: 403 });
@@ -84,9 +85,9 @@ export async function GET() {
     return Response.json({ message: "Restaurante não encontrado." }, { status: 404 });
   }
   return Response.json({ restaurant });
-}
+});
 
-export async function PUT(request: Request) {
+export const PUT = apiHandler(async (request: Request) => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
@@ -182,4 +183,4 @@ export async function PUT(request: Request) {
     .where(eq(restaurants.id, restaurant.id));
 
   return Response.json({ ok: true });
-}
+});

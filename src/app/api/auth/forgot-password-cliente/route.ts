@@ -6,6 +6,7 @@ import { phoneOtpCodes, users } from "@/lib/db/schema";
 import { normalizePhone } from "@/lib/phone";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
+import { apiHandler } from "@/lib/api";
 
 const schema = z.object({
   phone: z.string().min(10, "Informe um WhatsApp válido com DDD."),
@@ -14,7 +15,7 @@ const schema = z.object({
 const CODE_TTL_MS = 10 * 60 * 1000;
 
 /** Recuperação de senha de cliente (login por WhatsApp) via código enviado no próprio WhatsApp. */
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   // Proteção contra abuso/força bruta: no máx. 5 solicitações/hora por IP.
   const rl = rateLimit(`forgot-cliente:${clientIp(request)}`, 5, 60 * 60 * 1000);
   if (!rl.ok) {
@@ -63,4 +64,4 @@ export async function POST(request: Request) {
   ).catch((e) => console.error("[forgot-password-cliente] falha no envio:", e));
 
   return Response.json({ ok: true });
-}
+});

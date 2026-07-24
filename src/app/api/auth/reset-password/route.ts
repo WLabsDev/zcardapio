@@ -4,6 +4,7 @@ import { and, eq, gt, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { passwordResetTokens, users } from "@/lib/db/schema";
+import { apiHandler } from "@/lib/api";
 
 const schema = z.object({
   token: z.string().min(1, "Token inválido."),
@@ -11,7 +12,7 @@ const schema = z.object({
 });
 
 /** Aplica a nova senha de vendedor/admin a partir do link enviado por e-mail. */
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
@@ -50,4 +51,4 @@ export async function POST(request: Request) {
   });
 
   return Response.json({ ok: true });
-}
+});

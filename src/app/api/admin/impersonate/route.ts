@@ -4,13 +4,14 @@ import { requireAdmin } from "@/lib/admin";
 import { getSession, startImpersonation } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { restaurants } from "@/lib/db/schema";
+import { apiHandler } from "@/lib/api";
 
 const bodySchema = z.discriminatedUnion("target", [
   z.object({ target: z.literal("cliente") }),
   z.object({ target: z.literal("restaurante"), restaurantId: z.number().int() }),
 ]);
 
-export async function POST(request: Request) {
+export const POST = apiHandler(async (request: Request) => {
   const denied = await requireAdmin();
   if (denied) return denied;
 
@@ -54,4 +55,4 @@ export async function POST(request: Request) {
     role: "restaurante",
   });
   return Response.json({ redirect: "/vendedor" });
-}
+});
