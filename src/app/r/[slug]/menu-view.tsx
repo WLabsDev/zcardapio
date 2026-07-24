@@ -152,6 +152,7 @@ export function MenuView({
   pauseMessage,
   reviews = [],
   tableNumber = null,
+  showBranding = true,
 }: {
   restaurant: Restaurant;
   products: Product[];
@@ -160,6 +161,7 @@ export function MenuView({
   pauseMessage?: string;
   reviews?: Review[];
   tableNumber?: number | null;
+  showBranding?: boolean;
 }) {
   const closed = !initiallyOpen;
   const [search, setSearch] = useState("");
@@ -452,6 +454,34 @@ export function MenuView({
               ))}
             </div>
           </section>
+        )}
+
+        {/* Selo "Feito com zcardapio" — crescimento orgânico; removido nos planos pagos */}
+        {showBranding && (
+          <div className="pb-2 pt-8 text-center">
+            <a
+              href="/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-foreground/10 bg-card px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+            >
+              <UtensilsCrossed className="size-3" />
+              <span>Cardápio feito com</span>
+              <span className="font-display font-bold text-foreground">
+                zcardapio
+              </span>
+            </a>
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              <a
+                href="/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 transition-colors hover:text-foreground"
+              >
+                Crie o seu cardápio grátis →
+              </a>
+            </p>
+          </div>
         )}
       </div>
 

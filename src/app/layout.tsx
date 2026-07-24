@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Bricolage_Grotesque } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { Analytics } from "@/components/analytics";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -20,6 +21,10 @@ export const metadata: Metadata = {
   },
   description:
     "Crie o cardápio digital do seu restaurante em minutos. QR code, pedidos online e personalização completa.",
+  // Verificação do Google Search Console (só ativa se a env estiver definida).
+  verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
+    : undefined,
 };
 
 export default function RootLayout({
@@ -38,6 +43,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {children}
         <Toaster richColors position="bottom-right" duration={2500} />
+        <Analytics />
       </body>
     </html>
   );

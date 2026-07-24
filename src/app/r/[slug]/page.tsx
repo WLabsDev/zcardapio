@@ -8,7 +8,11 @@ import {
   getReviewsByRestaurant,
 } from "@/lib/db/queries";
 import { computeOpenState } from "@/lib/hours";
-import { getMonthlyOrderLimit, getPlanStatus } from "@/lib/plan-limits";
+import {
+  getMonthlyOrderLimit,
+  getPlanStatus,
+  isProUnlocked,
+} from "@/lib/plan-limits";
 import { MenuView } from "./menu-view";
 
 export default async function RestaurantMenuPage({
@@ -32,13 +36,13 @@ export default async function RestaurantMenuPage({
     session?.role === "cliente" ? Number(session.sub) : undefined
   );
   const openState = computeOpenState(restaurant);
-  const orderLimit = getMonthlyOrderLimit(
-    restaurant.plan,
-    getPlanStatus(restaurant.plan, restaurant.planValidUntil)
-  );
+  const planStatus = getPlanStatus(restaurant.plan, restaurant.planValidUntil);
+  const orderLimit = getMonthlyOrderLimit(restaurant.plan, planStatus);
   const overLimit =
     Number.isFinite(orderLimit) &&
     (await getMonthlyOrderCount(Number(restaurant.id))) >= orderLimit;
+  // Selo "Feito com zcardapio" aparece só nos planos grátis (benefício do pago é removê-lo).
+  const showBranding = !isProUnlocked(planStatus);
 
   return (
     <>
@@ -47,6 +51,7 @@ export default async function RestaurantMenuPage({
         restaurant={restaurant}
         products={products}
         tableNumber={tableNumber}
+        showBranding={showBranding}
         user={session ? { name: session.name, role: session.role } : null}
         initiallyOpen={openState.open && !overLimit}
         pauseMessage={
