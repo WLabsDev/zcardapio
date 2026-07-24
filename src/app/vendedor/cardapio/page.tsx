@@ -179,18 +179,20 @@ export default function CardapioPage() {
     }
   };
 
-  // Evita reordenações concorrentes (cliques rápidos) que causariam deadlock no
-  // banco e erro 500 — ignora cliques enquanto uma requisição está em voo.
-  const reorderingRef = useRef(false);
+  // Trava por chave (categoria, ou "__categories__" para a ordem das categorias):
+  // impede cliques concorrentes na mesma lista — que causariam deadlock no banco
+  // e erro 500 — mas permite reordenar listas diferentes sem travar a UI.
+  const reorderingRef = useRef<Set<string>>(new Set());
 
   const moveCategory = async (index: number, dir: -1 | 1) => {
-    if (reorderingRef.current) return;
+    const KEY = "__categories__";
+    if (reorderingRef.current.has(KEY)) return;
     const target = index + dir;
     if (target < 0 || target >= categories.length) return;
     const next = [...categories];
     [next[index], next[target]] = [next[target], next[index]];
     setCategories(next);
-    reorderingRef.current = true;
+    reorderingRef.current.add(KEY);
     try {
       const res = await fetch("/api/vendedor/categories/reorder", {
         method: "PATCH",
@@ -202,7 +204,7 @@ export default function CardapioPage() {
         load();
       }
     } finally {
-      reorderingRef.current = false;
+      reorderingRef.current.delete(KEY);
     }
   };
 
@@ -211,7 +213,7 @@ export default function CardapioPage() {
     productId: string,
     dir: -1 | 1
   ) => {
-    if (reorderingRef.current) return;
+    if (reorderingRef.current.has(categoryId)) return;
     const catIds = items
       .filter((p) => p.categoryId === categoryId)
       .map((p) => p.id);
@@ -219,16 +221,22 @@ export default function CardapioPage() {
     const target = idx + dir;
     if (target < 0 || target >= catIds.length) return;
     [catIds[idx], catIds[target]] = [catIds[target], catIds[idx]];
-    const orderMap = new Map(catIds.map((id, i) => [id, i]));
-    setItems((prev) =>
-      [...prev].sort((a, b) => {
-        if (a.categoryId === categoryId && b.categoryId === categoryId) {
-          return (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0);
-        }
-        return 0;
-      })
-    );
-    reorderingRef.current = true;
+    setItems((prev) => {
+      // Produtos da categoria já na nova ordem (catIds).
+      const byId = new Map(
+        prev.filter((p) => p.categoryId === categoryId).map((p) => [p.id, p])
+      );
+      const reordered = catIds
+        .map((id) => byId.get(id))
+        .filter((p): p is Product => !!p);
+      // Reconstrói o array trocando apenas os produtos da categoria de lugar,
+      // mantendo os demais nas posições relativas. (Não usar sort aqui: um
+      // comparador que ignora pares de outras categorias viola a transitividade
+      // e produz ordem indefinida — só a última categoria "funcionava".)
+      let ri = 0;
+      return prev.map((p) => (p.categoryId === categoryId ? reordered[ri++] : p));
+    });
+    reorderingRef.current.add(categoryId);
     try {
       const res = await fetch("/api/vendedor/products/reorder", {
         method: "PATCH",
@@ -240,7 +248,7 @@ export default function CardapioPage() {
         load();
       }
     } finally {
-      reorderingRef.current = false;
+      reorderingRef.current.delete(categoryId);
     }
   };
 
