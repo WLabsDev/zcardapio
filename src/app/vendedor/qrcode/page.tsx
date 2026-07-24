@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import QRCode from "react-qr-code";
 import {
@@ -8,6 +9,8 @@ import {
   Copy,
   Download,
   ExternalLink,
+  Minus,
+  Plus,
   Printer,
   QrCode as QrCodeIcon,
 } from "lucide-react";
@@ -20,6 +23,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const steps = [
   {
@@ -48,8 +53,11 @@ export default function QrcodePage() {
     name: "",
     slug: "",
   });
+  const [tableCount, setTableCount] = useState(10);
   const liveOrigin = useSyncExternalStore(subscribeNoop, origin, () => fallbackOrigin);
   const menuUrl = `${liveOrigin}/r/${restaurant.slug}`;
+  const tableNumbers = Array.from({ length: tableCount }, (_, i) => i + 1);
+  const tableUrl = (n: number) => `${menuUrl}?mesa=${n}`;
 
   useEffect(() => {
     fetch("/api/vendedor/restaurant")
@@ -206,6 +214,109 @@ export default function QrcodePage() {
           </div>
         </div>
       </div>
+
+      {/* QR codes por mesa */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">QR code por mesa</CardTitle>
+          <CardDescription>
+            Cada mesa com o próprio QR code: o cliente escaneia e o pedido já
+            chega com o número da mesa — sem endereço e sem taxa de entrega.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="grid gap-2">
+              <Label htmlFor="table-count">Quantidade de mesas</Label>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="outline"
+                  onClick={() => setTableCount((c) => Math.max(1, c - 1))}
+                  aria-label="Diminuir mesas"
+                >
+                  <Minus className="size-4" />
+                </Button>
+                <Input
+                  id="table-count"
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={tableCount}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    if (Number.isFinite(v)) {
+                      setTableCount(Math.min(100, Math.max(1, Math.floor(v))));
+                    }
+                  }}
+                  className="w-20 text-center"
+                />
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="outline"
+                  onClick={() => setTableCount((c) => Math.min(100, c + 1))}
+                  aria-label="Aumentar mesas"
+                >
+                  <Plus className="size-4" />
+                </Button>
+              </div>
+            </div>
+            <Button className="sm:ml-auto" onClick={() => window.print()}>
+              <Printer className="size-4" />
+              Imprimir mesas
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {tableNumbers.map((n) => (
+              <div
+                key={n}
+                className="flex flex-col items-center gap-2 rounded-xl border-2 border-foreground/10 bg-white p-3"
+              >
+                <QRCode
+                  value={tableUrl(n)}
+                  size={104}
+                  fgColor="#33261c"
+                  bgColor="#ffffff"
+                />
+                <p className="font-display text-sm font-bold">Mesa {n}</p>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Impressão dos QR codes das mesas — visível só ao imprimir */}
+      {createPortal(
+        <div id="print-tables" className="hidden print:block">
+          <div className="p-2 text-black">
+            <p className="mb-3 text-center text-lg font-extrabold uppercase tracking-wide">
+              {restaurant.name} — QR codes das mesas
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              {tableNumbers.map((n) => (
+                <div
+                  key={n}
+                  className="flex break-inside-avoid flex-col items-center gap-2 border-2 border-black p-3"
+                >
+                  <QRCode
+                    value={tableUrl(n)}
+                    size={150}
+                    fgColor="#000000"
+                    bgColor="#ffffff"
+                  />
+                  <p className="text-xl font-extrabold">Mesa {n}</p>
+                  <p className="text-center text-[11px]">
+                    Aponte a câmera e faça seu pedido
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

@@ -36,8 +36,9 @@ const createOrderSchema = z.object({
   restaurantId: z.coerce.number().int().positive(),
   customerName: z.string().min(2, "Informe seu nome."),
   customerPhone: z.string().min(8, "Informe um telefone válido."),
-  deliveryType: z.enum(["entrega", "retirada"]),
+  deliveryType: z.enum(["entrega", "retirada", "mesa"]),
   address: z.string().default(""),
+  tableNumber: z.coerce.number().int().positive().optional(),
   paymentMethod: z.enum(["pix", "cartao", "dinheiro"]),
   zoneId: z.coerce.number().int().positive().optional(),
   couponCode: z.string().max(40).optional(),
@@ -76,6 +77,12 @@ export const POST = apiHandler(async (request: Request) => {
   if (data.deliveryType === "entrega" && data.address.trim().length < 5) {
     return Response.json(
       { message: "Informe o endereço de entrega." },
+      { status: 400 }
+    );
+  }
+  if (data.deliveryType === "mesa" && !data.tableNumber) {
+    return Response.json(
+      { message: "Informe o número da mesa." },
       { status: 400 }
     );
   }
@@ -356,6 +363,7 @@ export const POST = apiHandler(async (request: Request) => {
           customerPhone: data.customerPhone,
           deliveryType: data.deliveryType,
           address: data.deliveryType === "entrega" ? data.address.trim() : "",
+          tableNumber: data.deliveryType === "mesa" ? data.tableNumber ?? null : null,
           paymentMethod: PAYMENT_LABEL[data.paymentMethod],
           subtotalCents,
           deliveryFeeCents,
@@ -472,7 +480,9 @@ export const POST = apiHandler(async (request: Request) => {
     const pedidosUrl = `${new URL(request.url).origin}/vendedor/pedidos`;
     const message =
       `🔔 *Novo pedido ${orderCode(order.id)}*\n` +
-      `Cliente: ${data.customerName}\n` +
+      (data.deliveryType === "mesa" && data.tableNumber
+        ? `Mesa: ${data.tableNumber}\n`
+        : `Cliente: ${data.customerName}\n`) +
       `Total: ${formatBRL(totalCents / 100)}\n\n` +
       `Ver detalhes: ${pedidosUrl}`;
     await sendWhatsAppMessage(restaurant.whatsapp, message).catch((e) =>

@@ -13,10 +13,16 @@ import { MenuView } from "./menu-view";
 
 export default async function RestaurantMenuPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ mesa?: string }>;
 }) {
   const { slug } = await params;
+  const { mesa } = await searchParams;
+  const mesaNum = mesa ? Number(mesa) : NaN;
+  const tableNumber =
+    Number.isInteger(mesaNum) && mesaNum > 0 ? mesaNum : null;
   const restaurant = await getRestaurantBySlugDb(slug);
   if (!restaurant) notFound();
   const products = await getProductsByRestaurantDb(Number(restaurant.id));
@@ -40,6 +46,7 @@ export default async function RestaurantMenuPage({
       <MenuView
         restaurant={restaurant}
         products={products}
+        tableNumber={tableNumber}
         user={session ? { name: session.name, role: session.role } : null}
         initiallyOpen={openState.open && !overLimit}
         pauseMessage={

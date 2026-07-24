@@ -45,10 +45,16 @@ export function OrderPrintTicket({ order }: { order: Order }) {
         <div className="space-y-0.5">
           <p className="text-[14px] font-bold uppercase">{order.customerName}</p>
           {order.customerPhone && <p>{order.customerPhone}</p>}
-          <p className="font-bold">
-            {order.deliveryType === "entrega" ? "ENTREGA" : "RETIRADA"}
-            {order.zoneName && ` - ${order.zoneName}`}
-          </p>
+          {order.deliveryType === "mesa" && order.tableNumber ? (
+            <p className="mt-1 border-2 border-black px-2 py-0.5 text-center text-[16px] font-extrabold">
+              *** MESA {order.tableNumber} ***
+            </p>
+          ) : (
+            <p className="font-bold">
+              {order.deliveryType === "entrega" ? "ENTREGA" : "RETIRADA"}
+              {order.zoneName && ` - ${order.zoneName}`}
+            </p>
+          )}
           {order.deliveryType === "entrega" && order.address && (
             <p>{order.address}</p>
           )}
@@ -104,10 +110,14 @@ export function OrderPrintTicket({ order }: { order: Order }) {
           )}
           <div className="flex justify-between">
             <span>
-              {order.deliveryType === "entrega" ? "Entrega" : "Retirada"}
+              {order.deliveryType === "entrega"
+                ? "Entrega"
+                : order.deliveryType === "mesa"
+                  ? "Mesa"
+                  : "Retirada"}
             </span>
             <span>
-              {order.deliveryType === "retirada" || (order.deliveryFee ?? 0) === 0
+              {order.deliveryType !== "entrega" || (order.deliveryFee ?? 0) === 0
                 ? "Grátis"
                 : formatBRL(order.deliveryFee ?? 0)}
             </span>

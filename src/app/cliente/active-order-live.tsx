@@ -45,10 +45,16 @@ export function ActiveOrderLive({ initialOrders }: { initialOrders: Order[] }) {
           <span className="flex items-center gap-1">
             {activeOrder.deliveryType === "entrega" ? (
               <Bike className="size-3.5" />
+            ) : activeOrder.deliveryType === "mesa" ? (
+              <UtensilsCrossed className="size-3.5" />
             ) : (
               <Store className="size-3.5" />
             )}
-            {activeOrder.deliveryType === "entrega" ? "Entrega" : "Retirada"}
+            {activeOrder.deliveryType === "entrega"
+              ? "Entrega"
+              : activeOrder.deliveryType === "mesa"
+                ? `Mesa ${activeOrder.tableNumber ?? ""}`
+                : "Retirada"}
           </span>
           <span className="font-semibold text-foreground">
             {formatBRL(activeOrder.total)}

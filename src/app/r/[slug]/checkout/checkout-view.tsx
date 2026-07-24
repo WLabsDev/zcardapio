@@ -12,6 +12,7 @@ import {
   MessageCircle,
   Plus,
   Store,
+  UtensilsCrossed,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -48,19 +49,21 @@ export function CheckoutView({
   restaurant,
   initiallyOpen,
   zones,
+  tableNumber = null,
 }: {
   restaurant: Restaurant;
   initiallyOpen: boolean;
   zones: DeliveryZone[];
+  tableNumber?: number | null;
 }) {
   const closed = !initiallyOpen;
   const acceptedPayments: PaymentMethod[] = restaurant.paymentMethods?.length
     ? restaurant.paymentMethods
     : ["pix", "cartao", "dinheiro"];
   const cart = useCart();
-  const [deliveryType, setDeliveryType] = useState<"entrega" | "retirada">(
-    "entrega"
-  );
+  const [deliveryType, setDeliveryType] = useState<
+    "entrega" | "retirada" | "mesa"
+  >(tableNumber ? "mesa" : "entrega");
   const [done, setDone] = useState(false);
   const [orderResult, setOrderResult] = useState<{
     code: string;
@@ -174,6 +177,7 @@ export function CheckoutView({
         customerPhone: phone.trim(),
         deliveryType,
         address,
+        tableNumber: deliveryType === "mesa" ? tableNumber ?? undefined : undefined,
         paymentMethod: payment,
         zoneId: deliveryType === "entrega" && zoneId ? zoneId : undefined,
         couponCode: coupon?.code,
@@ -330,6 +334,23 @@ export function CheckoutView({
       <div className="mx-auto grid max-w-3xl gap-6 px-4 py-6 md:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           {/* Delivery type */}
+          {tableNumber ? (
+            <Card>
+              <CardContent className="flex items-center gap-3 py-4">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border-2 border-foreground bg-primary text-primary-foreground">
+                  <UtensilsCrossed className="size-5" />
+                </span>
+                <div>
+                  <p className="font-semibold text-heading">Pedido na mesa</p>
+                  <p className="text-sm text-muted-foreground">
+                    Levamos seu pedido até a{" "}
+                    <strong className="text-heading">Mesa {tableNumber}</strong>. Sem
+                    taxa de entrega.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
           <Card>
             <CardHeader>
               <CardTitle className="text-base text-heading">Como quer receber?</CardTitle>
@@ -379,6 +400,7 @@ export function CheckoutView({
               </button>
             </CardContent>
           </Card>
+          )}
 
           {/* Contact / address */}
           <Card>
@@ -673,10 +695,17 @@ export function CheckoutView({
                 <span>−{formatBRL(discount)}</span>
               </div>
             )}
-            <div className="flex justify-between text-muted-foreground">
-              <span>Entrega</span>
-              <span>{deliveryFee === 0 ? "Grátis" : formatBRL(deliveryFee)}</span>
-            </div>
+            {tableNumber ? (
+              <div className="flex justify-between text-muted-foreground">
+                <span>Mesa</span>
+                <span>{tableNumber}</span>
+              </div>
+            ) : (
+              <div className="flex justify-between text-muted-foreground">
+                <span>Entrega</span>
+                <span>{deliveryFee === 0 ? "Grátis" : formatBRL(deliveryFee)}</span>
+              </div>
+            )}
             <div className="flex justify-between text-base font-bold">
               <span>Total</span>
               <span>{formatBRL(cart.total - discount + deliveryFee)}</span>

@@ -127,6 +127,13 @@
       "when": 1784864829782,
       "tag": "0017_chief_redwing",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1784910598295,
+      "tag": "0018_fair_celestials",
+      "breakpoints": true
     }
   ]
 }

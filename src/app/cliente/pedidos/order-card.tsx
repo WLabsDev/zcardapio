@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Bike, CalendarClock, ChevronDown, MapPin, Store } from "lucide-react";
+import { Bike, CalendarClock, ChevronDown, MapPin, Store, UtensilsCrossed } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,6 +32,8 @@ export function OrderCard({ order: o }: { order: Order }) {
       <Link href={`/r/${o.restaurantSlug}`}>
         {o.deliveryType === "entrega" ? (
           <Bike className="size-3.5" />
+        ) : o.deliveryType === "mesa" ? (
+          <UtensilsCrossed className="size-3.5" />
         ) : (
           <Store className="size-3.5" />
         )}
@@ -54,8 +56,13 @@ export function OrderCard({ order: o }: { order: Order }) {
                 dateStyle: "short",
                 timeStyle: "short",
               })}{" "}
-              · {o.deliveryType === "entrega" ? "Entrega" : "Retirada"} ·{" "}
-              {o.paymentMethod}
+              ·{" "}
+              {o.deliveryType === "entrega"
+                ? "Entrega"
+                : o.deliveryType === "mesa"
+                  ? `Mesa ${o.tableNumber ?? ""}`
+                  : "Retirada"}{" "}
+              · {o.paymentMethod}
               {!active &&
                 ` · ${itemCount} ${itemCount === 1 ? "item" : "itens"}`}
             </p>
@@ -177,10 +184,14 @@ export function OrderCard({ order: o }: { order: Order }) {
                 )}
                 <div className="flex justify-between text-muted-foreground">
                   <span>
-                    {o.deliveryType === "entrega" ? "Entrega" : "Retirada"}
+                    {o.deliveryType === "entrega"
+                      ? "Entrega"
+                      : o.deliveryType === "mesa"
+                        ? `Mesa ${o.tableNumber ?? ""}`
+                        : "Retirada"}
                   </span>
                   <span>
-                    {o.deliveryType === "retirada" ||
+                    {o.deliveryType !== "entrega" ||
                     (o.deliveryFee ?? 0) === 0
                       ? "Grátis"
                       : formatBRL(o.deliveryFee ?? 0)}

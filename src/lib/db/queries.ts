@@ -206,6 +206,7 @@ export function mapOrder(o: OrderRow): Order {
     deliveryType: o.deliveryType,
     address: o.address || undefined,
     zoneName: o.zoneName || undefined,
+    tableNumber: o.tableNumber ?? undefined,
     scheduledFor: o.scheduledFor ? o.scheduledFor.toISOString() : undefined,
     createdAt: o.createdAt.toISOString(),
     reviewed: o.review !== undefined ? Boolean(o.review) : undefined,

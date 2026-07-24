@@ -229,10 +229,11 @@
     overflow: visible !important;
     height: auto !important;
   }
-  body > *:not(#print-ticket) {
+  body > *:not(#print-ticket):not(#print-tables) {
     display: none !important;
   }
-  #print-ticket {
+  #print-ticket,
+  #print-tables {
     display: block !important;
   }
 }

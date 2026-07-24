@@ -14,6 +14,7 @@ import {
   Printer,
   ReceiptText,
   Store,
+  UtensilsCrossed,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -247,12 +248,18 @@ export default function PedidosPage() {
                     <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
                       {o.deliveryType === "entrega" ? (
                         <Bike className="size-3.5 shrink-0" />
+                      ) : o.deliveryType === "mesa" ? (
+                        <UtensilsCrossed className="size-3.5 shrink-0" />
                       ) : (
                         <Store className="size-3.5 shrink-0" />
                       )}
                       <span className="truncate">
-                        {o.deliveryType === "entrega" ? "Entrega" : "Retirada"} ·{" "}
-                        {o.paymentMethod} · {itemCount}{" "}
+                        {o.deliveryType === "entrega"
+                          ? "Entrega"
+                          : o.deliveryType === "mesa"
+                            ? `Mesa ${o.tableNumber ?? ""}`
+                            : "Retirada"}{" "}
+                        · {o.paymentMethod} · {itemCount}{" "}
                         {itemCount === 1 ? "item" : "itens"}
                       </span>
                     </p>
@@ -299,7 +306,16 @@ export default function PedidosPage() {
                           )}
                         </span>
                       </TableCell>
-                      <TableCell>{o.customerName}</TableCell>
+                      <TableCell>
+                        <span className="flex items-center gap-1.5">
+                          {o.customerName}
+                          {o.deliveryType === "mesa" && o.tableNumber && (
+                            <span className="shrink-0 rounded-full bg-foreground px-1.5 py-0.5 text-[10px] font-bold text-background">
+                              Mesa {o.tableNumber}
+                            </span>
+                          )}
+                        </span>
+                      </TableCell>
                       <TableCell>
                         {o.items.reduce((a, i) => a + i.quantity, 0)}
                       </TableCell>
@@ -436,6 +452,8 @@ export default function PedidosPage() {
                 <div className="flex items-start gap-2.5 text-sm">
                   {selected.deliveryType === "entrega" ? (
                     <Bike className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                  ) : selected.deliveryType === "mesa" ? (
+                    <UtensilsCrossed className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                   ) : (
                     <Store className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                   )}
@@ -443,7 +461,9 @@ export default function PedidosPage() {
                     <p className="font-medium">
                       {selected.deliveryType === "entrega"
                         ? "Entrega"
-                        : "Retirada no local"}
+                        : selected.deliveryType === "mesa"
+                          ? `Mesa ${selected.tableNumber ?? ""}`
+                          : "Retirada no local"}
                       {selected.zoneName && (
                         <span className="font-normal text-muted-foreground">
                           {" "}
@@ -530,10 +550,14 @@ export default function PedidosPage() {
                 )}
                 <div className="flex justify-between text-muted-foreground">
                   <span>
-                    {selected.deliveryType === "entrega" ? "Entrega" : "Retirada"}
+                    {selected.deliveryType === "entrega"
+                      ? "Entrega"
+                      : selected.deliveryType === "mesa"
+                        ? `Mesa ${selected.tableNumber ?? ""}`
+                        : "Retirada"}
                   </span>
                   <span>
-                    {selected.deliveryType === "retirada" ||
+                    {selected.deliveryType !== "entrega" ||
                     (selected.deliveryFee ?? 0) === 0
                       ? "Grátis"
                       : formatBRL(selected.deliveryFee ?? 0)}

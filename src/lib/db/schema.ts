@@ -29,7 +29,11 @@ export const orderStatusEnum = pgEnum("order_status", [
   "entregue",
   "cancelado",
 ]);
-export const deliveryTypeEnum = pgEnum("delivery_type", ["entrega", "retirada"]);
+export const deliveryTypeEnum = pgEnum("delivery_type", [
+  "entrega",
+  "retirada",
+  "mesa",
+]);
 export const couponTypeEnum = pgEnum("coupon_type", ["percent", "fixed"]);
 export const loyaltyMechanicEnum = pgEnum("loyalty_mechanic", [
   "none",
@@ -221,6 +225,8 @@ export const orders = pgTable(
     customerPhone: varchar("customer_phone", { length: 20 }).notNull().default(""),
     deliveryType: deliveryTypeEnum("delivery_type").notNull().default("entrega"),
     address: text("address").notNull().default(""),
+    // Número da mesa para pedidos feitos no local (deliveryType = "mesa").
+    tableNumber: integer("table_number"),
     paymentMethod: varchar("payment_method", { length: 40 }).notNull().default(""),
     subtotalCents: integer("subtotal_cents").notNull(),
     deliveryFeeCents: integer("delivery_fee_cents").notNull().default(0),

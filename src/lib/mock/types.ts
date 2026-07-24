@@ -184,9 +184,11 @@ export type Order = {
   total: number;
   status: OrderStatus;
   paymentMethod: string;
-  deliveryType: "entrega" | "retirada";
+  deliveryType: "entrega" | "retirada" | "mesa";
   address?: string;
   zoneName?: string;
+  /** número da mesa para pedidos feitos no local (deliveryType = "mesa") */
+  tableNumber?: number;
   scheduledFor?: string;
   createdAt: string;
   /** presente quando o pedido vem da API: já existe avaliação para ele? */

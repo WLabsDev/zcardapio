@@ -17,6 +17,7 @@ import {
   Star,
   Trash2,
   UserRound,
+  UtensilsCrossed,
 } from "lucide-react";
 import { EmptyState } from "@/components/panel/empty-state";
 import { LoginDialog } from "./login-dialog";
@@ -150,6 +151,7 @@ export function MenuView({
   initiallyOpen,
   pauseMessage,
   reviews = [],
+  tableNumber = null,
 }: {
   restaurant: Restaurant;
   products: Product[];
@@ -157,6 +159,7 @@ export function MenuView({
   initiallyOpen: boolean;
   pauseMessage?: string;
   reviews?: Review[];
+  tableNumber?: number | null;
 }) {
   const closed = !initiallyOpen;
   const [search, setSearch] = useState("");
@@ -232,6 +235,13 @@ export function MenuView({
         {restaurant.bannerText?.trim() && (
           <div className="bg-primary px-4 py-2 text-center text-sm font-semibold text-primary-foreground">
             {restaurant.bannerText}
+          </div>
+        )}
+        {/* Pedido na mesa — veio do QR code da mesa */}
+        {tableNumber && (
+          <div className="flex items-center justify-center gap-1.5 bg-foreground px-4 py-2 text-center text-sm font-semibold text-background">
+            <UtensilsCrossed className="size-4" />
+            Pedido na mesa — Mesa {tableNumber}
           </div>
         )}
         {/* Pausa temporária / fechado */}
@@ -675,16 +685,25 @@ export function MenuView({
                       {formatBRL(cart.total)}
                     </span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Entrega</span>
-                    <span className="font-semibold">
-                      {formatBRL(restaurant.deliveryFee)}
-                    </span>
-                  </div>
+                  {tableNumber ? (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Mesa</span>
+                      <span className="font-semibold">{tableNumber}</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Entrega</span>
+                      <span className="font-semibold">
+                        {formatBRL(restaurant.deliveryFee)}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between font-bold">
                     <span>Total</span>
                     <span>
-                      {formatBRL(cart.total + restaurant.deliveryFee)}
+                      {formatBRL(
+                        cart.total + (tableNumber ? 0 : restaurant.deliveryFee)
+                      )}
                     </span>
                   </div>
                   <Button
@@ -692,7 +711,11 @@ export function MenuView({
                     className="rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
                     asChild
                   >
-                    <Link href={`/r/${restaurant.slug}/checkout`}>
+                    <Link
+                      href={`/r/${restaurant.slug}/checkout${
+                        tableNumber ? `?mesa=${tableNumber}` : ""
+                      }`}
+                    >
                       Finalizar pedido
                     </Link>
                   </Button>
