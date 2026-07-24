@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Clock, MapPin } from "lucide-react";
+import { ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { uploadImage } from "@/lib/upload";
@@ -14,8 +14,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatBRL, type Product } from "@/lib/mock/types";
-import { contrastTextColor, FONT_DISPLAY } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const colors = [
@@ -133,18 +131,10 @@ type Appearance = {
   badgeTextColor: string;
 };
 
-type RestaurantMeta = {
-  address: string;
-  deliveryTime: string;
-  deliveryFee: number;
-  minOrder: number;
-  openingHours: string;
-};
-
 export default function AparenciaPage() {
   const [form, setForm] = useState<Appearance | null>(null);
-  const [meta, setMeta] = useState<RestaurantMeta | null>(null);
-  const [previewProduct, setPreviewProduct] = useState<Product | null>(null);
+  const [slug, setSlug] = useState<string | null>(null);
+  const [previewKey, setPreviewKey] = useState(0);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState<"logo" | "cover" | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -169,6 +159,7 @@ export default function AparenciaPage() {
       .then((res) => res.json())
       .then((data) => {
         const r = data.restaurant;
+        setSlug(r.slug ?? null);
         setForm({
           name: r.name,
           description: r.description,
@@ -187,27 +178,8 @@ export default function AparenciaPage() {
           badgeColor: r.badgeColor ?? "",
           badgeTextColor: r.badgeTextColor ?? "",
         });
-        setMeta({
-          address: r.address ?? "",
-          deliveryTime: r.deliveryTime ?? "",
-          deliveryFee: r.deliveryFee ?? 0,
-          minOrder: r.minOrder ?? 0,
-          openingHours: r.openingHours ?? "",
-        });
       })
       .catch(() => toast.error("Não foi possível carregar a aparência."));
-
-    fetch("/api/vendedor/products")
-      .then((res) => res.json())
-      .then((data) => {
-        const products: Product[] = data?.products ?? [];
-        const pick =
-          products.find((p) => p.popular && p.available) ??
-          products.find((p) => p.available) ??
-          products[0];
-        if (pick) setPreviewProduct(pick);
-      })
-      .catch(() => {});
   }, []);
 
   const set = <K extends keyof Appearance>(key: K, value: Appearance[K]) =>
@@ -245,6 +217,7 @@ export default function AparenciaPage() {
       return;
     }
     toast.success("Aparência salva!");
+    setPreviewKey((k) => k + 1);
   };
 
   if (!form) {
@@ -381,70 +354,6 @@ export default function AparenciaPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Tipografia e botões</CardTitle>
-              <CardDescription>
-                Fonte dos títulos e formato dos botões do cardápio.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label>Fonte dos títulos</Label>
-                <div className="flex flex-wrap gap-2">
-                  {(
-                    [
-                      { id: "bricolage", name: "Bricolage" },
-                      { id: "jakarta", name: "Jakarta" },
-                      { id: "mono", name: "Mono" },
-                    ] as const
-                  ).map((f) => (
-                    <button
-                      type="button"
-                      key={f.id}
-                      onClick={() => set("font", f.id)}
-                      style={{ fontFamily: FONT_DISPLAY[f.id] }}
-                      className={cn(
-                        "rounded-lg border-2 px-3 py-1.5 text-sm transition-all",
-                        form.font === f.id
-                          ? "border-foreground bg-accent font-semibold"
-                          : "border-foreground/15 hover:border-foreground"
-                      )}
-                    >
-                      {f.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label>Formato dos botões</Label>
-                <div className="flex flex-wrap gap-2">
-                  {(
-                    [
-                      { id: "arredondado", name: "Arredondado" },
-                      { id: "reto", name: "Reto" },
-                    ] as const
-                  ).map((b) => (
-                    <button
-                      type="button"
-                      key={b.id}
-                      onClick={() => set("buttonStyle", b.id)}
-                      className={cn(
-                        "border-2 px-4 py-1.5 text-sm transition-all",
-                        b.id === "arredondado" ? "rounded-full" : "rounded-md",
-                        form.buttonStyle === b.id
-                          ? "border-foreground bg-accent font-semibold"
-                          : "border-foreground/15 hover:border-foreground"
-                      )}
-                    >
-                      {b.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
               <CardTitle className="text-base">Paleta de cores</CardTitle>
               <CardDescription>
                 Escolha um estilo pronto ou ajuste cada cor individualmente.
@@ -521,157 +430,55 @@ export default function AparenciaPage() {
 
         {/* Live preview */}
         <div className="lg:sticky lg:top-24 lg:self-start">
-          <p className="mb-2 text-sm font-medium text-muted-foreground">
-            Pré-visualização
-          </p>
-          {(() => {
-            const dark = form.theme === "escuro";
-            const pBg = form.bgColor || (dark ? "#131316" : "#f7f5f0");
-            const pCard = form.cardColor || (dark ? "#1e1e23" : "#ffffff");
-            const pHeading = form.headingColor || (dark ? "#f5f5f4" : "#292524");
-            const pProductTitle = form.productTitleColor || (dark ? "#fafafa" : "#1c1917");
-            const pBody = form.bodyColor || (dark ? "#e7e5e4" : "#44403c");
-            const pMuted = form.mutedColor || "#a8a29e";
-            const pBadge = form.badgeColor || "#f59e0b";
-            const pBadgeText = form.badgeTextColor || "#1c1917";
-            const pRadius = form.buttonStyle === "reto" ? "0.25rem" : "9999px";
-            const fontFamily = FONT_DISPLAY[form.font];
-            const onColor = contrastTextColor(color);
-            const product = previewProduct ?? {
-              name: "Zé Clássico",
-              description: "Pão brioche, blend 160g e queijo cheddar.",
-              price: 29.9,
-              image: "",
-              popular: true,
-            };
-
-            return (
-              <div
-                className="overflow-hidden rounded-2xl border shadow-sm"
-                style={{ backgroundColor: pBg }}
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-sm font-medium text-muted-foreground">
+              Pré-visualização
+            </p>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setPreviewKey((k) => k + 1)}
+                disabled={!slug}
+                aria-label="Recarregar pré-visualização"
               >
-                <div
-                  className="h-20 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${form.cover})` }}
-                />
-                <div className="-mt-6 px-4">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={form.logo}
-                    alt="Logo"
-                    className="size-12 rounded-xl border-2 object-cover shadow"
-                    style={{ borderColor: pCard }}
-                  />
-                </div>
-                <div className="space-y-3 p-4">
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <p
-                        className="text-lg font-bold"
-                        style={{ color: pHeading, fontFamily }}
-                      >
-                        {form.name || "Nome do restaurante"}
-                      </p>
-                      <span
-                        className="rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
-                        style={{ backgroundColor: color, color: onColor }}
-                      >
-                        Aberto
-                      </span>
-                    </div>
-                    {form.description && (
-                      <p className="text-xs" style={{ color: pMuted }}>
-                        {form.description}
-                      </p>
-                    )}
-                    {meta && (meta.deliveryTime || meta.address) && (
-                      <div
-                        className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]"
-                        style={{ color: pMuted }}
-                      >
-                        {meta.deliveryTime && (
-                          <span className="flex items-center gap-1">
-                            <Clock className="size-3" />
-                            {meta.deliveryTime}
-                          </span>
-                        )}
-                        {meta.address && (
-                          <span className="flex items-center gap-1 truncate">
-                            <MapPin className="size-3 shrink-0" />
-                            <span className="truncate">{meta.address}</span>
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {meta && (
-                      <p className="text-[11px]" style={{ color: pMuted }}>
-                        Entrega {formatBRL(meta.deliveryFee)} · Pedido mínimo{" "}
-                        {formatBRL(meta.minOrder)}
-                        {meta.openingHours && ` · ${meta.openingHours}`}
-                      </p>
-                    )}
-                  </div>
+                <RefreshCw className="size-3.5" />
+              </Button>
+              {slug && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => window.open(`/r/${slug}`, "_blank")}
+                  aria-label="Abrir cardápio em nova aba"
+                >
+                  <ExternalLink className="size-3.5" />
+                </Button>
+              )}
+            </div>
+          </div>
 
-                  <div
-                    className="flex gap-2.5 rounded-lg border p-2.5"
-                    style={{ backgroundColor: pCard, borderColor: `${pBody}26` }}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <p
-                          className="truncate text-sm font-semibold"
-                          style={{ color: pProductTitle, fontFamily }}
-                        >
-                          {product.name}
-                        </p>
-                        {product.popular && (
-                          <span
-                            className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold"
-                            style={{ backgroundColor: pBadge, color: pBadgeText }}
-                          >
-                            Popular
-                          </span>
-                        )}
-                      </div>
-                      <p
-                        className="mt-0.5 line-clamp-2 text-xs"
-                        style={{ color: pMuted }}
-                      >
-                        {product.description}
-                      </p>
-                      <p
-                        className="mt-1 text-sm font-bold"
-                        style={{ color, fontFamily }}
-                      >
-                        {formatBRL(product.price)}
-                      </p>
-                    </div>
-                    {product.image && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="size-16 shrink-0 rounded-md border object-cover"
-                        style={{ borderColor: `${pBody}26` }}
-                      />
-                    )}
-                  </div>
-
-                  <div
-                    className="p-2 text-center text-sm font-semibold"
-                    style={{
-                      borderRadius: pRadius,
-                      backgroundColor: color,
-                      color: onColor,
-                      fontFamily,
-                    }}
-                  >
-                    Ver carrinho
-                  </div>
-                </div>
+          <div className="overflow-hidden rounded-[2rem] border-4 border-foreground/15 bg-background shadow-xl">
+            <div className="flex items-center justify-center border-b border-foreground/10 bg-foreground/5 py-2">
+              <div className="h-1.5 w-16 rounded-full bg-foreground/20" />
+            </div>
+            {slug ? (
+              <iframe
+                key={previewKey}
+                src={`/r/${slug}`}
+                title="Pré-visualização do cardápio"
+                className="h-[560px] w-full border-0 bg-background"
+              />
+            ) : (
+              <div className="flex h-[560px] items-center justify-center text-sm text-muted-foreground">
+                Carregando cardápio...
               </div>
-            );
-          })()}
+            )}
+          </div>
+          <p className="mt-2 text-center text-xs text-muted-foreground">
+            As alterações aparecem no cardápio após salvar.
+          </p>
         </div>
       </div>
     </div>
