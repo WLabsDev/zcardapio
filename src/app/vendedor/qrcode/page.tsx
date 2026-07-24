@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { copyText } from "@/lib/clipboard";
 
 const steps = [
   {
@@ -75,7 +76,8 @@ export default function QrcodePage() {
 
   async function copyLink() {
     try {
-      await navigator.clipboard.writeText(menuUrl);
+      const ok = await copyText(menuUrl);
+      if (!ok) throw new Error("copy failed");
       setCopied(true);
       toast.success("Link copiado!");
       setTimeout(() => setCopied(false), 2000);

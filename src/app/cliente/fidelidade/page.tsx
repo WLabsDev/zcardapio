@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatBRL } from "@/lib/mock/types";
+import { copyText } from "@/lib/clipboard";
 
 type LoyaltyItem = {
   restaurantId: string;
@@ -83,9 +84,9 @@ export default function FidelidadePage() {
     load();
   };
 
-  const copyCode = (code: string) => {
-    navigator.clipboard.writeText(code).catch(() => {});
-    toast.success("Código copiado!");
+  const copyCode = async (code: string) => {
+    const ok = await copyText(code);
+    if (ok) toast.success("Código copiado!");
   };
 
   return (

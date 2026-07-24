@@ -31,6 +31,7 @@ import { itemUnitPrice, useCart } from "@/components/cart/cart-context";
 import { formatBRL, type DeliveryZone, type PaymentMethod, type Restaurant } from "@/lib/mock/types";
 import { isDarkTheme, restaurantThemeVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
+import { copyText } from "@/lib/clipboard";
 
 const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   pix: "Pix",
@@ -253,9 +254,9 @@ export function CheckoutView({
                   type="button"
                   variant="outline"
                   className="w-full"
-                  onClick={() => {
-                    navigator.clipboard.writeText(orderResult.pix!.brCode).catch(() => {});
-                    toast.success("Código Pix copiado!");
+                  onClick={async () => {
+                    const ok = await copyText(orderResult.pix!.brCode);
+                    if (ok) toast.success("Código Pix copiado!");
                   }}
                 >
                   <Copy className="size-4" />
