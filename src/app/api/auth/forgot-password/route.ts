@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { passwordResetTokens, users } from "@/lib/db/schema";
 import { sendPasswordResetEmail } from "@/lib/mailer";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 const schema = z.object({
   email: z.email("Informe um e-mail válido."),
@@ -13,6 +14,15 @@ const TOKEN_TTL_MS = 30 * 60 * 1000;
 
 /** Recuperação de senha de vendedor/admin (login por e-mail) via link enviado por SMTP. */
 export async function POST(request: Request) {
+  // Proteção contra abuso/força bruta: no máx. 5 solicitações/hora por IP.
+  const rl = rateLimit(`forgot:${clientIp(request)}`, 5, 60 * 60 * 1000);
+  if (!rl.ok) {
+    return Response.json(
+      { message: "Muitas solicitações. Aguarde e tente novamente mais tarde." },
+      { status: 429 }
+    );
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {

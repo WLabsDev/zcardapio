@@ -5,6 +5,7 @@ import { setSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { normalizePhone } from "@/lib/phone";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 const loginSchema = z.object({
   // "cliente" = entra por WhatsApp; "restaurante" = entra por e-mail (cobre
@@ -16,6 +17,15 @@ const loginSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  // Proteção contra força bruta: no máx. 10 tentativas/minuto por IP.
+  const rl = rateLimit(`login:${clientIp(request)}`, 10, 60_000);
+  if (!rl.ok) {
+    return Response.json(
+      { message: "Muitas tentativas de login. Aguarde instantes e tente novamente." },
+      { status: 429 }
+    );
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = loginSchema.safeParse(body);
   if (!parsed.success) {

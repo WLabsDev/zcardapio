@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { phoneOtpCodes, users } from "@/lib/db/schema";
 import { normalizePhone } from "@/lib/phone";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
 
 const schema = z.object({
@@ -14,6 +15,15 @@ const CODE_TTL_MS = 10 * 60 * 1000;
 
 /** Recuperação de senha de cliente (login por WhatsApp) via código enviado no próprio WhatsApp. */
 export async function POST(request: Request) {
+  // Proteção contra abuso/força bruta: no máx. 5 solicitações/hora por IP.
+  const rl = rateLimit(`forgot-cliente:${clientIp(request)}`, 5, 60 * 60 * 1000);
+  if (!rl.ok) {
+    return Response.json(
+      { message: "Muitas solicitações. Aguarde e tente novamente mais tarde." },
+      { status: 429 }
+    );
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) {

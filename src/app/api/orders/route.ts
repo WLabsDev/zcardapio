@@ -242,6 +242,9 @@ export async function POST(request: Request) {
     );
   }
 
+  // Sessão é buscada antes do cupom para validar a posse de cupons pessoais.
+  const session = await getSession();
+
   // Cupom de desconto — sempre recalculado no servidor.
   let discountCents = 0;
   let couponCode = "";
@@ -261,6 +264,17 @@ export async function POST(request: Request) {
       return Response.json(
         { message: "Cupom inválido, inativo ou já utilizado." },
         { status: 400 }
+      );
+    }
+    // Cupom pessoal (fidelidade) só pode ser usado pelo dono. Cupons do vendedor
+    // têm customerId null e valem para qualquer cliente.
+    if (
+      coupon.customerId !== null &&
+      (session?.role !== "cliente" || Number(session.sub) !== coupon.customerId)
+    ) {
+      return Response.json(
+        { message: "Este cupom é pessoal. Entre na conta dona do cupom para usá-lo." },
+        { status: 403 }
       );
     }
     discountCents =
@@ -291,8 +305,6 @@ export async function POST(request: Request) {
   }
 
   const totalCents = subtotalCents - discountCents + deliveryFeeCents;
-
-  const session = await getSession();
 
   let order: typeof orders.$inferSelect;
   let createdAccountId: number | null = null;

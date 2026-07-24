@@ -21,7 +21,10 @@ type RestaurantRow = typeof restaurants.$inferSelect & {
   plan: { name: string } | null;
 };
 
-function mapRestaurant(r: RestaurantRow): Restaurant {
+function mapRestaurant(
+  r: RestaurantRow,
+  opts?: { includePixKey?: boolean }
+): Restaurant {
   return {
     id: String(r.id),
     slug: r.slug,
@@ -62,7 +65,9 @@ function mapRestaurant(r: RestaurantRow): Restaurant {
     badgeTextColor: r.badgeTextColor,
     acceptsScheduled: r.acceptsScheduled,
     reviewsEnabled: r.reviewsEnabled,
-    pixKey: r.pixKey,
+    // A chave Pix só é exposta ao próprio vendedor (rota autenticada). Nas
+    // respostas públicas ela é omitida para não vazar CPF/CNPJ/e-mail do dono.
+    ...(opts?.includePixKey ? { pixKey: r.pixKey } : {}),
   };
 }
 
@@ -86,7 +91,7 @@ export async function listActiveRestaurants(): Promise<Restaurant[]> {
     },
     orderBy: (r, { asc }) => [asc(r.id)],
   });
-  return rows.map(mapRestaurant);
+  return rows.map((r) => mapRestaurant(r));
 }
 
 export async function getProductsByRestaurantDb(
@@ -428,7 +433,7 @@ export async function getRestaurantByOwnerMapped(
       plan: { columns: { name: true } },
     },
   });
-  return row ? mapRestaurant(row) : null;
+  return row ? mapRestaurant(row, { includePixKey: true }) : null;
 }
 
 export async function getDeliveryZonesDb(
