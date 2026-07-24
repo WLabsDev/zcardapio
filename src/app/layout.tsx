@@ -21,6 +21,17 @@ export const metadata: Metadata = {
   },
   description:
     "Crie o cardápio digital do seu restaurante em minutos. QR code, pedidos online e personalização completa.",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://zcardapio.com.br"
+  ),
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    siteName: "zCardapio",
+    title: "zCardapio — Cardápio digital sem comissão por pedido",
+    description:
+      "Monte o cardápio do seu restaurante, cole o QR code na mesa e receba pedidos no painel. Sem comissão por venda.",
+  },
   // Verificação do Google Search Console (só ativa se a env estiver definida).
   verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
     ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }

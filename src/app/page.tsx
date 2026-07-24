@@ -16,6 +16,10 @@ import { listPlans } from "@/lib/db/queries";
 import { formatBRL } from "@/lib/mock/types";
 import { cn } from "@/lib/utils";
 
+// Os planos vêm do banco, então a página é renderizada sob demanda (não no build,
+// onde o Docker ainda não tem acesso ao banco).
+export const dynamic = "force-dynamic";
+
 const marqueeItems = [
   "Hamburguerias",
   "Pizzarias",
@@ -78,7 +82,7 @@ export default async function LandingPage() {
           <nav className="hidden items-center gap-7 text-sm font-semibold md:flex">
             <a href="#recursos" className="hover:text-primary">Recursos</a>
             <a href="#planos" className="hover:text-primary">Planos</a>
-            <a href="#depoimentos" className="hover:text-primary">Depoimentos</a>
+            <a href="#demo" className="hover:text-primary">Demo</a>
           </nav>
           <div className="flex items-center gap-2">
             <Button variant="ghost" asChild>
@@ -101,7 +105,7 @@ export default async function LandingPage() {
           <div className="flex flex-col items-start gap-7">
             <span className="inline-flex items-center gap-2 rounded-full border-2 border-foreground bg-accent px-4 py-1.5 text-sm font-semibold shadow-offset-sm">
               <Flame className="size-4 text-primary" />
-              1.204 restaurantes vendendo agora
+              Sem comissão por pedido — o cliente é seu
             </span>
             <h1 className="font-display text-5xl font-bold leading-[1.02] tracking-tight md:text-[4.2rem]">
               Cardápio de papel{" "}
@@ -134,6 +138,16 @@ export default async function LandingPage() {
                   Criar meu cardápio
                   <ArrowRight className="size-4" />
                 </Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-12 rounded-full border-2 border-foreground px-7 text-base font-semibold"
+                asChild
+              >
+                <a href="/r/burguer-do-zeca" target="_blank" rel="noopener noreferrer">
+                  Ver cardápio de exemplo
+                </a>
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -265,65 +279,35 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section id="depoimentos" className="mx-auto w-full max-w-6xl px-4 py-20 md:py-28">
-        <p className="mb-3 font-display text-sm font-bold uppercase tracking-widest text-primary">
-          Depoimentos
-        </p>
-        <h2 className="mb-14 font-display text-4xl font-bold tracking-tight md:text-5xl">
-          Palavra de quem vive de fogão.
-        </h2>
-        <div className="grid gap-6 md:grid-cols-3">
-          {[
-            {
-              name: "José Ferreira",
-              business: "Burguer do Zé · São Paulo",
-              initials: "JF",
-              rotate: "md:-rotate-1",
-              quote:
-                "Aposentei o cardápio plastificado. QR code na mesa e os pedidos online cresceram 40% no primeiro mês.",
-            },
-            {
-              name: "Giovanna Rossi",
-              business: "Bella Napoli · São Paulo",
-              initials: "GR",
-              rotate: "md:rotate-1 md:translate-y-3",
-              quote:
-                "Coloquei o cardápio no ar numa noite de domingo, entre uma fornada e outra. Os clientes elogiam toda semana.",
-            },
-            {
-              name: "Kenji Tanaka",
-              business: "Sushi Kai · São Paulo",
-              initials: "KT",
-              rotate: "md:-rotate-1",
-              quote:
-                "Minha equipe aprendeu a usar o painel sozinha, sem treinamento. Isso pra mim já valeu a mensalidade.",
-            },
-          ].map((t) => (
-            <figure
-              key={t.name}
-              className={cn(
-                "flex flex-col gap-5 rounded-2xl border-2 border-foreground bg-card p-6 shadow-offset-sm transition-transform hover:rotate-0",
-                t.rotate
-              )}
+      {/* Demo */}
+      <section id="demo" className="mx-auto w-full max-w-6xl px-4 py-20 md:py-28">
+        <div className="relative overflow-hidden rounded-3xl border-2 border-foreground bg-accent p-10 shadow-offset md:p-16">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-16 -top-16 size-64 rounded-full bg-primary/15 blur-3xl"
+          />
+          <div className="relative flex flex-col items-start gap-6">
+            <p className="font-display text-sm font-bold uppercase tracking-widest text-primary">
+              Demo
+            </p>
+            <h2 className="font-display text-4xl font-bold tracking-tight md:text-5xl">
+              Ver vale mais que mil palavras.
+            </h2>
+            <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
+              Abra um cardápio de exemplo e faça um pedido de teste — exatamente
+              como o seu cliente vai fazer. Sem cadastro, sem compromisso.
+            </p>
+            <Button
+              size="lg"
+              className="h-12 rounded-full px-7 text-base font-semibold shadow-offset transition-transform hover:-translate-y-0.5"
+              asChild
             >
-              <span className="font-display text-5xl font-bold leading-none text-primary">
-                “
-              </span>
-              <blockquote className="-mt-4 flex-1 leading-relaxed">
-                {t.quote}
-              </blockquote>
-              <figcaption className="flex items-center gap-3">
-                <span className="flex size-10 items-center justify-center rounded-full border-2 border-foreground bg-accent font-display text-sm font-bold">
-                  {t.initials}
-                </span>
-                <div>
-                  <p className="text-sm font-bold">{t.name}</p>
-                  <p className="text-xs text-muted-foreground">{t.business}</p>
-                </div>
-              </figcaption>
-            </figure>
-          ))}
+              <a href="/r/burguer-do-zeca" target="_blank" rel="noopener noreferrer">
+                Abrir cardápio de exemplo
+                <ArrowRight className="size-4" />
+              </a>
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -359,7 +343,7 @@ export default async function LandingPage() {
           <p>© 2026 zCardapio · zcardapio.com.br</p>
           <div className="flex gap-5">
             <Link href="/login" className="hover:text-background">Entrar</Link>
-            <Link href="/cadastro" className="hover:text-background">Criar conta</Link>
+            <Link href="/cadastro-restaurante" className="hover:text-background">Criar conta</Link>
           </div>
         </div>
       </footer>
