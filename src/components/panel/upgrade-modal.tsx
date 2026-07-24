@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -34,7 +33,6 @@ export function UpgradeModal({
 }) {
   const [plans, setPlans] = useState<PlanOption[] | null>(null);
   const [upgrading, setUpgrading] = useState<string | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
     if (!open || plans) return;
@@ -46,19 +44,19 @@ export function UpgradeModal({
 
   const upgrade = async (planId: string) => {
     setUpgrading(planId);
-    const res = await fetch("/api/vendedor/plan", {
+    const res = await fetch("/api/vendedor/plan/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ planId: Number(planId) }),
     }).catch(() => null);
-    setUpgrading(null);
-    if (!res?.ok) {
-      toast.error("Não foi possível atualizar o plano.");
+    const data = await res?.json().catch(() => null);
+    if (!res?.ok || !data?.initPoint) {
+      setUpgrading(null);
+      toast.error(data?.message ?? "Não foi possível iniciar o pagamento.");
       return;
     }
-    toast.success("Plano atualizado!");
-    onOpenChange(false);
-    router.refresh();
+    // Redireciona para o checkout do MercadoPago (PIX/cartão).
+    window.location.assign(data.initPoint);
   };
 
   return (
@@ -114,8 +112,8 @@ export function UpgradeModal({
                     {plan.name === "Grátis"
                       ? "Plano atual"
                       : upgrading === plan.id
-                        ? "Atualizando..."
-                        : "Fazer upgrade"}
+                        ? "Redirecionando..."
+                        : "Assinar plano"}
                   </Button>
                 </CardContent>
               </Card>

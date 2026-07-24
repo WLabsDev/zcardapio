@@ -145,6 +145,8 @@ export type Restaurant = {
   reviewsEnabled?: boolean;
   /** chave Pix para gerar o QR Code estático no checkout */
   pixKey?: string;
+  /** vigência do plano pago (null = grátis/nunca pagou) — ISO string */
+  planValidUntil?: string | null;
 };
 
 export type OrderStatus =

@@ -6,6 +6,7 @@
 import { and, avg, count, desc, eq, gte, ne } from "drizzle-orm";
 import { db } from "./index";
 import { deliveryZones, orders, restaurants, reviewHides, reviews } from "./schema";
+import { getPlanStatus, type PlanStatus } from "@/lib/plan-limits";
 import type {
   DeliveryZone,
   Order,
@@ -65,6 +66,7 @@ function mapRestaurant(
     badgeTextColor: r.badgeTextColor,
     acceptsScheduled: r.acceptsScheduled,
     reviewsEnabled: r.reviewsEnabled,
+    planValidUntil: r.planValidUntil ? r.planValidUntil.toISOString() : null,
     // A chave Pix só é exposta ao próprio vendedor (rota autenticada). Nas
     // respostas públicas ela é omitida para não vazar CPF/CNPJ/e-mail do dono.
     ...(opts?.includePixKey ? { pixKey: r.pixKey } : {}),
@@ -398,6 +400,18 @@ export async function getRestaurantByOwner(ownerId: number) {
   return db.query.restaurants.findFirst({
     where: eq(restaurants.ownerId, ownerId),
   });
+}
+
+/** Situação do plano (free/active/grace/expired) de um restaurante pelo id. */
+export async function getRestaurantPlanStatus(
+  restaurantId: number
+): Promise<PlanStatus> {
+  const row = await db.query.restaurants.findFirst({
+    where: eq(restaurants.id, restaurantId),
+    with: { plan: { columns: { name: true } } },
+    columns: { planValidUntil: true },
+  });
+  return getPlanStatus(row?.plan?.name ?? null, row?.planValidUntil ?? null);
 }
 
 /** Pedidos do restaurante no mês corrente (não conta cancelados). */

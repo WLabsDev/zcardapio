@@ -2,7 +2,8 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { loyaltyPrograms } from "@/lib/db/schema";
-import { isFreePlan } from "@/lib/plan-limits";
+import { getRestaurantPlanStatus } from "@/lib/db/queries";
+import { isProUnlocked } from "@/lib/plan-limits";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
 import { apiHandler } from "@/lib/api";
 
@@ -18,12 +19,8 @@ const putSchema = z.object({
   stampsRewardValue: z.number().int().min(0).optional(),
 });
 
-async function getPlanName(restaurantId: number) {
-  const row = await db.query.restaurants.findFirst({
-    where: (r, { eq }) => eq(r.id, restaurantId),
-    with: { plan: { columns: { name: true } } },
-  });
-  return row?.plan?.name ?? null;
+async function isPro(restaurantId: number) {
+  return isProUnlocked(await getRestaurantPlanStatus(restaurantId));
 }
 
 export const GET = apiHandler(async () => {
@@ -46,7 +43,7 @@ export const GET = apiHandler(async () => {
       stampsRewardType: "fixed",
       stampsRewardValue: 0,
     },
-    isFree: isFreePlan(await getPlanName(restaurant.id)),
+    isFree: !(await isPro(restaurant.id)),
   });
 });
 
@@ -64,7 +61,7 @@ export const PUT = apiHandler(async (request: Request) => {
   }
   const d = parsed.data;
 
-  if (d.mechanic !== "none" && isFreePlan(await getPlanName(restaurant.id))) {
+  if (d.mechanic !== "none" && !(await isPro(restaurant.id))) {
     return Response.json(
       {
         message:

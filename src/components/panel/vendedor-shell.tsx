@@ -14,6 +14,8 @@ import {
 import { OrdersProvider, useOrders } from "@/components/panel/orders-provider";
 import { PanelShell, type NavItem } from "@/components/panel/panel-shell";
 import { PlanLimitBanner } from "@/components/panel/plan-limit-banner";
+import { RenewalBanner } from "@/components/panel/renewal-banner";
+import type { PlanStatus } from "@/lib/plan-limits";
 
 type OrderLimitBanner = {
   monthlyOrderCount: number;
@@ -26,6 +28,8 @@ function Shell({
   planName,
   impersonating,
   orderLimitBanner,
+  planStatus,
+  planValidUntil,
   children,
 }: {
   userName: string;
@@ -33,6 +37,8 @@ function Shell({
   planName: string | null;
   impersonating?: boolean;
   orderLimitBanner?: OrderLimitBanner | null;
+  planStatus: PlanStatus;
+  planValidUntil: string | null;
   children: React.ReactNode;
 }) {
   const { pendingCount } = useOrders();
@@ -67,12 +73,15 @@ function Shell({
       userRole={planName ? `Restaurante · Plano ${planName}` : "Restaurante"}
       impersonating={impersonating}
       banner={
-        orderLimitBanner && (
-          <PlanLimitBanner
-            monthlyOrderCount={orderLimitBanner.monthlyOrderCount}
-            limit={orderLimitBanner.limit}
-          />
-        )
+        <>
+          {orderLimitBanner && (
+            <PlanLimitBanner
+              monthlyOrderCount={orderLimitBanner.monthlyOrderCount}
+              limit={orderLimitBanner.limit}
+            />
+          )}
+          <RenewalBanner status={planStatus} planValidUntil={planValidUntil} />
+        </>
       }
     >
       {children}
@@ -86,6 +95,8 @@ export function VendedorShell({
   planName,
   impersonating,
   orderLimitBanner,
+  planStatus,
+  planValidUntil,
   children,
 }: {
   userName: string;
@@ -93,6 +104,8 @@ export function VendedorShell({
   planName: string | null;
   impersonating?: boolean;
   orderLimitBanner?: OrderLimitBanner | null;
+  planStatus: PlanStatus;
+  planValidUntil: string | null;
   children: React.ReactNode;
 }) {
   return (
@@ -103,6 +116,8 @@ export function VendedorShell({
         planName={planName}
         impersonating={impersonating}
         orderLimitBanner={orderLimitBanner}
+        planStatus={planStatus}
+        planValidUntil={planValidUntil}
       >
         {children}
       </Shell>

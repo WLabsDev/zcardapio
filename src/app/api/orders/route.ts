@@ -24,7 +24,7 @@ import { computeOpenState } from "@/lib/hours";
 import { formatBRL, isAvailable } from "@/lib/mock/types";
 import { normalizePhone } from "@/lib/phone";
 import { generateOrderPix } from "@/lib/pix";
-import { FREE_PLAN_MONTHLY_ORDER_LIMIT, isFreePlan } from "@/lib/plan-limits";
+import { FREE_PLAN_MONTHLY_ORDER_LIMIT, getPlanStatus, isProUnlocked } from "@/lib/plan-limits";
 import { publishOrderEvent } from "@/lib/realtime";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
 import { apiHandler } from "@/lib/api";
@@ -90,7 +90,7 @@ export const POST = apiHandler(async (request: Request) => {
       { status: 404 }
     );
   }
-  if (isFreePlan(restaurant.plan?.name)) {
+  if (!isProUnlocked(getPlanStatus(restaurant.plan?.name, restaurant.planValidUntil))) {
     const monthlyOrders = await getMonthlyOrderCount(restaurant.id);
     if (monthlyOrders >= FREE_PLAN_MONTHLY_ORDER_LIMIT) {
       return Response.json(

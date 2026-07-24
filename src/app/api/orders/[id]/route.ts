@@ -11,7 +11,7 @@ import {
   products,
 } from "@/lib/db/schema";
 import { mapOrder } from "@/lib/db/queries";
-import { isFreePlan } from "@/lib/plan-limits";
+import { getPlanStatus, isProUnlocked } from "@/lib/plan-limits";
 import { publishOrderEvent } from "@/lib/realtime";
 import { apiHandler } from "@/lib/api";
 
@@ -96,11 +96,13 @@ export const PATCH = apiHandler(async (
     return Response.json({ message: "Restaurante não encontrado." }, { status: 404 });
   }
 
-  const loyaltyProgram = isFreePlan(restaurant.plan?.name)
-    ? null
-    : await db.query.loyaltyPrograms.findFirst({
+  const loyaltyProgram = isProUnlocked(
+    getPlanStatus(restaurant.plan?.name, restaurant.planValidUntil)
+  )
+    ? await db.query.loyaltyPrograms.findFirst({
         where: eq(loyaltyPrograms.restaurantId, restaurant.id),
-      });
+      })
+    : null;
 
   const updated = await db.transaction(async (tx) => {
     const [existing] = await tx

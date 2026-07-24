@@ -120,6 +120,13 @@
       "when": 1784834975463,
       "tag": "0016_numerous_paper_doll",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1784864829782,
+      "tag": "0017_chief_redwing",
+      "breakpoints": true
     }
   ]
 }

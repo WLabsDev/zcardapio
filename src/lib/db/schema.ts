@@ -126,6 +126,9 @@ export const restaurants = pgTable(
     // Chave Pix pra gerar o QR Code estático no checkout — o dinheiro cai direto
     // na conta do restaurante, a plataforma nunca chega a tocar no valor.
     pixKey: varchar("pix_key", { length: 140 }).notNull().default(""),
+    // Vigência do plano pago (null = nunca pagou / plano grátis). Atualizado a
+    // cada pagamento aprovado no MercadoPago (ver lib/billing.ts).
+    planValidUntil: timestamp("plan_valid_until"),
     status: restaurantStatusEnum("status").notNull().default("pendente"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
@@ -464,6 +467,31 @@ export const loyaltyProgress = pgTable(
     ),
     index("loyalty_progress_customer_idx").on(t.customerId),
   ]
+);
+
+// Pagamentos de plano via MercadoPago (Checkout Pro — PIX ou cartão, avulso).
+export const planPayments = pgTable(
+  "plan_payments",
+  {
+    id: serial("id").primaryKey(),
+    restaurantId: integer("restaurant_id")
+      .notNull()
+      .references(() => restaurants.id, { onDelete: "cascade" }),
+    planId: integer("plan_id")
+      .notNull()
+      .references(() => plans.id),
+    mpPreferenceId: varchar("mp_preference_id", { length: 64 }),
+    // Único: garante idempotência — um pagamento aprovado ativa o plano uma
+    // única vez, mesmo que o webhook/notificação chegue mais de uma vez.
+    mpPaymentId: varchar("mp_payment_id", { length: 64 }).unique(),
+    // pending | approved | rejected | refunded | cancelled
+    status: varchar("status", { length: 20 }).notNull().default("pending"),
+    amountCents: integer("amount_cents").notNull().default(0),
+    planValidUntil: timestamp("plan_valid_until"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("plan_payments_restaurant_idx").on(t.restaurantId)]
 );
 
 // Relations (para queries aninhadas via db.query)

@@ -21,7 +21,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarsChart, RankList } from "@/components/panel/charts";
 import { StatCard } from "@/components/panel/panel-shell";
 import { ProGate } from "@/components/panel/pro-gate";
-import { isFreePlan } from "@/lib/plan-limits";
+import { getPlanStatus, isProUnlocked } from "@/lib/plan-limits";
 import { formatBRL, type ChartPoint, type ReportPeriod } from "@/lib/mock/types";
 
 type Report = {
@@ -55,7 +55,13 @@ export default function RelatoriosPage() {
   useEffect(() => {
     fetch("/api/vendedor/restaurant")
       .then((res) => res.json())
-      .then((data) => setIsFree(isFreePlan(data?.restaurant?.plan)))
+      .then((data) =>
+        setIsFree(
+          !isProUnlocked(
+            getPlanStatus(data?.restaurant?.plan, data?.restaurant?.planValidUntil)
+          )
+        )
+      )
       .catch(() => setIsFree(false));
   }, []);
 

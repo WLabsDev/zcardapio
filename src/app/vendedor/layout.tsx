@@ -4,7 +4,7 @@ import { getSession, isImpersonating } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { restaurants } from "@/lib/db/schema";
 import { getMonthlyOrderCount } from "@/lib/db/queries";
-import { FREE_PLAN_MONTHLY_ORDER_LIMIT, isFreePlan } from "@/lib/plan-limits";
+import { FREE_PLAN_MONTHLY_ORDER_LIMIT, getPlanStatus, isProUnlocked } from "@/lib/plan-limits";
 import { VendedorShell } from "@/components/panel/vendedor-shell";
 
 export default async function VendedorLayout({
@@ -25,7 +25,8 @@ export default async function VendedorLayout({
   // mandaria de volta pra /vendedor, que mandaria de volta pra /login...
   if (!restaurant) redirect("/api/auth/logout?next=/login");
 
-  const isFree = isFreePlan(restaurant.plan?.name);
+  const planStatus = getPlanStatus(restaurant.plan?.name, restaurant.planValidUntil);
+  const isFree = !isProUnlocked(planStatus);
   const monthlyOrderCount = isFree
     ? await getMonthlyOrderCount(restaurant.id)
     : 0;
@@ -37,6 +38,10 @@ export default async function VendedorLayout({
       restaurantName={restaurant.name}
       planName={restaurant.plan?.name ?? null}
       impersonating={await isImpersonating()}
+      planStatus={planStatus}
+      planValidUntil={
+        restaurant.planValidUntil ? restaurant.planValidUntil.toISOString() : null
+      }
       orderLimitBanner={
         overLimit
           ? { monthlyOrderCount, limit: FREE_PLAN_MONTHLY_ORDER_LIMIT }
