@@ -179,20 +179,30 @@ export default function CardapioPage() {
     }
   };
 
+  // Evita reordenações concorrentes (cliques rápidos) que causariam deadlock no
+  // banco e erro 500 — ignora cliques enquanto uma requisição está em voo.
+  const reorderingRef = useRef(false);
+
   const moveCategory = async (index: number, dir: -1 | 1) => {
+    if (reorderingRef.current) return;
     const target = index + dir;
     if (target < 0 || target >= categories.length) return;
     const next = [...categories];
     [next[index], next[target]] = [next[target], next[index]];
     setCategories(next);
-    const res = await fetch("/api/vendedor/categories/reorder", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: next.map((c) => c.id) }),
-    }).catch(() => null);
-    if (!res?.ok) {
-      toast.error("Não foi possível reordenar as categorias.");
-      load();
+    reorderingRef.current = true;
+    try {
+      const res = await fetch("/api/vendedor/categories/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: next.map((c) => c.id) }),
+      }).catch(() => null);
+      if (!res?.ok) {
+        toast.error("Não foi possível reordenar as categorias.");
+        load();
+      }
+    } finally {
+      reorderingRef.current = false;
     }
   };
 
@@ -201,6 +211,7 @@ export default function CardapioPage() {
     productId: string,
     dir: -1 | 1
   ) => {
+    if (reorderingRef.current) return;
     const catIds = items
       .filter((p) => p.categoryId === categoryId)
       .map((p) => p.id);
@@ -217,14 +228,19 @@ export default function CardapioPage() {
         return 0;
       })
     );
-    const res = await fetch("/api/vendedor/products/reorder", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ categoryId, ids: catIds }),
-    }).catch(() => null);
-    if (!res?.ok) {
-      toast.error("Não foi possível reordenar os produtos.");
-      load();
+    reorderingRef.current = true;
+    try {
+      const res = await fetch("/api/vendedor/products/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categoryId, ids: catIds }),
+      }).catch(() => null);
+      if (!res?.ok) {
+        toast.error("Não foi possível reordenar os produtos.");
+        load();
+      }
+    } finally {
+      reorderingRef.current = false;
     }
   };
 
