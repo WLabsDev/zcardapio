@@ -8,7 +8,7 @@ import {
   getReviewsByRestaurant,
 } from "@/lib/db/queries";
 import { computeOpenState } from "@/lib/hours";
-import { FREE_PLAN_MONTHLY_ORDER_LIMIT, getPlanStatus, isProUnlocked } from "@/lib/plan-limits";
+import { getMonthlyOrderLimit, getPlanStatus } from "@/lib/plan-limits";
 import { MenuView } from "./menu-view";
 
 export default async function RestaurantMenuPage({
@@ -26,10 +26,13 @@ export default async function RestaurantMenuPage({
     session?.role === "cliente" ? Number(session.sub) : undefined
   );
   const openState = computeOpenState(restaurant);
+  const orderLimit = getMonthlyOrderLimit(
+    restaurant.plan,
+    getPlanStatus(restaurant.plan, restaurant.planValidUntil)
+  );
   const overLimit =
-    !isProUnlocked(getPlanStatus(restaurant.plan, restaurant.planValidUntil)) &&
-    (await getMonthlyOrderCount(Number(restaurant.id))) >=
-      FREE_PLAN_MONTHLY_ORDER_LIMIT;
+    Number.isFinite(orderLimit) &&
+    (await getMonthlyOrderCount(Number(restaurant.id))) >= orderLimit;
 
   return (
     <>

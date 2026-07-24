@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   FREE_PLAN_MONTHLY_ORDER_LIMIT,
   GRACE_PERIOD_DAYS,
+  PRO_PLAN_MONTHLY_ORDER_LIMIT,
+  getMonthlyOrderLimit,
   getPlanStatus,
   isFreePlan,
   isProUnlocked,
@@ -65,5 +67,39 @@ describe("isProUnlocked", () => {
     expect(isProUnlocked("grace")).toBe(true);
     expect(isProUnlocked("free")).toBe(false);
     expect(isProUnlocked("expired")).toBe(false);
+  });
+});
+
+describe("getMonthlyOrderLimit", () => {
+  it("plano grátis tem limite de 100 pedidos", () => {
+    expect(getMonthlyOrderLimit("Grátis", "free")).toBe(
+      FREE_PLAN_MONTHLY_ORDER_LIMIT
+    );
+    expect(getMonthlyOrderLimit(null, "free")).toBe(
+      FREE_PLAN_MONTHLY_ORDER_LIMIT
+    );
+  });
+
+  it("plano pago expirado rebaixa para o limite do grátis", () => {
+    expect(getMonthlyOrderLimit("Pro", "expired")).toBe(
+      FREE_PLAN_MONTHLY_ORDER_LIMIT
+    );
+    expect(getMonthlyOrderLimit("Premium", "expired")).toBe(
+      FREE_PLAN_MONTHLY_ORDER_LIMIT
+    );
+  });
+
+  it("plano Pro ativo ou em carência tem limite de 600 pedidos", () => {
+    expect(getMonthlyOrderLimit("Pro", "active")).toBe(
+      PRO_PLAN_MONTHLY_ORDER_LIMIT
+    );
+    expect(getMonthlyOrderLimit("Pro", "grace")).toBe(
+      PRO_PLAN_MONTHLY_ORDER_LIMIT
+    );
+  });
+
+  it("plano Premium ativo ou em carência é ilimitado", () => {
+    expect(getMonthlyOrderLimit("Premium", "active")).toBe(Infinity);
+    expect(getMonthlyOrderLimit("Premium", "grace")).toBe(Infinity);
   });
 });

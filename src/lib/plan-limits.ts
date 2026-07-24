@@ -5,6 +5,9 @@
  */
 export const FREE_PLAN_MONTHLY_ORDER_LIMIT = 100;
 
+/** Limite mensal de pedidos do plano Pro. */
+export const PRO_PLAN_MONTHLY_ORDER_LIMIT = 600;
+
 /** Dias de carência após o vencimento antes de rebaixar para o plano grátis. */
 export const GRACE_PERIOD_DAYS = 5;
 
@@ -42,4 +45,20 @@ export function getPlanStatus(
 /** Recursos pro estão liberados quando o plano está ativo ou em carência. */
 export function isProUnlocked(status: PlanStatus): boolean {
   return status === "active" || status === "grace";
+}
+
+/**
+ * Limite mensal de pedidos conforme o plano e sua situação efetiva:
+ * - Grátis (ou plano pago vencido/expirado): FREE_PLAN_MONTHLY_ORDER_LIMIT
+ * - Pro (ativo ou em carência): PRO_PLAN_MONTHLY_ORDER_LIMIT
+ * - Premium (ativo ou em carência): ilimitado (Infinity)
+ */
+export function getMonthlyOrderLimit(
+  planName: string | null | undefined,
+  status: PlanStatus
+): number {
+  if (!isProUnlocked(status)) return FREE_PLAN_MONTHLY_ORDER_LIMIT;
+  if (planName === "Premium") return Infinity;
+  if (planName === "Pro") return PRO_PLAN_MONTHLY_ORDER_LIMIT;
+  return FREE_PLAN_MONTHLY_ORDER_LIMIT;
 }

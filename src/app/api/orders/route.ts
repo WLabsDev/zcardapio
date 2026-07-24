@@ -24,7 +24,7 @@ import { computeOpenState } from "@/lib/hours";
 import { formatBRL, isAvailable } from "@/lib/mock/types";
 import { normalizePhone } from "@/lib/phone";
 import { generateOrderPix } from "@/lib/pix";
-import { FREE_PLAN_MONTHLY_ORDER_LIMIT, getPlanStatus, isProUnlocked } from "@/lib/plan-limits";
+import { getMonthlyOrderLimit, getPlanStatus } from "@/lib/plan-limits";
 import { publishOrderEvent } from "@/lib/realtime";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
 import { apiHandler } from "@/lib/api";
@@ -90,13 +90,17 @@ export const POST = apiHandler(async (request: Request) => {
       { status: 404 }
     );
   }
-  if (!isProUnlocked(getPlanStatus(restaurant.plan?.name, restaurant.planValidUntil))) {
+  const orderLimit = getMonthlyOrderLimit(
+    restaurant.plan?.name,
+    getPlanStatus(restaurant.plan?.name, restaurant.planValidUntil)
+  );
+  if (Number.isFinite(orderLimit)) {
     const monthlyOrders = await getMonthlyOrderCount(restaurant.id);
-    if (monthlyOrders >= FREE_PLAN_MONTHLY_ORDER_LIMIT) {
+    if (monthlyOrders >= orderLimit) {
       return Response.json(
         {
           message:
-            "Este restaurante atingiu o limite de pedidos do plano grátis neste mês. Tente novamente mais tarde.",
+            "Este restaurante atingiu o limite de pedidos do plano neste mês. Tente novamente mais tarde.",
         },
         { status: 409 }
       );

@@ -24,7 +24,7 @@ export function PlanLimitBanner({
               Restaurante fechado automaticamente
             </p>
             <p className="text-sm text-destructive/90">
-              Você atingiu o limite de {limit} pedidos do plano grátis este mês
+              Você atingiu o limite de {limit} pedidos do seu plano este mês
               ({monthlyOrderCount}/{limit}). Novos pedidos ficam bloqueados até
               o início do próximo mês ou até você fazer upgrade de plano.
             </p>
