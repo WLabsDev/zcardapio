@@ -1,36 +1,90 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# zCardápio
 
-## Getting Started
+Plataforma de cardápio digital: o restaurante monta o cardápio, compartilha um link/QR code e o cliente pede pelo navegador — sem app. Inclui painel do vendedor, área do cliente e administração da plataforma.
 
-First, run the development server:
+## Funcionalidades
+
+- **Cardápio público** (`/r/[slug]`) — vitrine do restaurante com busca, avaliações e carrinho.
+- **Checkout** — entrega/retirada, cupons, pedido mínimo, pagamento via PIX (QR code) e criação de conta automática pelo WhatsApp.
+- **Área do cliente** (`/cliente`) — pedidos em tempo real, fidelidade (pontos/cashback/carimbos), endereços e perfil.
+- **Painel do vendedor** (`/vendedor`) — gestão de cardápio (categorias, produtos, complementos, reordenação), pedidos ao vivo, avaliações, aparência/tema, cupons, fidelidade, QR code e relatórios.
+- **Admin** (`/admin`) — restaurantes, usuários, planos e métricas (com impersonation).
+- **Autenticação** — login por WhatsApp (cliente) ou e-mail (vendedor/admin), recuperação de senha e definição de senha no primeiro acesso.
+
+## Stack
+
+- **Next.js 16** (App Router, Turbopack) + **React 19** + **TypeScript**
+- **Drizzle ORM** + **Postgres** (com LISTEN/NOTIFY para pedidos em tempo real)
+- **Tailwind CSS v4** + **Radix UI** (shadcn/ui) + `tw-animate-css`
+- **react-hook-form** + **zod** nos formulários
+- **jose** (sessão em cookie httpOnly) + **bcryptjs**
+- **pix-utils** (BR Code do PIX), **react-qr-code**, **nodemailer** (SMTP), **sonner** (toasts)
+
+## Requisitos
+
+- Node.js 20+
+- Postgres 14+
+
+## Como rodar
 
 ```bash
+# 1. Instale as dependências
+npm install
+
+# 2. Configure o ambiente
+cp .env.example .env   # preencha DATABASE_URL e AUTH_SECRET (obrigatórias)
+
+# 3. Crie o schema e popule dados de exemplo
+npm run db:migrate
+npm run db:seed
+
+# 4. Suba o servidor de desenvolvimento
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Acesse [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+> Sem `SMTP_*` / `EVOLUTION_API_*`, e-mails e mensagens de WhatsApp não são enviados — ficam apenas no log do servidor (ótimo para testar em dev). O admin vê um aviso no painel quando o WhatsApp não está configurado.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Scripts
 
-## Learn More
+| Script | Descrição |
+| --- | --- |
+| `npm run dev` | Servidor de desenvolvimento (Turbopack) |
+| `npm run build` | Build de produção |
+| `npm run start` | Servidor de produção |
+| `npm run lint` | ESLint |
+| `npm run db:generate` | Gera migrações a partir do schema (Drizzle) |
+| `npm run db:migrate` | Aplica as migrações no banco |
+| `npm run db:seed` | Popula dados de exemplo |
+| `npm run db:studio` | Abre o Drizzle Studio |
 
-To learn more about Next.js, take a look at the following resources:
+## Variáveis de ambiente
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Veja [`.env.example`](./.env.example). Obrigatórias: `DATABASE_URL` e `AUTH_SECRET`. Opcionais: `SMTP_*` (e-mail) e `EVOLUTION_API_*` (WhatsApp).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Contas de exemplo (seed)
 
-## Deploy on Vercel
+A senha de todas as contas do seed é `12345678`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Perfil | Acesso |
+| --- | --- |
+| Admin | `admin@zcardapio.com.br` (e-mail) |
+| Vendedor | `ze@burguerdoze.com.br` (e-mail) |
+| Cliente | WhatsApp `11 99999-1234` (Mariana Souza) |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Estrutura
+
+```
+src/
+  app/            # rotas (páginas e API handlers)
+    r/[slug]/     # cardápio público + checkout
+    cliente/      # área do cliente
+    vendedor/     # painel do vendedor
+    admin/        # administração
+    api/          # rotas de API
+  components/     # componentes (ui/ = shadcn, panel/ = painéis, cart/ = carrinho)
+  lib/            # db (schema/queries/seed), auth, pix, mailer, whatsapp, etc.
+  hooks/          # hooks customizados
+drizzle/          # migrações geradas
+```
