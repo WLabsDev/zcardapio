@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  Bike,
+  CircleDollarSign,
   CircleUserRound,
   Clock,
   LogOut,
@@ -173,7 +175,19 @@ export function MenuView({
   const [notes, setNotes] = useState("");
   const [choices, setChoices] = useState<Record<string, string[]>>({});
   const [cartOpen, setCartOpen] = useState(false);
+  const [logoFailed, setLogoFailed] = useState(false);
   const cart = useCart();
+
+  // Iniciais do restaurante — fallback visual quando o logo não carrega.
+  // Ignora artigos/preposições ("do", "da"...) pra pegar as palavras fortes.
+  const STOP = new Set(["do", "da", "de", "dos", "das", "o", "a", "os", "as", "e", "em"]);
+  const words = restaurant.name.trim().split(/\s+/);
+  const meaningful = words.filter((w) => !STOP.has(w.toLowerCase()));
+  const initials = (meaningful.length ? meaningful : words)
+    .slice(0, 2)
+    .map((w) => w[0] ?? "")
+    .join("")
+    .toUpperCase();
 
   // No mobile, o botão "voltar" fecha o modal do produto em vez de sair da página.
   useBackToClose(!!selected, () => setSelected(null));
@@ -253,61 +267,108 @@ export function MenuView({
           </div>
         )}
         {/* Cover */}
-        <div
-          className="relative h-40 bg-cover bg-center md:h-56"
-          style={{ backgroundImage: `url(${restaurant.cover})` }}
-        >
-        <div className="absolute right-4 top-4">
-          <AccountButton user={user} restaurant={restaurant} />
+        <div className="relative h-44 overflow-hidden md:h-60">
+          {/* Fallback de marca — aparece se a capa não carregar */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-primary/10 to-foreground/5" />
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${restaurant.cover})` }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/25 to-transparent" />
+          <div className="absolute right-4 top-4">
+            <AccountButton user={user} restaurant={restaurant} />
+          </div>
         </div>
-      </div>
 
-      {/* Restaurant header */}
-      <div className="relative mx-auto -mt-10 max-w-3xl px-4">
-        <div className="rounded-2xl border-2 border-foreground bg-card p-4 shadow-offset">
-          <div className="flex items-start gap-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={restaurant.logo}
-              alt={restaurant.name}
-              className="size-16 rounded-xl border-2 border-foreground"
-            />
-            <div className="flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-display text-xl font-bold">
-                  {restaurant.name}
-                </h1>
-                <Badge variant={!closed ? "default" : "secondary"}>
-                  {!closed ? "Aberto" : "Fechado"}
-                </Badge>
-              </div>
-              <p className="mt-0.5 text-sm text-muted-foreground">
-                {restaurant.description}
-              </p>
-              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        {/* Restaurant header */}
+        <div className="relative mx-auto -mt-12 max-w-3xl px-4">
+          <div className="animate-in fade-in slide-in-from-bottom-4 rounded-2xl border-2 border-foreground bg-card p-5 shadow-offset duration-500">
+            <div className="flex items-start gap-4">
+              {restaurant.logo && !logoFailed ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={restaurant.logo}
+                  alt={restaurant.name}
+                  onError={() => setLogoFailed(true)}
+                  className="size-20 shrink-0 rounded-2xl border-2 border-foreground bg-background object-cover shadow-offset-sm"
+                />
+              ) : (
+                <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl border-2 border-foreground bg-primary font-display text-2xl font-bold text-primary-foreground shadow-offset-sm">
+                  {initials || <UtensilsCrossed className="size-8" />}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+                  <h1 className="font-display text-2xl font-bold leading-tight">
+                    {restaurant.name}
+                  </h1>
+                  <Badge
+                    variant={!closed ? "default" : "secondary"}
+                    className={!closed ? "gap-1.5" : undefined}
+                  >
+                    {!closed && (
+                      <span className="relative flex size-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-foreground opacity-60" />
+                        <span className="relative inline-flex size-2 rounded-full bg-primary-foreground" />
+                      </span>
+                    )}
+                    {!closed ? "Aberto agora" : "Fechado"}
+                  </Badge>
+                </div>
+
                 {visibleReviewCount > 0 && (
-                  <span className="flex items-center gap-1">
-                    <Star className="size-3.5 fill-amber-400 text-amber-400" />
-                    {restaurant.rating.toFixed(1)}
-                  </span>
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <Star className="size-4 fill-amber-400 text-amber-400" />
+                    <span className="text-sm font-bold">
+                      {restaurant.rating.toFixed(1)}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      ({visibleReviewCount}{" "}
+                      {visibleReviewCount === 1 ? "avaliação" : "avaliações"})
+                    </span>
+                  </div>
                 )}
-                <span className="flex items-center gap-1">
-                  <Clock className="size-3.5" />
-                  {restaurant.deliveryTime}
-                </span>
-                <span className="flex items-center gap-1">
-                  <MapPin className="size-3.5" />
-                  {restaurant.address}
-                </span>
+
+                {restaurant.description && (
+                  <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">
+                    {restaurant.description}
+                  </p>
+                )}
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Entrega {formatBRL(restaurant.deliveryFee)} · Pedido mínimo{" "}
-                {formatBRL(restaurant.minOrder)} · {restaurant.openingHours}
-              </p>
+            </div>
+
+            {/* Infos essenciais em chips escaneáveis (uma linha só) */}
+            <div className="mt-4 flex flex-wrap gap-1">
+              <span className="inline-flex items-center gap-1 rounded-full border border-foreground/15 bg-background px-2 py-1 text-[10px] font-semibold">
+                <Clock className="size-3 text-primary" />
+                {restaurant.deliveryTime}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-foreground/15 bg-background px-2 py-1 text-[10px] font-semibold">
+                <Bike className="size-3 text-primary" />
+                {formatBRL(restaurant.deliveryFee)}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-foreground/15 bg-background px-2 py-1 text-[10px] font-semibold">
+                <CircleDollarSign className="size-3 text-primary" />
+                mín. {formatBRL(restaurant.minOrder)}
+              </span>
+            </div>
+
+            <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+              {restaurant.address && (
+                <p className="flex items-center gap-1.5">
+                  <MapPin className="size-3.5 shrink-0" />
+                  {restaurant.address}
+                </p>
+              )}
+              {restaurant.openingHours && (
+                <p className="flex items-center gap-1.5">
+                  <Clock className="size-3.5 shrink-0" />
+                  {restaurant.openingHours}
+                </p>
+              )}
             </div>
           </div>
         </div>
-      </div>
 
       {/* Search + categories */}
       <div className="sticky top-0 z-30 mt-4 border-b bg-background/95 backdrop-blur">
