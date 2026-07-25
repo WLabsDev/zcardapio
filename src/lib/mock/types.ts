@@ -173,6 +173,8 @@ export type Order = {
   /** presentes quando o pedido vem da API */
   restaurantName?: string;
   restaurantSlug?: string;
+  /** telefone/WhatsApp do restaurante — botão de contato no card do pedido */
+  restaurantPhone?: string;
   customerName: string;
   customerPhone?: string;
   items: OrderItem[];

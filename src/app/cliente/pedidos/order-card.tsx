@@ -2,15 +2,26 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Bike, CalendarClock, ChevronDown, MapPin, Store, UtensilsCrossed } from "lucide-react";
+import {
+  Bike,
+  CalendarClock,
+  ChevronDown,
+  MapPin,
+  MessageCircle,
+  Store,
+  UtensilsCrossed,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { OrderPixDialog } from "@/components/panel/order-pix-dialog";
 import { OrderReview } from "@/components/panel/order-review";
 import { OrderStatusBadge } from "@/components/panel/order-status-badge";
 import { OrderStatusTimeline } from "@/components/panel/order-status-timeline";
 import { formatBRL, type Order, type OrderStatus } from "@/lib/mock/types";
+import { isPixPayment } from "@/lib/payment";
+import { whatsappLink } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 
 const isActive = (status: OrderStatus) =>
@@ -26,6 +37,28 @@ export function OrderCard({ order: o }: { order: Order }) {
   const [expanded, setExpanded] = useState(false);
   const showFull = active || expanded;
   const itemCount = o.items.reduce((a, i) => a + i.quantity, 0);
+  // Pedido no Pix ainda não confirmado: o cliente pode ter fechado a tela de
+  // pagamento antes de pagar, então o QR fica à mão aqui.
+  const aguardandoPix = o.status === "pendente" && isPixPayment(o.paymentMethod);
+
+  // Fala com o restaurante já com o pedido identificado — evita o "qual pedido?"
+  const whatsappButton = o.restaurantPhone?.trim() && (
+    <Button size="sm" variant="outline" asChild>
+      <a
+        href={whatsappLink(
+          o.restaurantPhone,
+          `Olá! Falo sobre o pedido ${o.code}${
+            o.restaurantName ? ` no ${o.restaurantName}` : ""
+          }.`
+        )}
+        target="_blank"
+        rel="noreferrer"
+      >
+        <MessageCircle className="size-3.5" />
+        Falar no WhatsApp
+      </a>
+    </Button>
+  );
 
   const reorderButton = o.restaurantSlug && (
     <Button size="sm" variant="outline" asChild>
@@ -118,6 +151,20 @@ export function OrderCard({ order: o }: { order: Order }) {
             <div className="space-y-3 pt-3">
               <OrderStatusTimeline status={o.status} className="py-1" />
 
+              {aguardandoPix && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-primary/30 bg-primary/10 p-3">
+                  <p className="min-w-0 text-xs font-medium text-heading">
+                    Aguardando o pagamento no Pix para o restaurante confirmar.
+                  </p>
+                  <OrderPixDialog
+                    orderId={o.id}
+                    orderCode={o.code}
+                    total={o.total}
+                    restaurantPhone={o.restaurantPhone}
+                  />
+                </div>
+              )}
+
               {o.deliveryType === "entrega" && o.address && (
                 <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
                   <MapPin className="mt-0.5 size-3.5 shrink-0" />
@@ -208,8 +255,11 @@ export function OrderCard({ order: o }: { order: Order }) {
                   initiallyReviewed={Boolean(o.reviewed)}
                 />
               )}
-              {reorderButton && (
-                <div className="flex justify-end">{reorderButton}</div>
+              {(whatsappButton || reorderButton) && (
+                <div className="flex flex-wrap justify-end gap-2">
+                  {whatsappButton}
+                  {reorderButton}
+                </div>
               )}
             </div>
           </div>

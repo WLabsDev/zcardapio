@@ -46,7 +46,14 @@ export const GET = apiHandler(async (
     with: {
       items: { with: { options: true } },
       restaurant: {
-        columns: { name: true, slug: true, ownerId: true, reviewsEnabled: true },
+        // phone alimenta o botão de WhatsApp no card do pedido (via mapOrder).
+        columns: {
+          name: true,
+          slug: true,
+          phone: true,
+          ownerId: true,
+          reviewsEnabled: true,
+        },
       },
     },
   });

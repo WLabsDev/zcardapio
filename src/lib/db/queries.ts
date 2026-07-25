@@ -165,7 +165,12 @@ type OrderRow = typeof orders.$inferSelect & {
     notes: string;
     options: { groupName: string; name: string; priceCents: number }[];
   }[];
-  restaurant?: { name: string; slug: string; reviewsEnabled: boolean } | null;
+  restaurant?: {
+    name: string;
+    slug: string;
+    phone: string;
+    reviewsEnabled: boolean;
+  } | null;
   review?: { id: number } | null;
 };
 
@@ -176,6 +181,7 @@ export function mapOrder(o: OrderRow): Order {
     restaurantId: String(o.restaurantId),
     restaurantName: o.restaurant?.name,
     restaurantSlug: o.restaurant?.slug,
+    restaurantPhone: o.restaurant?.phone || undefined,
     customerName: o.customerName,
     customerPhone: o.customerPhone || undefined,
     items: o.items.map((i) => ({
@@ -218,7 +224,10 @@ export function mapOrder(o: OrderRow): Order {
 
 const orderWith = {
   items: { with: { options: true } },
-  restaurant: { columns: { name: true, slug: true, reviewsEnabled: true } },
+  // phone: o cliente fala com o restaurante pelo WhatsApp direto do pedido.
+  restaurant: {
+    columns: { name: true, slug: true, phone: true, reviewsEnabled: true },
+  },
   review: { columns: { id: true } },
 } as const;
 
