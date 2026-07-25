@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { setSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { plans, restaurants, users } from "@/lib/db/schema";
+import { restaurants, users } from "@/lib/db/schema";
 import { apiHandler } from "@/lib/api";
 
 const registerRestaurantSchema = z.object({
@@ -20,14 +20,7 @@ const registerRestaurantSchema = z.object({
   endereco: z.string().min(5, "Informe o endereço."),
   cidade: z.string().min(2, "Informe a cidade."),
   estado: z.string().length(2, "Selecione o estado."),
-  plano: z.enum(["gratis", "pro", "premium"]).optional(),
 });
-
-const PLAN_NAME_BY_KEY: Record<string, string> = {
-  gratis: "Grátis",
-  pro: "Pro",
-  premium: "Premium",
-};
 
 export const POST = apiHandler(async (request: Request) => {
   const body = await request.json().catch(() => null);
@@ -50,7 +43,6 @@ export const POST = apiHandler(async (request: Request) => {
     endereco,
     cidade,
     estado,
-    plano,
   } = parsed.data;
   const address = `${endereco.trim()} — ${cidade.trim()}/${estado}`;
   const normalizedEmail = email.toLowerCase();
@@ -75,12 +67,6 @@ export const POST = apiHandler(async (request: Request) => {
     );
   }
 
-  const plan = plano
-    ? await db.query.plans.findFirst({
-        where: eq(plans.name, PLAN_NAME_BY_KEY[plano]),
-      })
-    : null;
-
   const passwordHash = await hash(senha, 10);
 
   const result = await db.transaction(async (tx) => {
@@ -99,7 +85,9 @@ export const POST = apiHandler(async (request: Request) => {
       .insert(restaurants)
       .values({
         ownerId: user.id,
-        planId: plan?.id ?? null,
+        // Plano pago só é atribuído após pagamento confirmado (checkout).
+        // No registro o restaurante entra sempre no grátis.
+        planId: null,
         slug,
         name: restauranteNome,
         segment: segmento,
