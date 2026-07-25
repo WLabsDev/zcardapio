@@ -403,9 +403,7 @@ export default async function LandingPage() {
               Recursos
             </p>
             <h2 className="font-display text-4xl font-bold tracking-tight md:text-5xl">
-              Feito para quem cozinha,
-              <br />
-              não para quem programa.
+              Feito para quem cozinha.
             </h2>
           </div>
           <p className="max-w-xs text-muted-foreground">
