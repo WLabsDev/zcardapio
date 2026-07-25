@@ -1,0 +1,164 @@
+/* Design tokens do novo visual. Ficam escopados no <div> raiz da página para
+   não vazarem para o resto do app enquanto o design está sendo avaliado.
+   A paleta sai do próprio logo: azul-marinho + laranja, sobre papel quente. */
+.page {
+  --lp-bg: #f8f6f1;
+  --lp-bg-soft: #f1ede4;
+  --lp-surface: #ffffff;
+
+  --lp-ink: #14273e;
+  --lp-body: #4e5b6e;
+  --lp-muted: #7f8a99;
+
+  --lp-line: #e6dfd3;
+  --lp-line-soft: #f0ebe1;
+
+  --lp-accent: #e9552a;
+  --lp-accent-dark: #c8401a;
+  --lp-accent-tint: #fdece5;
+
+  --lp-navy: #0f2136;
+  --lp-navy-soft: #1b3a5c;
+
+  --lp-gold: #e5a13a;
+  --lp-mint: #1f9d74;
+  --lp-mint-tint: #e7f5ef;
+  --lp-chart-idle: #e2e6ec;
+
+  --lp-shadow-sm: 0 1px 2px rgba(15, 33, 54, 0.05), 0 6px 16px -10px rgba(15, 33, 54, 0.25);
+  --lp-shadow: 0 1px 2px rgba(15, 33, 54, 0.05), 0 20px 44px -26px rgba(15, 33, 54, 0.4);
+  --lp-shadow-lg: 0 2px 6px rgba(15, 33, 54, 0.06), 0 44px 80px -36px rgba(15, 33, 54, 0.5);
+
+  background-color: var(--lp-bg);
+  color: var(--lp-body);
+}
+
+/* Serifada de display. `opsz` maior deixa o traço mais fino e editorial nos
+   títulos grandes; `SOFT` arredonda as pontas para não ficar acadêmico demais. */
+.display {
+  font-family: var(--font-lp-display), Georgia, "Times New Roman", serif;
+  font-variation-settings: "opsz" 96, "SOFT" 26;
+}
+
+.displaySm {
+  font-family: var(--font-lp-display), Georgia, "Times New Roman", serif;
+  font-variation-settings: "opsz" 20, "SOFT" 20;
+}
+
+/* Brilhos de fundo -------------------------------------------------------- */
+.heroGlow {
+  background:
+    radial-gradient(36rem 30rem at 76% 12%, rgba(233, 85, 42, 0.16), transparent 62%),
+    radial-gradient(32rem 26rem at 8% 4%, rgba(15, 33, 54, 0.09), transparent 60%);
+}
+
+.ctaGlow {
+  background:
+    radial-gradient(30rem 24rem at 12% 0%, rgba(233, 85, 42, 0.35), transparent 60%),
+    radial-gradient(26rem 22rem at 92% 108%, rgba(66, 133, 199, 0.28), transparent 60%);
+}
+
+.dots {
+  background-image: radial-gradient(circle at 1px 1px, rgba(15, 33, 54, 0.13) 1px, transparent 0);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(ellipse 62% 52% at 50% 38%, #000 24%, transparent 74%);
+  mask-image: radial-gradient(ellipse 62% 52% at 50% 38%, #000 24%, transparent 74%);
+}
+
+/* Grão de papel: dá textura e tira o aspecto "chapado" das áreas grandes. */
+.grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+  opacity: 0.05;
+}
+
+/* Fotos do mockup -------------------------------------------------------- */
+.cover {
+  background-color: #cbb49c;
+  background-image:
+    linear-gradient(180deg, rgba(15, 33, 54, 0) 40%, rgba(15, 33, 54, 0.45) 100%),
+    url("https://images.unsplash.com/photo-1550547660-d9450f859349?w=800&q=60&auto=format&fit=crop");
+  background-size: cover;
+  background-position: center;
+}
+
+/* As mesmas fotos que o cardápio de demonstração usa em `src/lib/mock/data.ts`. */
+.thumbClassico {
+  background-color: #d3b294;
+  background-image: url("https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=240&q=70&auto=format&fit=crop");
+  background-size: cover;
+  background-position: center;
+}
+
+.thumbBacon {
+  background-color: #c9a184;
+  background-image: url("https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=240&q=70&auto=format&fit=crop");
+  background-size: cover;
+  background-position: center;
+}
+
+.thumbVeggie {
+  background-color: #cdb894;
+  background-image: url("https://images.unsplash.com/photo-1520072959219-c595dc870360?w=240&q=70&auto=format&fit=crop");
+  background-size: cover;
+  background-position: center;
+}
+
+/* Movimento --------------------------------------------------------------- */
+@keyframes lpFloat {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+@keyframes lpPing {
+  0% {
+    box-shadow: 0 0 0 0 rgba(31, 157, 116, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgba(31, 157, 116, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(31, 157, 116, 0);
+  }
+}
+
+.float {
+  animation: lpFloat 6.5s ease-in-out infinite;
+}
+
+.floatSlow {
+  animation: lpFloat 8.5s ease-in-out infinite;
+  animation-delay: -2.5s;
+}
+
+.ping {
+  animation: lpPing 2.2s ease-out infinite;
+}
+
+/* Acordeão das dúvidas: tira o marcador nativo do <details> e vira o "+" em "×"
+   quando abre. O giro fica aqui porque o Tailwind não gera a variante
+   `group-open:`. */
+.faq summary {
+  list-style: none;
+}
+
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq details[open] .chevron {
+  transform: rotate(45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .float,
+  .floatSlow,
+  .ping {
+    animation: none;
+  }
+}

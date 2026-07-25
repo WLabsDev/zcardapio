@@ -1,0 +1,6 @@
+/* O Tailwind v4 deste projeto não gera as variantes `group-open:` nem
+   `group-[[open]]:` (verificado: nenhuma regra chega ao CSS final), então o giro
+   do "+" para "×" no acordeão das dúvidas fica aqui. */
+.faq details[open] .chevron {
+  transform: rotate(45deg);
+}

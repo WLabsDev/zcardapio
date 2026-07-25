@@ -12,6 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { formatBRL, type Order, type OrderStatus } from "@/lib/mock/types";
+import { playOrderChime } from "@/lib/notification-sound";
 
 // Backstop: além do push via SSE, refaz a busca a cada 60s (rede de segurança
 // caso algum evento se perca) e imediatamente ao reconectar após uma queda.
@@ -42,6 +43,7 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
       if (knownIds.current) {
         const fresh = incoming.filter((o) => !knownIds.current!.has(o.id));
         for (const o of fresh) {
+          playOrderChime();
           toast("🔔 Pedido novo!", {
             description: `${o.code} · ${o.customerName} · ${formatBRL(o.total)}`,
             action: {
@@ -74,6 +76,7 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
       const msg: { type: "order_created" | "order_updated"; order: Order } =
         JSON.parse(e.data);
       if (msg.type === "order_created" && !knownIds.current?.has(msg.order.id)) {
+        playOrderChime();
         toast("🔔 Pedido novo!", {
           description: `${msg.order.code} · ${msg.order.customerName} · ${formatBRL(msg.order.total)}`,
           action: {
