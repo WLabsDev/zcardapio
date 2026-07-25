@@ -132,7 +132,7 @@ export default function CadastroRestaurantePage() {
       return;
     }
 
-    toast.success("Restaurante cadastrado! Bem-vindo ao zCardapio 🎉");
+    toast.success("Restaurante cadastrado! Bem-vindo ao zCardápio 🎉");
     router.push("/vendedor");
   }
 

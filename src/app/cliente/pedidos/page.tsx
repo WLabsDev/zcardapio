@@ -10,7 +10,7 @@ export default async function ClientePedidosPage() {
       <div>
         <h2 className="font-display text-xl font-bold">Meus pedidos</h2>
         <p className="text-sm text-muted-foreground">
-          Histórico de pedidos feitos pelo zCardapio.
+          Histórico de pedidos feitos pelo zCardápio.
         </p>
       </div>
 

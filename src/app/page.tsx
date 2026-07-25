@@ -318,7 +318,7 @@ export default async function LandingPage() {
               tone="negative"
             />
             <CostPanel
-              label="zCardapio"
+              label="zCardápio"
               amount={
                 refPlan ? `− ${formatBRL(refPlan.price)}` : "0% de comissão"
               }
@@ -633,7 +633,7 @@ export default async function LandingPage() {
             className="rounded-xl bg-background/95 px-2.5 py-1.5 shadow-offset-sm"
             imgClassName="h-7 group-hover:scale-100"
           />
-          <p>© 2026 zCardapio · zcardapio.com.br</p>
+          <p>© 2026 zCardápio · zcardapio.com.br</p>
           <div className="flex gap-5">
             <Link href="/login" className="hover:text-background">
               Entrar

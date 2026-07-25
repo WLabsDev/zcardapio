@@ -85,7 +85,7 @@ export default function AdminDashboard() {
         <div>
           <h2 className="font-display text-xl font-bold">Visão geral da plataforma</h2>
           <p className="text-sm text-muted-foreground">
-            Acompanhe o crescimento do zCardapio.
+            Acompanhe o crescimento do zCardápio.
           </p>
         </div>
         <Button

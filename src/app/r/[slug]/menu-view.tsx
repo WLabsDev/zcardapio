@@ -517,7 +517,7 @@ export function MenuView({
           </section>
         )}
 
-        {/* Selo "Feito com zcardapio" — crescimento orgânico; removido nos planos pagos */}
+        {/* Selo "Feito com zCardápio" — crescimento orgânico; removido nos planos pagos */}
         {showBranding && (
           <div className="pb-2 pt-8 text-center">
             <a
@@ -529,7 +529,7 @@ export function MenuView({
               <UtensilsCrossed className="size-3" />
               <span>Cardápio feito com</span>
               <span className="font-display font-bold text-foreground">
-                zcardapio
+                zCardápio
               </span>
             </a>
             <p className="mt-2 text-[11px] text-muted-foreground">

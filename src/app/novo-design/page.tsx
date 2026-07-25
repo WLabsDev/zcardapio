@@ -39,7 +39,7 @@ const fraunces = Fraunces({
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: { absolute: "zCardapio — Um cardápio digital à altura da sua cozinha" },
+  title: { absolute: "zCardápio — Um cardápio digital à altura da sua cozinha" },
   description:
     "Monte o cardápio, cole o QR code na mesa e receba os pedidos no painel. Mensalidade fixa, zero comissão por pedido.",
   // Enquanto é só um estudo de design, fica fora da indexação para não competir
@@ -303,7 +303,7 @@ export default async function NewLandingPage() {
                 tone="negative"
               />
               <CostPanel
-                label="zCardapio"
+                label="zCardápio"
                 amount={refPlan ? `− ${formatBRL(refPlan.price)}` : "0% de comissão"}
                 caption={
                   refPlan
@@ -680,7 +680,7 @@ export default async function NewLandingPage() {
             </div>
           </div>
           <div className="mt-12 border-t border-[var(--lp-line)] pt-6 text-xs text-[var(--lp-muted)]">
-            © 2026 zCardapio · zcardapio.com.br
+            © 2026 zCardápio · zcardapio.com.br
           </div>
         </div>
       </footer>

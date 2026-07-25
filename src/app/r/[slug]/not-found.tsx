@@ -13,7 +13,7 @@ export default function RestaurantNotFound() {
           Cardápio não encontrado
         </h1>
         <p className="mx-auto max-w-sm text-sm text-muted-foreground">
-          Este restaurante não existe no zCardapio ou o link está errado.
+          Este restaurante não existe no zCardápio ou o link está errado.
           Confira o endereço com o estabelecimento.
         </p>
       </div>

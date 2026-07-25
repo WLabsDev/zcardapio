@@ -42,7 +42,7 @@ export default function OpengraphImage() {
             z
           </div>
           <span style={{ fontSize: "48px", fontWeight: 800, color: ink }}>
-            zcardapio
+            zCardápio
           </span>
         </div>
 

@@ -41,7 +41,7 @@ export default async function RestaurantMenuPage({
   const overLimit =
     Number.isFinite(orderLimit) &&
     (await getMonthlyOrderCount(Number(restaurant.id))) >= orderLimit;
-  // Selo "Feito com zcardapio" aparece só nos planos grátis (benefício do pago é removê-lo).
+  // Selo "Feito com zCardápio" aparece só nos planos grátis (benefício do pago é removê-lo).
   const showBranding = !isProUnlocked(planStatus);
 
   return (

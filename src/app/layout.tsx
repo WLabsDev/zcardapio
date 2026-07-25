@@ -16,8 +16,8 @@ const bricolage = Bricolage_Grotesque({
 
 export const metadata: Metadata = {
   title: {
-    default: "zCardapio — Cardápio online para o seu restaurante",
-    template: "%s | zCardapio",
+    default: "zCardápio — Cardápio online para o seu restaurante",
+    template: "%s | zCardápio",
   },
   description:
     "Crie o cardápio digital do seu restaurante em minutos. QR code, pedidos online e personalização completa.",
@@ -27,8 +27,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "pt_BR",
-    siteName: "zCardapio",
-    title: "zCardapio — Cardápio digital sem comissão por pedido",
+    siteName: "zCardápio",
+    title: "zCardápio — Cardápio digital sem comissão por pedido",
     description:
       "Monte o cardápio do seu restaurante, cole o QR code na mesa e receba pedidos no painel. Sem comissão por venda.",
   },
