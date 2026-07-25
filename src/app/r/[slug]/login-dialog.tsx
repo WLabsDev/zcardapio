@@ -304,15 +304,7 @@ export function LoginDialog({
                   name="senha"
                   render={({ field }) => (
                     <FormItem>
-                      <div className="flex items-center justify-between">
-                        <FormLabel>Senha</FormLabel>
-                        <Link
-                          href="/recuperar-senha-cliente"
-                          className="text-xs text-primary hover:underline"
-                        >
-                          Esqueci minha senha
-                        </Link>
-                      </div>
+                      <FormLabel>Senha</FormLabel>
                       <FormControl>
                         <Input
                           type="password"
@@ -322,6 +314,12 @@ export function LoginDialog({
                         />
                       </FormControl>
                       <FormMessage />
+                      <Link
+                        href="/recuperar-senha-cliente"
+                        className="justify-self-end text-xs text-primary hover:underline"
+                      >
+                        Esqueci minha senha
+                      </Link>
                     </FormItem>
                   )}
                 />

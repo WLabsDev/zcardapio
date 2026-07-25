@@ -106,15 +106,7 @@ export function LoginForm() {
             name="senha"
             render={({ field }) => (
               <FormItem>
-                <div className="flex items-center justify-between">
-                  <FormLabel>Senha *</FormLabel>
-                  <Link
-                    href="/recuperar-senha"
-                    className="text-xs text-primary hover:underline"
-                  >
-                    Esqueci a senha
-                  </Link>
-                </div>
+                <FormLabel>Senha *</FormLabel>
                 <div className="relative">
                   <FormControl>
                     <Input
@@ -139,6 +131,12 @@ export function LoginForm() {
                   </button>
                 </div>
                 <FormMessage />
+                <Link
+                  href="/recuperar-senha"
+                  className="justify-self-end text-xs text-primary hover:underline"
+                >
+                  Esqueci a senha
+                </Link>
               </FormItem>
             )}
           />
