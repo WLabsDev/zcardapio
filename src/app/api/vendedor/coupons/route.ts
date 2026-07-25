@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { coupons } from "@/lib/db/schema";
@@ -21,8 +21,14 @@ export const GET = apiHandler(async () => {
   const { error, restaurant } = await requireVendedorRestaurant();
   if (error) return error;
 
+  // Só os cupons criados à mão pelo vendedor. Os gerados por resgate de
+  // fidelidade (customerId preenchido) são de um cliente específico e ficam
+  // listados em /vendedor/fidelidade — senão a lista aqui vira um depósito.
   const rows = await db.query.coupons.findMany({
-    where: eq(coupons.restaurantId, restaurant.id),
+    where: and(
+      eq(coupons.restaurantId, restaurant.id),
+      isNull(coupons.customerId)
+    ),
     orderBy: (c, { desc }) => [desc(c.id)],
   });
   return Response.json({

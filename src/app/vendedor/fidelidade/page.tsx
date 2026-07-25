@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { LoyaltyCoupons } from "@/components/panel/loyalty-coupons";
 import { LoyaltyManager, type LoyaltyProgram } from "@/components/panel/loyalty-manager";
 import { ProGate } from "@/components/panel/pro-gate";
+import { Separator } from "@/components/ui/separator";
 
 export default function FidelidadePage() {
   const [program, setProgram] = useState<LoyaltyProgram | null>(null);
@@ -33,12 +35,19 @@ export default function FidelidadePage() {
       {!program || isFree === null ? (
         <p className="text-sm text-muted-foreground">Carregando...</p>
       ) : (
-        <ProGate
-          active={isFree}
-          message="Fidelização de clientes é um benefício dos planos pagos."
-        >
-          <LoyaltyManager program={program} onSaved={load} />
-        </ProGate>
+        <>
+          <ProGate
+            active={isFree}
+            message="Fidelização de clientes é um benefício dos planos pagos."
+          >
+            <LoyaltyManager program={program} onSaved={load} />
+          </ProGate>
+
+          {/* Fora do ProGate de propósito: quem já teve fidelidade e caiu para
+              o plano grátis ainda precisa enxergar os cupons em circulação. */}
+          <Separator />
+          <LoyaltyCoupons />
+        </>
       )}
     </div>
   );

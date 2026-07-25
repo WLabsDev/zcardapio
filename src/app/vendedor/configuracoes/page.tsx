@@ -535,7 +535,7 @@ export default function ConfiguracoesPage() {
       <SettingsSection
         icon={Ticket}
         title="Cupons de desconto"
-        description="Crie códigos que o cliente aplica no checkout."
+        description="Códigos que você cria e o cliente aplica no checkout. Os cupons gerados pela fidelidade ficam na página Fidelidade."
       >
         <CouponsManager />
       </SettingsSection>

@@ -19,6 +19,10 @@ const putSchema = z.object({
 
 type Ctx = { params: Promise<{ id: string }> };
 
+/** Cupom de resgate pertence a um cliente — o vendedor não mexe nele por aqui. */
+const LOYALTY_COUPON_MESSAGE =
+  "Este cupom foi gerado pela fidelidade de um cliente e não pode ser alterado aqui.";
+
 async function parseId(params: Ctx["params"]) {
   const { id } = await params;
   const couponId = Number(id);
@@ -38,6 +42,9 @@ export const PUT = apiHandler(async (request: Request, { params }: Ctx) => {
   });
   if (!current) {
     return Response.json({ message: "Cupom não encontrado." }, { status: 404 });
+  }
+  if (current.customerId !== null) {
+    return Response.json({ message: LOYALTY_COUPON_MESSAGE }, { status: 409 });
   }
 
   const body = await request.json().catch(() => null);
@@ -78,13 +85,17 @@ export const DELETE = apiHandler(async (_request: Request, { params }: Ctx) => {
     return Response.json({ message: "Cupom inválido." }, { status: 400 });
   }
 
-  const [deleted] = await db
-    .delete(coupons)
-    .where(and(eq(coupons.id, couponId), eq(coupons.restaurantId, restaurant.id)))
-    .returning({ id: coupons.id });
-
-  if (!deleted) {
+  const current = await db.query.coupons.findFirst({
+    where: and(eq(coupons.id, couponId), eq(coupons.restaurantId, restaurant.id)),
+    columns: { id: true, customerId: true },
+  });
+  if (!current) {
     return Response.json({ message: "Cupom não encontrado." }, { status: 404 });
   }
+  if (current.customerId !== null) {
+    return Response.json({ message: LOYALTY_COUPON_MESSAGE }, { status: 409 });
+  }
+
+  await db.delete(coupons).where(eq(coupons.id, couponId));
   return Response.json({ ok: true });
 });
