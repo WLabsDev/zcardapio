@@ -28,6 +28,21 @@ Em **App → Environment Variables**, defina:
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `SMTP_FROM` | opcional | E-mail (recuperação de senha de vendedor/admin). Sem isso, o e-mail é logado no console. |
 | `EVOLUTION_API_URL` / `EVOLUTION_API_KEY` / `EVOLUTION_INSTANCE` | opcional | WhatsApp (Evolution API). Sem isso, a mensagem é logada no console. |
 | `MP_ACCESS_TOKEN` | opcional | MercadoPago (cobrança de plano). Sem isso, o checkout de plano fica indisponível. |
+| `MP_WEBHOOK_SECRET` | recomendada com o MP | Segredo do webhook do MercadoPago — valida a assinatura das notificações (veja abaixo). |
+
+### Webhook do MercadoPago
+
+O plano é cobrado pelo **Checkout Pro**: o painel redireciona o restaurante para
+o MercadoPago e a ativação acontece quando chega a notificação de pagamento.
+
+1. No painel do MercadoPago: **Suas integrações → sua aplicação → Webhooks**.
+2. URL: `https://SEU-DOMINIO/api/webhooks/mercadopago` · evento: **Pagamentos**.
+3. Copie o **Segredo** gerado ali e coloque em `MP_WEBHOOK_SECRET`.
+
+Com o segredo definido, notificação sem assinatura válida (`x-signature`) leva
+401 e é descartada. Sem o segredo, o endpoint aceita qualquer POST e registra um
+aviso no log — o dano é limitado (o pagamento é consultado na API do MercadoPago
+pelo id antes de ativar qualquer plano), mas não deixe assim em produção.
 
 ## 4. Marketing / Analytics (também runtime)
 
