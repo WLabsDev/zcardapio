@@ -99,6 +99,7 @@ export type Restaurant = {
   logo: string;
   cover: string;
   address: string;
+  /** telefone/WhatsApp do restaurante — contato do cliente e aviso de pedido */
   phone: string;
   openingHours: string;
   isOpen: boolean;
@@ -118,8 +119,6 @@ export type Restaurant = {
   pauseMessage?: string;
   /** aviso/promoção exibido no topo do cardápio */
   bannerText?: string;
-  /** número de WhatsApp para contato/pedidos */
-  whatsapp?: string;
   /** mensagem personalizada pós-pedido */
   confirmMessage?: string;
   /** métodos de pagamento aceitos */

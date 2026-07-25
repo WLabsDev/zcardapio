@@ -32,6 +32,7 @@ import { formatBRL, type DeliveryZone, type PaymentMethod, type Restaurant } fro
 import { isDarkTheme, restaurantThemeVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { copyText } from "@/lib/clipboard";
+import { whatsappLink } from "@/lib/phone";
 
 const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   pix: "Pix",
@@ -262,12 +263,13 @@ export function CheckoutView({
                   <Copy className="size-4" />
                   Pix copia e cola
                 </Button>
-                {restaurant.whatsapp?.trim() && (
+                {restaurant.phone?.trim() && (
                   <Button className="w-full rounded-full font-semibold shadow-offset-sm" asChild>
                     <a
-                      href={`https://wa.me/55${restaurant.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(
+                      href={whatsappLink(
+                        restaurant.phone,
                         `Olá! Segue o comprovante do pedido ${orderResult.code} no valor de ${formatBRL(orderResult.total)}.`
-                      )}`}
+                      )}
                       target="_blank"
                       rel="noreferrer"
                     >
@@ -281,10 +283,10 @@ export function CheckoutView({
           )}
 
           <div className="flex flex-wrap justify-center gap-3">
-            {!orderResult?.pix && restaurant.whatsapp?.trim() && (
+            {!orderResult?.pix && restaurant.phone?.trim() && (
               <Button className="rounded-full font-semibold shadow-offset-sm" asChild>
                 <a
-                  href={`https://wa.me/55${restaurant.whatsapp.replace(/\D/g, "")}`}
+                  href={whatsappLink(restaurant.phone)}
                   target="_blank"
                   rel="noreferrer"
                 >

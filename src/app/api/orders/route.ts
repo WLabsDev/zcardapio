@@ -474,7 +474,8 @@ export const POST = apiHandler(async (request: Request) => {
     });
   }
 
-  if (restaurant.whatsapp) {
+  // Avisa o vendedor no WhatsApp cadastrado em "Dados do restaurante".
+  if (restaurant.phone) {
     // Sem detalhes do pedido de propósito — só o suficiente pra avisar, o
     // vendedor precisa abrir o app pra ver o que é.
     const pedidosUrl = `${new URL(request.url).origin}/vendedor/pedidos`;
@@ -485,7 +486,7 @@ export const POST = apiHandler(async (request: Request) => {
         : `Cliente: ${data.customerName}\n`) +
       `Total: ${formatBRL(totalCents / 100)}\n\n` +
       `Ver detalhes: ${pedidosUrl}`;
-    await sendWhatsAppMessage(restaurant.whatsapp, message).catch((e) =>
+    await sendWhatsAppMessage(restaurant.phone, message).catch((e) =>
       console.error("[orders] falha ao notificar vendedor por WhatsApp:", e)
     );
   }

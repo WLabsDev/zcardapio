@@ -50,7 +50,6 @@ function mapRestaurant(
     hours: r.hours,
     pauseMessage: r.pauseMessage,
     bannerText: r.bannerText,
-    whatsapp: r.whatsapp,
     confirmMessage: r.confirmMessage,
     paymentMethods: r.paymentMethods,
     theme: r.theme as Restaurant["theme"],

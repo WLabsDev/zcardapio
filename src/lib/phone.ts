@@ -20,3 +20,24 @@ export function formatPhone(value: string): string {
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
+
+/**
+ * Número pronto para WhatsApp: só dígitos e com o DDI do Brasil (55) na frente.
+ * Não duplica o 55 se o vendedor já tiver digitado o DDI.
+ */
+export function toWhatsAppNumber(phone: string): string {
+  const digits = normalizePhone(phone);
+  if (!digits) return "";
+  return digits.startsWith("55") ? digits : `55${digits}`;
+}
+
+/**
+ * Link wa.me para abrir a conversa, opcionalmente com mensagem pronta.
+ * Retorna string vazia quando não há número — quem chama decide se esconde o
+ * botão.
+ */
+export function whatsappLink(phone: string, text?: string): string {
+  const number = toWhatsAppNumber(phone);
+  if (!number) return "";
+  return `https://wa.me/${number}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
+}

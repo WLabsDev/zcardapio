@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { formatPhone } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 import type { DayHours, PaymentMethod } from "@/lib/mock/types";
 
@@ -150,7 +151,6 @@ type Settings = {
   hours: DayHours[];
   pauseMessage: string;
   bannerText: string;
-  whatsapp: string;
   confirmMessage: string;
   paymentMethods: PaymentMethod[];
   acceptsScheduled: boolean;
@@ -169,7 +169,7 @@ export default function ConfiguracoesPage() {
         setForm({
           name: r.name,
           description: r.description ?? "",
-          phone: r.phone,
+          phone: formatPhone(r.phone ?? ""),
           address: r.address,
           slug: r.slug,
           isOpen: r.isOpen,
@@ -180,7 +180,6 @@ export default function ConfiguracoesPage() {
           hours: normalizeHours(r.hours),
           pauseMessage: r.pauseMessage ?? "",
           bannerText: r.bannerText ?? "",
-          whatsapp: r.whatsapp ?? "",
           confirmMessage: r.confirmMessage ?? "",
           paymentMethods:
             r.paymentMethods?.length ? r.paymentMethods : [...ALL_PAYMENTS],
@@ -239,7 +238,6 @@ export default function ConfiguracoesPage() {
         hours: form.hours,
         pauseMessage: form.pauseMessage.trim(),
         bannerText: form.bannerText.trim(),
-        whatsapp: form.whatsapp.trim(),
         confirmMessage: form.confirmMessage.trim(),
         paymentMethods: form.paymentMethods,
         acceptsScheduled: form.acceptsScheduled,
@@ -289,12 +287,18 @@ export default function ConfiguracoesPage() {
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="telefone">Telefone</Label>
+              <Label htmlFor="telefone">Telefone / WhatsApp</Label>
               <Input
                 id="telefone"
+                inputMode="numeric"
                 value={form.phone}
-                onChange={(e) => set("phone", e.target.value)}
+                onChange={(e) => set("phone", formatPhone(e.target.value))}
+                placeholder="(11) 99999-1234"
               />
+              <p className="text-xs text-muted-foreground">
+                É o número usado no botão de contato do cardápio e para te
+                avisar de cada pedido novo no WhatsApp.
+              </p>
             </div>
           </div>
           <div className="grid gap-2">
@@ -508,18 +512,6 @@ export default function ConfiguracoesPage() {
               onChange={(e) => set("bannerText", e.target.value)}
               placeholder="Ex.: 🎉 Hoje: frete grátis acima de R$ 50!"
             />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="whatsapp">WhatsApp (opcional)</Label>
-            <Input
-              id="whatsapp"
-              value={form.whatsapp}
-              onChange={(e) => set("whatsapp", e.target.value)}
-              placeholder="Somente números, com DDD. Ex.: 11999991234"
-            />
-            <p className="text-xs text-muted-foreground">
-              Usado no botão de contato e na confirmação do pedido.
-            </p>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="confirm">Mensagem pós-pedido (opcional)</Label>

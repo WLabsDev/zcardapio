@@ -58,9 +58,8 @@ const putSchema = z.object({
   // Horário inteligente
   hours: z.array(dayHoursSchema).max(7).optional(),
   pauseMessage: z.string().max(140).optional(),
-  // Banner + comunicação
+  // Banner + comunicação (o WhatsApp de contato é o `phone` acima)
   bannerText: z.string().max(200).optional(),
-  whatsapp: z.string().max(20).optional(),
   confirmMessage: z.string().max(300).optional(),
   pixKey: z.string().max(140).optional(),
   // Pagamentos
@@ -156,7 +155,6 @@ export const PUT = apiHandler(async (request: Request) => {
       ...(d.hours !== undefined && { hours: d.hours }),
       ...(d.pauseMessage !== undefined && { pauseMessage: d.pauseMessage }),
       ...(d.bannerText !== undefined && { bannerText: d.bannerText }),
-      ...(d.whatsapp !== undefined && { whatsapp: d.whatsapp }),
       ...(d.confirmMessage !== undefined && { confirmMessage: d.confirmMessage }),
       ...(d.pixKey !== undefined && { pixKey: d.pixKey }),
       ...(d.paymentMethods !== undefined && { paymentMethods: d.paymentMethods }),

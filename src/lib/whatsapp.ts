@@ -13,11 +13,7 @@
  * instância divergir, ajuste o corpo da requisição abaixo.
  */
 
-function normalizeForWhatsApp(phone: string) {
-  const digits = phone.replace(/\D/g, "");
-  // Evolution API espera o número com DDI (Brasil = 55), sem "+" e sem sufixo.
-  return digits.startsWith("55") ? digits : `55${digits}`;
-}
+import { toWhatsAppNumber } from "@/lib/phone";
 
 /** True quando a Evolution API está configurada (envio de WhatsApp ativo). */
 export function isWhatsAppConfigured() {
@@ -44,7 +40,8 @@ export async function sendWhatsAppMessage(phone: string, text: string) {
         apikey: EVOLUTION_API_KEY,
       },
       body: JSON.stringify({
-        number: normalizeForWhatsApp(phone),
+        // Evolution API espera o número com DDI (Brasil = 55), sem "+".
+        number: toWhatsAppNumber(phone),
         text,
       }),
     }

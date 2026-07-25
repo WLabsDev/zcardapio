@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { formatPhone, normalizePhone } from "./phone";
+import {
+  formatPhone,
+  normalizePhone,
+  toWhatsAppNumber,
+  whatsappLink,
+} from "./phone";
 
 describe("normalizePhone", () => {
   it("remove tudo que não é dígito", () => {
@@ -33,5 +38,36 @@ describe("formatPhone", () => {
   it("limita a 11 dígitos e ignora não-dígitos", () => {
     expect(formatPhone("(11) 99999-12345678")).toBe("(11) 99999-1234");
     expect(formatPhone("abc")).toBe("");
+  });
+});
+
+describe("toWhatsAppNumber", () => {
+  it("adiciona o DDI 55 quando falta", () => {
+    expect(toWhatsAppNumber("(11) 99999-1234")).toBe("5511999991234");
+  });
+
+  it("não duplica o DDI já digitado", () => {
+    expect(toWhatsAppNumber("+55 11 99999-1234")).toBe("5511999991234");
+  });
+
+  it("retorna vazio sem dígitos", () => {
+    expect(toWhatsAppNumber("")).toBe("");
+    expect(toWhatsAppNumber("  ")).toBe("");
+  });
+});
+
+describe("whatsappLink", () => {
+  it("monta o link da conversa", () => {
+    expect(whatsappLink("(11) 99999-1234")).toBe("https://wa.me/5511999991234");
+  });
+
+  it("codifica a mensagem pronta", () => {
+    expect(whatsappLink("11999991234", "Olá, pedido #1")).toBe(
+      "https://wa.me/5511999991234?text=Ol%C3%A1%2C%20pedido%20%231"
+    );
+  });
+
+  it("retorna vazio sem número", () => {
+    expect(whatsappLink("")).toBe("");
   });
 });

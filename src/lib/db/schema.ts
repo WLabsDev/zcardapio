@@ -86,6 +86,8 @@ export const restaurants = pgTable(
     logoUrl: text("logo_url").notNull().default(""),
     coverUrl: text("cover_url").notNull().default(""),
     address: varchar("address", { length: 255 }).notNull().default(""),
+    // Telefone/WhatsApp do restaurante: é o número usado no botão de contato do
+    // cardápio e no aviso de novo pedido enviado ao vendedor.
     phone: varchar("phone", { length: 20 }).notNull().default(""),
     openingHours: varchar("opening_hours", { length: 120 }).notNull().default(""),
     isOpen: boolean("is_open").notNull().default(true),
@@ -100,9 +102,8 @@ export const restaurants = pgTable(
       .notNull()
       .default([]),
     pauseMessage: text("pause_message").notNull().default(""),
-    // Banner + comunicação
+    // Banner + comunicação (o WhatsApp de contato é o `phone` acima)
     bannerText: text("banner_text").notNull().default(""),
-    whatsapp: varchar("whatsapp", { length: 20 }).notNull().default(""),
     confirmMessage: text("confirm_message").notNull().default(""),
     // Pagamentos aceitos
     paymentMethods: text("payment_methods")
