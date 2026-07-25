@@ -16,11 +16,11 @@ COPY . .
 # Em runtime o Easypanel injeta o DATABASE_URL de verdade.
 ARG DATABASE_URL=postgres://build:build@localhost:5432/build
 
-# Variáveis NEXT_PUBLIC_* são embutidas pelo Next.js no BUILD (não em runtime).
-# Defina-as como build args no Easypanel se quiser analytics/OG ativos.
-ARG NEXT_PUBLIC_SITE_URL
-ARG NEXT_PUBLIC_GA_MEASUREMENT_ID
-ARG NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+# NÃO declare aqui variáveis NEXT_PUBLIC_*: o Next as embute no bundle durante o
+# build, e o cache de camadas do Docker faz um redeploy reaproveitar o bundle
+# antigo — o valor novo só apareceria com um rebuild sem cache. GA, URL do site e
+# verificação do Search Console são lidos em runtime (ver src/lib/site-config.ts),
+# então basta definir as envs no Easypanel e reiniciar.
 RUN npm run build
 
 # ---- Runtime ----

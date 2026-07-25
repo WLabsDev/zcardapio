@@ -29,19 +29,29 @@ Em **App → Environment Variables**, defina:
 | `EVOLUTION_API_URL` / `EVOLUTION_API_KEY` / `EVOLUTION_INSTANCE` | opcional | WhatsApp (Evolution API). Sem isso, a mensagem é logada no console. |
 | `MP_ACCESS_TOKEN` | opcional | MercadoPago (cobrança de plano). Sem isso, o checkout de plano fica indisponível. |
 
-## 4. Build args (variáveis `NEXT_PUBLIC_*`)
+## 4. Marketing / Analytics (também runtime)
 
-As variáveis `NEXT_PUBLIC_*` são embutidas **no build** pelo Next.js. Se quiser
-analytics/OG ativos, defina-as como **Build Arguments** no Easypanel (não como
-env de runtime):
+Estas também vão em **Environment Variables** — **não** as coloque como Build
+Arguments:
 
-| Build arg | Descrição |
-|-----------|-----------|
-| `NEXT_PUBLIC_SITE_URL` | URL pública (ex.: `https://zcardapio.com.br`) — usada nas tags Open Graph. |
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | ID do Google Analytics 4 (`G-XXXX`). |
-| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Token de verificação do Search Console. |
+| Variável | Descrição |
+|----------|-----------|
+| `SITE_URL` | URL pública (ex.: `https://zcardapio.com.br`) — usada nas tags Open Graph. |
+| `GA_MEASUREMENT_ID` | ID do Google Analytics 4 (`G-XXXX`). |
+| `GOOGLE_SITE_VERIFICATION` | Token de verificação do Search Console. |
 
-> Sem elas o app funciona normalmente (analytics fica desativado e o OG usa a URL padrão).
+Depois de alterar qualquer uma delas, **reiniciar o app já basta** — não precisa
+rebuild. Sem elas o app funciona normalmente (analytics desativado, OG com a URL
+padrão).
+
+> **Por que não `NEXT_PUBLIC_*`?** O Next.js embute variáveis com esse prefixo no
+> JavaScript durante o `next build`. Como o Easypanel reaproveita o cache de
+> camadas do Docker, um redeploy depois de mudar o valor reusa o bundle antigo e
+> nada muda — era preciso rebuild do zero. Lidas em runtime no servidor
+> (`src/lib/site-config.ts`), o problema deixa de existir. Os nomes antigos
+> `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_GA_MEASUREMENT_ID` e
+> `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` continuam funcionando como env de
+> runtime (fallback), mas prefira os nomes novos.
 
 ## 5. Storage persistente (IMPORTANTE)
 
