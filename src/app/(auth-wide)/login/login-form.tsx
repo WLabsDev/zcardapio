@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Mail, MessageCircle } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,14 +18,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SetPasswordForm } from "@/components/set-password-form";
-import { formatPhone } from "@/lib/phone";
 import { roleHome, safeRedirectPath } from "@/lib/routes";
 import type { SessionRole } from "@/lib/session";
 
 const loginSchema = z.object({
-  identifier: z.string().min(1, "Informe este campo."),
+  email: z.string().min(1, "Informe seu e-mail."),
   senha: z.string().min(1, "Informe sua senha."),
 });
 
@@ -33,29 +30,14 @@ type LoginValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const router = useRouter();
-  // "cliente" = entra por WhatsApp; "restaurante" = entra por e-mail (cobre
-  // restaurante e admin — ver src/app/api/auth/login/route.ts). O usuário só
-  // escolhe o método de entrada, não precisa saber/declarar qual é o perfil.
-  const [method, setMethod] = useState<"cliente" | "restaurante">("cliente");
-  const [step, setStep] = useState<"login" | "set-password">("login");
   const [loggingIn, setLoggingIn] = useState(false);
   const [showSenha, setShowSenha] = useState(false);
-  const [setupPhone, setSetupPhone] = useState("");
-
-  const isWhatsapp = method === "cliente";
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { identifier: "", senha: "" },
+    defaultValues: { email: "", senha: "" },
   });
 
-  function changeMethod(next: string) {
-    setMethod(next as "cliente" | "restaurante");
-    setShowSenha(false);
-    form.reset({ identifier: "", senha: "" });
-  }
-
-  // Destino pós-login: ?next= (se for caminho interno) ou o painel do perfil.
   function redirectAfter(role: SessionRole, fallback = "/") {
     const next = safeRedirectPath(
       new URLSearchParams(window.location.search).get("next")
@@ -64,28 +46,21 @@ export function LoginForm() {
   }
 
   async function onSubmit(values: LoginValues) {
-    const payload = isWhatsapp
-      ? { phone: values.identifier, senha: values.senha, profile: method }
-      : { email: values.identifier, senha: values.senha, profile: method };
-
     setLoggingIn(true);
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        email: values.email,
+        senha: values.senha,
+        profile: "restaurante",
+      }),
     });
     const data = await res.json().catch(() => null);
     setLoggingIn(false);
 
-    if (!res.ok || (!data?.user && !data?.needsPassword)) {
+    if (!res.ok || !data?.user) {
       toast.error(data?.message ?? "Não foi possível entrar.");
-      return;
-    }
-
-    // Conta criada no pedido ainda sem senha → definir senha no 1º acesso.
-    if (data.needsPassword) {
-      setSetupPhone(data.phone);
-      setStep("set-password");
       return;
     }
 
@@ -93,73 +68,33 @@ export function LoginForm() {
     redirectAfter(data.user.role as SessionRole);
   }
 
-  // ---- Primeiro acesso: definir senha ----
-  if (step === "set-password") {
-    return (
-      <div className="w-full max-w-sm animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
-        <h1 className="font-display text-2xl font-bold tracking-tight">
-          Crie sua senha 🔑
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Encontramos seus pedidos pelo número{" "}
-          <strong className="text-foreground">{setupPhone}</strong>. Defina uma
-          senha para acompanhar seus pedidos.
-        </p>
-        <div className="mt-6">
-          <SetPasswordForm
-            phone={setupPhone}
-            onBack={() => setStep("login")}
-            onSuccess={(user) => redirectAfter(user.role as SessionRole, "/cliente")}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // ---- Login ----
   return (
     <div className="w-full max-w-sm animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
       <h1 className="font-display text-2xl font-bold tracking-tight">
         Que bom ter você aqui!
       </h1>
-      <p className="mt-1 text-sm text-muted-foreground">Como você quer entrar?</p>
-
-      <Tabs value={method} onValueChange={changeMethod} className="mt-6 mb-5">
-        <TabsList className="w-full">
-          <TabsTrigger value="cliente" className="flex-1">
-            <MessageCircle className="size-4" />
-            WhatsApp
-          </TabsTrigger>
-          <TabsTrigger value="restaurante" className="flex-1">
-            <Mail className="size-4" />
-            E-mail
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Entre com seu e-mail para acessar o painel.
+      </p>
 
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="grid gap-4"
+          className="mt-6 grid gap-4"
           noValidate
         >
           <FormField
             control={form.control}
-            name="identifier"
+            name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{isWhatsapp ? "WhatsApp" : "E-mail"} *</FormLabel>
+                <FormLabel>E-mail *</FormLabel>
                 <FormControl>
                   <Input
-                    type={isWhatsapp ? "tel" : "email"}
-                    placeholder={isWhatsapp ? "(11) 99999-1234" : "voce@email.com"}
-                    autoComplete={isWhatsapp ? "tel" : "email"}
+                    type="email"
+                    placeholder="voce@email.com"
+                    autoComplete="email"
                     {...field}
-                    onChange={
-                      isWhatsapp
-                        ? (e) => field.onChange(formatPhone(e.target.value))
-                        : field.onChange
-                    }
                   />
                 </FormControl>
                 <FormMessage />
@@ -174,7 +109,7 @@ export function LoginForm() {
                 <div className="flex items-center justify-between">
                   <FormLabel>Senha *</FormLabel>
                   <Link
-                    href={isWhatsapp ? "/recuperar-senha-cliente" : "/recuperar-senha"}
+                    href="/recuperar-senha"
                     className="text-xs text-primary hover:underline"
                   >
                     Esqueci a senha
@@ -219,7 +154,7 @@ export function LoginForm() {
       </Form>
 
       <div className="mt-6 border-t border-foreground/10 pt-5 text-center">
-        <p className="text-sm text-muted-foreground">Não é cliente ainda?</p>
+        <p className="text-sm text-muted-foreground">Não tem conta ainda?</p>
         <Button
           variant="outline"
           className="mt-3 w-full rounded-full border-2 border-foreground font-semibold"

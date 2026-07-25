@@ -115,7 +115,7 @@ const steps = [
     n: "01",
     title: "Monte o cardápio",
     description:
-      "Categorias, produtos, fotos, adicionais e preços. Tudo por um painel simples, sem depender de agência nem de programador.",
+      "Categorias, produtos, fotos, adicionais e preços. Tudo por um painel simples, sem depender de agência.",
   },
   {
     n: "02",
@@ -164,7 +164,8 @@ export default async function LandingPage() {
   // A comparação de comissão usa o preço real do plano em destaque, para não
   // inventar número nenhum na conta.
   const refPlan =
-    plans.find((p) => p.highlighted && p.price > 0) ?? plans.find((p) => p.price > 0);
+    plans.find((p) => p.highlighted && p.price > 0) ??
+    plans.find((p) => p.price > 0);
   const commission = SALES_EXAMPLE * MARKETPLACE_RATE;
   const savings = refPlan ? commission - refPlan.price : null;
 
@@ -175,10 +176,18 @@ export default async function LandingPage() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <Logo />
           <nav className="hidden items-center gap-7 text-sm font-semibold md:flex">
-            <a href="#recursos" className="hover:text-primary">Recursos</a>
-            <a href="#planos" className="hover:text-primary">Planos</a>
-            <a href="#demo" className="hover:text-primary">Demo</a>
-            <a href="#duvidas" className="hover:text-primary">Dúvidas</a>
+            <a href="#recursos" className="hover:text-primary">
+              Recursos
+            </a>
+            <a href="#planos" className="hover:text-primary">
+              Planos
+            </a>
+            <a href="#demo" className="hover:text-primary">
+              Demo
+            </a>
+            <a href="#duvidas" className="hover:text-primary">
+              Dúvidas
+            </a>
           </nav>
           <div className="flex items-center gap-2">
             <Button variant="ghost" asChild>
@@ -208,8 +217,7 @@ export default async function LandingPage() {
               <span className="relative inline-block text-muted-foreground/60 line-through decoration-primary decoration-4">
                 morreu
               </span>
-              .<br />
-              O seu agora é{" "}
+              .<br />O seu agora é{" "}
               <span className="relative inline-block">
                 <span className="relative z-10">online</span>
                 <span
@@ -222,7 +230,9 @@ export default async function LandingPage() {
             <p className="max-w-lg text-lg leading-relaxed text-muted-foreground">
               Monte seu cardápio digital em uma noite, cole o QR code na mesa e
               receba pedidos direto no seu painel.{" "}
-              <strong className="text-foreground">Sem comissão por venda.</strong>
+              <strong className="text-foreground">
+                Sem comissão por venda.
+              </strong>
             </p>
             <div className="flex flex-wrap items-center gap-4">
               <Button
@@ -241,14 +251,18 @@ export default async function LandingPage() {
                 className="h-12 rounded-full border-2 border-foreground px-7 text-base font-semibold"
                 asChild
               >
-                <a href="/r/burguer-do-zeca" target="_blank" rel="noopener noreferrer">
+                <a
+                  href="/r/burguer-do-zeca"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   Ver cardápio de exemplo
                 </a>
               </Button>
             </div>
             <p className="text-sm text-muted-foreground">
-              Grátis para sempre no plano inicial · Sem cartão de crédito · No ar hoje
-              mesmo
+              Grátis para sempre no plano inicial · Sem cartão de crédito · No
+              ar hoje mesmo
             </p>
           </div>
 
@@ -278,8 +292,8 @@ export default async function LandingPage() {
             A comissão do marketplace é o prato mais caro do seu cardápio.
           </h2>
           <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-            Ela não aparece no menu, mas sai de todo pedido. Veja o mesmo mês nas duas
-            contas.
+            Ela não aparece no menu, mas sai de todo pedido. Veja o mesmo mês
+            nas duas contas.
           </p>
         </div>
 
@@ -288,8 +302,10 @@ export default async function LandingPage() {
             <Flame className="size-4 shrink-0 text-primary" />
             <p className="text-sm">
               Cenário:{" "}
-              <strong className="font-semibold">{formatBRL(SALES_EXAMPLE)}</strong> em
-              vendas no mês
+              <strong className="font-semibold">
+                {formatBRL(SALES_EXAMPLE)}
+              </strong>{" "}
+              em vendas no mês
             </p>
           </div>
 
@@ -303,20 +319,28 @@ export default async function LandingPage() {
             />
             <CostPanel
               label="zCardapio"
-              amount={refPlan ? `− ${formatBRL(refPlan.price)}` : "0% de comissão"}
+              amount={
+                refPlan ? `− ${formatBRL(refPlan.price)}` : "0% de comissão"
+              }
               caption={
                 refPlan
                   ? `Mensalidade fixa do plano ${refPlan.name}. Zero por pedido.`
                   : "Mensalidade fixa. Zero por pedido."
               }
-              barWidth={refPlan ? Math.max(1.2, (refPlan.price / commission) * 100) : 1.2}
+              barWidth={
+                refPlan
+                  ? Math.max(1.2, (refPlan.price / commission) * 100)
+                  : 1.2
+              }
               tone="positive"
             />
           </div>
 
           {savings !== null && (
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t-2 border-foreground bg-foreground px-6 py-6 text-background md:px-8">
-              <span className="text-sm text-background/70">Diferença no seu caixa:</span>
+              <span className="text-sm text-background/70">
+                Diferença no seu caixa:
+              </span>
               <span className="font-display text-3xl font-bold tracking-tight md:text-4xl">
                 {formatBRL(savings)}
               </span>
@@ -326,9 +350,9 @@ export default async function LandingPage() {
         </div>
 
         <p className="mt-4 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-          Valores ilustrativos. As comissões dos marketplaces variam conforme o plano
-          contratado e a modalidade de entrega — os 27% usados aqui são uma média de
-          mercado, não um número oficial de nenhuma plataforma.
+          Valores ilustrativos. As comissões dos marketplaces variam conforme o
+          plano contratado e a modalidade de entrega — os 27% usados aqui são
+          uma média de mercado, não um número oficial de nenhuma plataforma.
         </p>
       </section>
 
@@ -340,7 +364,7 @@ export default async function LandingPage() {
               Como funciona
             </p>
             <h2 className="font-display text-4xl font-bold tracking-tight md:text-5xl">
-              Três passos. Nenhum deles envolve programar.
+              Três passos. Sua loja no ar em minutos.
             </h2>
           </div>
 
@@ -356,7 +380,9 @@ export default async function LandingPage() {
                 <span className="relative z-10 flex size-12 items-center justify-center rounded-full border-2 border-foreground bg-background font-display font-bold text-primary shadow-offset-sm">
                   {step.n}
                 </span>
-                <h3 className="mt-6 font-display text-xl font-bold">{step.title}</h3>
+                <h3 className="mt-6 font-display text-xl font-bold">
+                  {step.title}
+                </h3>
                 <p className="mt-2 max-w-sm leading-relaxed text-muted-foreground">
                   {step.description}
                 </p>
@@ -367,7 +393,10 @@ export default async function LandingPage() {
       </section>
 
       {/* Features — editorial numbered rows */}
-      <section id="recursos" className="mx-auto w-full max-w-6xl px-4 py-20 md:py-28">
+      <section
+        id="recursos"
+        className="mx-auto w-full max-w-6xl px-4 py-20 md:py-28"
+      >
         <div className="mb-14 flex flex-wrap items-end justify-between gap-6">
           <div className="max-w-2xl">
             <p className="mb-3 font-display text-sm font-bold uppercase tracking-widest text-primary">
@@ -380,7 +409,8 @@ export default async function LandingPage() {
             </h2>
           </div>
           <p className="max-w-xs text-muted-foreground">
-            Sem plugin, sem integração paga, sem &ldquo;fale com o comercial&rdquo;.
+            Sem plugin, sem integração paga, sem &ldquo;fale com o
+            comercial&rdquo;.
           </p>
         </div>
         <div className="divide-y-2 divide-foreground/10 border-y-2 border-foreground/10">
@@ -407,7 +437,10 @@ export default async function LandingPage() {
       </section>
 
       {/* Plans */}
-      <section id="planos" className="border-y-2 border-foreground/10 bg-secondary/50">
+      <section
+        id="planos"
+        className="border-y-2 border-foreground/10 bg-secondary/50"
+      >
         <div className="mx-auto max-w-6xl px-4 py-20 md:py-28">
           <div className="mb-14 flex flex-wrap items-end justify-between gap-6">
             <div>
@@ -432,7 +465,7 @@ export default async function LandingPage() {
                   "relative flex flex-col gap-5 rounded-2xl border-2 bg-card p-7",
                   plan.highlighted
                     ? "border-foreground shadow-offset md:-translate-y-3"
-                    : "border-foreground/15"
+                    : "border-foreground/15",
                 )}
               >
                 {plan.highlighted && (
@@ -441,7 +474,9 @@ export default async function LandingPage() {
                   </span>
                 )}
                 <div>
-                  <h3 className="font-display text-xl font-bold">{plan.name}</h3>
+                  <h3 className="font-display text-xl font-bold">
+                    {plan.name}
+                  </h3>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {plan.description}
                   </p>
@@ -467,7 +502,7 @@ export default async function LandingPage() {
                   className={cn(
                     "rounded-full font-semibold",
                     !plan.highlighted &&
-                      "border-2 border-foreground bg-transparent text-foreground hover:bg-foreground hover:text-background"
+                      "border-2 border-foreground bg-transparent text-foreground hover:bg-foreground hover:text-background",
                   )}
                   asChild
                 >
@@ -480,7 +515,10 @@ export default async function LandingPage() {
       </section>
 
       {/* Demo */}
-      <section id="demo" className="mx-auto w-full max-w-6xl px-4 py-20 md:py-28">
+      <section
+        id="demo"
+        className="mx-auto w-full max-w-6xl px-4 py-20 md:py-28"
+      >
         <div className="relative overflow-hidden rounded-3xl border-2 border-foreground bg-accent p-10 shadow-offset md:p-16">
           <div
             aria-hidden
@@ -502,7 +540,11 @@ export default async function LandingPage() {
               className="h-12 rounded-full px-7 text-base font-semibold shadow-offset transition-transform hover:-translate-y-0.5"
               asChild
             >
-              <a href="/r/burguer-do-zeca" target="_blank" rel="noopener noreferrer">
+              <a
+                href="/r/burguer-do-zeca"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Abrir cardápio de exemplo
                 <ArrowRight className="size-4" />
               </a>
@@ -512,7 +554,10 @@ export default async function LandingPage() {
       </section>
 
       {/* Dúvidas */}
-      <section id="duvidas" className="border-y-2 border-foreground/10 bg-secondary/50">
+      <section
+        id="duvidas"
+        className="border-y-2 border-foreground/10 bg-secondary/50"
+      >
         <div className="mx-auto w-full max-w-6xl px-4 py-20 md:py-28">
           <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
             <div>
@@ -523,25 +568,27 @@ export default async function LandingPage() {
                 Perguntas que todo dono faz.
               </h2>
               <p className="mt-5 leading-relaxed text-muted-foreground">
-                Ficou faltando alguma? Cria a conta gratuita e testa — não pedimos cartão
-                para isso.
+                Ficou faltando alguma? Cria a conta gratuita e testa — não
+                pedimos cartão para isso.
               </p>
             </div>
 
             <div
               className={cn(
                 styles.faq,
-                "divide-y-2 divide-foreground/10 border-y-2 border-foreground/10"
+                "divide-y-2 divide-foreground/10 border-y-2 border-foreground/10",
               )}
             >
               {faq.map((item) => (
                 <details key={item.q}>
                   <summary className="flex cursor-pointer list-none items-center gap-4 py-5 [&::-webkit-details-marker]:hidden">
-                    <span className="flex-1 font-display font-bold">{item.q}</span>
+                    <span className="flex-1 font-display font-bold">
+                      {item.q}
+                    </span>
                     <span
                       className={cn(
                         styles.chevron,
-                        "flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-background text-primary transition-transform duration-200"
+                        "flex size-8 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-background text-primary transition-transform duration-200",
                       )}
                     >
                       <Plus className="size-4" />
@@ -588,8 +635,15 @@ export default async function LandingPage() {
           />
           <p>© 2026 zCardapio · zcardapio.com.br</p>
           <div className="flex gap-5">
-            <Link href="/login" className="hover:text-background">Entrar</Link>
-            <Link href="/cadastro-restaurante" className="hover:text-background">Criar conta</Link>
+            <Link href="/login" className="hover:text-background">
+              Entrar
+            </Link>
+            <Link
+              href="/cadastro-restaurante"
+              className="hover:text-background"
+            >
+              Criar conta
+            </Link>
           </div>
         </div>
       </footer>
@@ -620,17 +674,19 @@ function CostPanel({
       <p
         className={cn(
           "mt-3 font-display text-4xl font-bold tracking-tight md:text-5xl",
-          tone === "negative" ? "text-destructive" : "text-foreground"
+          tone === "negative" ? "text-destructive" : "text-foreground",
         )}
       >
         {amount}
       </p>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{caption}</p>
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+        {caption}
+      </p>
       <div className="mt-6 h-3 w-full overflow-hidden rounded-full border-2 border-foreground/15 bg-background">
         <div
           className={cn(
             "h-full rounded-full",
-            tone === "negative" ? "bg-destructive" : "bg-primary"
+            tone === "negative" ? "bg-destructive" : "bg-primary",
           )}
           style={{ width: `${barWidth}%` }}
         />

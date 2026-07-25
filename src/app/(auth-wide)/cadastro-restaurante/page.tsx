@@ -447,8 +447,10 @@ export default function CadastroRestaurantePage() {
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={step === 0}
-                    onClick={() => setStep((s) => s - 1)}
+                    onClick={() => {
+                      if (step === 0) router.push("/login");
+                      else setStep((s) => s - 1);
+                    }}
                   >
                     Voltar
                   </Button>
