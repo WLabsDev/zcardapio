@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { plans } from "@/lib/db/schema";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
+import { getPublicOrigin } from "@/lib/site-config";
 import { apiHandler } from "@/lib/api";
 import { createPlanPreference, isBillingConfigured } from "@/lib/billing";
 
@@ -42,9 +43,10 @@ export const POST = apiHandler(async (request: Request) => {
     );
   }
 
-  const origin = new URL(request.url).origin;
   const { initPoint } = await createPlanPreference({
-    origin,
+    // As back_urls precisam ser públicas e HTTPS — o MercadoPago recusa a
+    // preferência se receber o endereço interno do container.
+    origin: getPublicOrigin(request),
     restaurant: { id: String(restaurant.id), name: restaurant.name },
     plan: { id: String(plan.id), name: plan.name, priceCents: plan.priceCents },
   });

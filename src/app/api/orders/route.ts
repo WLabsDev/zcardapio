@@ -26,6 +26,7 @@ import { normalizePhone } from "@/lib/phone";
 import { generateOrderPix } from "@/lib/pix";
 import { getMonthlyOrderLimit, getPlanStatus } from "@/lib/plan-limits";
 import { publishOrderEvent } from "@/lib/realtime";
+import { getPublicOrigin } from "@/lib/site-config";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
 import { apiHandler } from "@/lib/api";
 
@@ -478,7 +479,7 @@ export const POST = apiHandler(async (request: Request) => {
   if (restaurant.phone) {
     // Sem detalhes do pedido de propósito — só o suficiente pra avisar, o
     // vendedor precisa abrir o app pra ver o que é.
-    const pedidosUrl = `${new URL(request.url).origin}/vendedor/pedidos`;
+    const pedidosUrl = `${getPublicOrigin(request)}/vendedor/pedidos`;
     const message =
       `🔔 *Novo pedido ${orderCode(order.id)}*\n` +
       (data.deliveryType === "mesa" && data.tableNumber

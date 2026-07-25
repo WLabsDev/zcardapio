@@ -51,7 +51,7 @@ Arguments:
 
 | Variável | Descrição |
 |----------|-----------|
-| `SITE_URL` | URL pública (ex.: `https://zcardapio.com.br`) — usada nas tags Open Graph. |
+| `SITE_URL` | URL pública (ex.: `https://zcardapio.com.br`). Além das tags Open Graph, é o domínio dos links que saem do servidor: e-mail de recuperação de senha, aviso de pedido no WhatsApp e retorno do MercadoPago. **Defina em produção** — atrás do proxy do Easypanel a requisição chega como `0.0.0.0:80` e o link sairia quebrado. |
 | `GA_MEASUREMENT_ID` | ID do Google Analytics 4 (`G-XXXX`). |
 | `GOOGLE_SITE_VERIFICATION` | Token de verificação do Search Console. |
 

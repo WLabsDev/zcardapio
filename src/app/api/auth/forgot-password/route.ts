@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { passwordResetTokens, users } from "@/lib/db/schema";
 import { sendPasswordResetEmail } from "@/lib/mailer";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { getPublicOrigin } from "@/lib/site-config";
 import { apiHandler } from "@/lib/api";
 
 const schema = z.object({
@@ -54,8 +55,7 @@ export const POST = apiHandler(async (request: Request) => {
       expiresAt: new Date(Date.now() + TOKEN_TTL_MS),
     });
 
-    const origin = new URL(request.url).origin;
-    const resetUrl = `${origin}/redefinir-senha?token=${token}`;
+    const resetUrl = `${getPublicOrigin(request)}/redefinir-senha?token=${token}`;
     await sendPasswordResetEmail(user.email, user.name, resetUrl).catch((e) =>
       console.error("[forgot-password] falha ao enviar e-mail:", e)
     );
