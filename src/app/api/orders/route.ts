@@ -20,6 +20,7 @@ import {
   getRestaurantByOwner,
   orderCode,
 } from "@/lib/db/queries";
+import { findZoneForAddress } from "@/lib/delivery-zones";
 import { computeOpenState } from "@/lib/hours";
 import { formatBRL, isAvailable } from "@/lib/mock/types";
 import { normalizePhone } from "@/lib/phone";
@@ -41,7 +42,6 @@ const createOrderSchema = z.object({
   address: z.string().default(""),
   tableNumber: z.coerce.number().int().positive().optional(),
   paymentMethod: z.enum(["pix", "cartao", "dinheiro"]),
-  zoneId: z.coerce.number().int().positive().optional(),
   couponCode: z.string().max(40).optional(),
   scheduledFor: z.coerce.date().optional(),
   items: z
@@ -224,28 +224,18 @@ export const POST = apiHandler(async (request: Request) => {
         i.quantity,
     0
   );
-  // Taxa de entrega: por região (se informada) ou a taxa padrão do restaurante.
+  // Taxa de entrega: a da região que aparece no endereço do cliente; se o
+  // endereço não bate com nenhuma região cadastrada, vale a taxa padrão. O
+  // cliente não escolhe a região — quem decide é este cálculo.
   let deliveryFeeCents = 0;
   let zoneName = "";
   if (data.deliveryType === "entrega") {
-    if (data.zoneId) {
-      const zone = await db.query.deliveryZones.findFirst({
-        where: and(
-          eq(deliveryZones.id, data.zoneId),
-          eq(deliveryZones.restaurantId, restaurant.id)
-        ),
-      });
-      if (!zone) {
-        return Response.json(
-          { message: "Região de entrega inválida." },
-          { status: 400 }
-        );
-      }
-      deliveryFeeCents = zone.feeCents;
-      zoneName = zone.name;
-    } else {
-      deliveryFeeCents = restaurant.deliveryFeeCents;
-    }
+    const zones = await db.query.deliveryZones.findMany({
+      where: eq(deliveryZones.restaurantId, restaurant.id),
+    });
+    const zone = findZoneForAddress(data.address, zones);
+    deliveryFeeCents = zone ? zone.feeCents : restaurant.deliveryFeeCents;
+    zoneName = zone?.name ?? "";
   }
 
   if (subtotalCents < restaurant.minOrderCents) {

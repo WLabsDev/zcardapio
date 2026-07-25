@@ -32,6 +32,7 @@ import { formatBRL, type DeliveryZone, type PaymentMethod, type Restaurant } fro
 import { isDarkTheme, restaurantThemeVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { copyText } from "@/lib/clipboard";
+import { findZoneForAddress } from "@/lib/delivery-zones";
 import { whatsappLink } from "@/lib/phone";
 
 const PAYMENT_LABELS: Record<PaymentMethod, string> = {
@@ -39,6 +40,9 @@ const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   cartao: "Cartão na entrega",
   dinheiro: "Dinheiro",
 };
+
+/** Ordem de exibição no checkout — Pix primeiro, independente da ordem salva. */
+const PAYMENT_ORDER: PaymentMethod[] = ["pix", "cartao", "dinheiro"];
 
 type SavedAddress = {
   id: string;
@@ -59,9 +63,11 @@ export function CheckoutView({
   tableNumber?: number | null;
 }) {
   const closed = !initiallyOpen;
-  const acceptedPayments: PaymentMethod[] = restaurant.paymentMethods?.length
-    ? restaurant.paymentMethods
-    : ["pix", "cartao", "dinheiro"];
+  const acceptedPayments: PaymentMethod[] = PAYMENT_ORDER.filter((m) =>
+    restaurant.paymentMethods?.length
+      ? restaurant.paymentMethods.includes(m)
+      : true
+  );
   const cart = useCart();
   const [deliveryType, setDeliveryType] = useState<
     "entrega" | "retirada" | "mesa"
@@ -80,8 +86,6 @@ export function CheckoutView({
   const [complement, setComplement] = useState("");
   const [payment, setPayment] = useState<PaymentMethod>(acceptedPayments[0]);
   const [sending, setSending] = useState(false);
-  // Região de entrega
-  const [zoneId, setZoneId] = useState<string>(zones[0]?.id ?? "");
   // Cupom
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<{ code: string; type: "percent" | "fixed"; value: number } | null>(null);
@@ -130,12 +134,17 @@ export function CheckoutView({
   const usingSavedAddress =
     loggedIn && savedAddresses.length > 0 && !useNewAddress && !!selectedSavedAddress;
 
-  const selectedZone = zones.find((z) => z.id === zoneId);
+  const address = usingSavedAddress
+    ? selectedSavedAddress?.address ?? ""
+    : [street, district, city, complement].filter(Boolean).join(" — ");
+
+  // A região sai do próprio endereço — o cliente não escolhe. Se nada casar,
+  // vale a taxa padrão. O servidor refaz esta conta ao criar o pedido.
+  const matchedZone =
+    deliveryType === "entrega" ? findZoneForAddress(address, zones) : undefined;
   const deliveryFee =
     deliveryType === "entrega"
-      ? selectedZone
-        ? selectedZone.fee
-        : restaurant.deliveryFee
+      ? matchedZone?.fee ?? restaurant.deliveryFee
       : 0;
   const discount = coupon
     ? coupon.type === "percent"
@@ -167,9 +176,6 @@ export function CheckoutView({
 
   async function submitOrder() {
     setSending(true);
-    const address = usingSavedAddress
-      ? selectedSavedAddress!.address
-      : [street, district, city, complement].filter(Boolean).join(" — ");
     const res = await fetch("/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -181,7 +187,6 @@ export function CheckoutView({
         address,
         tableNumber: deliveryType === "mesa" ? tableNumber ?? undefined : undefined,
         paymentMethod: payment,
-        zoneId: deliveryType === "entrega" && zoneId ? zoneId : undefined,
         couponCode: coupon?.code,
         scheduledFor: scheduledFor || undefined,
         items: cart.items.map((i) => ({
@@ -431,23 +436,6 @@ export function CheckoutView({
               </div>
               {deliveryType === "entrega" && (
                 <>
-                  {zones.length > 0 && (
-                    <div className="grid gap-2">
-                      <Label>Região de entrega</Label>
-                      <Select value={zoneId} onValueChange={setZoneId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione a região" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {zones.map((z) => (
-                            <SelectItem key={z.id} value={z.id}>
-                              {z.name} · {z.fee === 0 ? "Grátis" : formatBRL(z.fee)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
                   <div className="grid gap-2">
                     <Label>Endereço</Label>
 
@@ -586,6 +574,30 @@ export function CheckoutView({
                       </div>
                     )}
                   </div>
+
+                  {/* A taxa vem da região que o endereço menciona; sem região
+                      cadastrada não há o que avisar. */}
+                  {zones.length > 0 && address.trim() && (
+                    <p className="text-xs text-muted-foreground">
+                      {matchedZone ? (
+                        <>
+                          Entrega em <strong>{matchedZone.name}</strong> —{" "}
+                          {matchedZone.fee === 0
+                            ? "frete grátis"
+                            : `frete ${formatBRL(matchedZone.fee)}`}
+                          .
+                        </>
+                      ) : (
+                        <>
+                          Fora das regiões cadastradas — vale a taxa padrão de{" "}
+                          {restaurant.deliveryFee === 0
+                            ? "frete grátis"
+                            : formatBRL(restaurant.deliveryFee)}
+                          .
+                        </>
+                      )}
+                    </p>
+                  )}
                 </>
               )}
               <div className="grid gap-2">
@@ -704,9 +716,13 @@ export function CheckoutView({
                 <span>{tableNumber}</span>
               </div>
             ) : (
-              <div className="flex justify-between text-muted-foreground">
-                <span>Entrega</span>
-                <span>{deliveryFee === 0 ? "Grátis" : formatBRL(deliveryFee)}</span>
+              <div className="flex justify-between gap-2 text-muted-foreground">
+                <span className="truncate">
+                  Entrega{matchedZone && ` · ${matchedZone.name}`}
+                </span>
+                <span className="shrink-0">
+                  {deliveryFee === 0 ? "Grátis" : formatBRL(deliveryFee)}
+                </span>
               </div>
             )}
             <div className="flex justify-between text-base font-bold">

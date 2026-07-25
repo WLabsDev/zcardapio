@@ -432,34 +432,49 @@ export default function ConfiguracoesPage() {
       <SettingsSection
         icon={Bike}
         title="Entrega"
-        contentClassName="sm:grid-cols-3"
+        description="Taxa padrão, pedido mínimo e — se quiser cobrar diferente por bairro — as regiões."
       >
-          <div className="grid gap-2">
-            <Label htmlFor="taxa">Taxa de entrega (R$)</Label>
-            <Input
-              id="taxa"
-              type="number"
-              step="0.1"
-              value={form.deliveryFee}
-              onChange={(e) => set("deliveryFee", e.target.value)}
-            />
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-2">
+              <Label htmlFor="taxa">Taxa de entrega (R$)</Label>
+              <Input
+                id="taxa"
+                type="number"
+                step="0.1"
+                value={form.deliveryFee}
+                onChange={(e) => set("deliveryFee", e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="minimo">Pedido mínimo (R$)</Label>
+              <Input
+                id="minimo"
+                type="number"
+                value={form.minOrder}
+                onChange={(e) => set("minOrder", e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="tempo">Tempo estimado</Label>
+              <Input
+                id="tempo"
+                value={form.deliveryTime}
+                onChange={(e) => set("deliveryTime", e.target.value)}
+              />
+            </div>
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="minimo">Pedido mínimo (R$)</Label>
-            <Input
-              id="minimo"
-              type="number"
-              value={form.minOrder}
-              onChange={(e) => set("minOrder", e.target.value)}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="tempo">Tempo estimado</Label>
-            <Input
-              id="tempo"
-              value={form.deliveryTime}
-              onChange={(e) => set("deliveryTime", e.target.value)}
-            />
+
+          <div className="grid gap-3 border-t border-foreground/10 pt-4">
+            <div className="flex items-center gap-2">
+              <MapPin className="size-4 shrink-0 text-muted-foreground" />
+              <p className="text-sm font-medium">Entrega por região</p>
+            </div>
+            <p className="-mt-1.5 text-xs text-muted-foreground">
+              Use o nome do bairro: quando ele aparece no endereço do cliente, o
+              checkout cobra a taxa da região. Endereço fora das regiões
+              cadastradas paga a taxa padrão acima.
+            </p>
+            <DeliveryZonesManager />
           </div>
       </SettingsSection>
 
@@ -522,14 +537,6 @@ export default function ConfiguracoesPage() {
               placeholder="Ex.: Obrigado! Já estamos preparando seu pedido. Qualquer dúvida, chame no WhatsApp."
             />
           </div>
-      </SettingsSection>
-
-      <SettingsSection
-        icon={MapPin}
-        title="Entrega por região"
-        description="Defina taxas diferentes por região. Sem regiões, vale a taxa padrão de entrega."
-      >
-        <DeliveryZonesManager />
       </SettingsSection>
 
       <SettingsSection
