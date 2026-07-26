@@ -1,8 +1,9 @@
 import { hash } from "bcryptjs";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { restaurants, users } from "@/lib/db/schema";
+import { canonicalPhone, phoneVariants } from "@/lib/phone";
 import { requireAdmin } from "@/lib/admin";
 import { apiHandler } from "@/lib/api";
 
@@ -38,7 +39,8 @@ export const PUT = apiHandler(async (
   }
   const d = parsed.data;
   const email = d.email !== undefined ? d.email.trim().toLowerCase() : undefined;
-  const phone = d.phone !== undefined ? d.phone.trim() : undefined;
+  // Canônico + busca pelas duas grafias: ver lib/phone.ts (nono dígito).
+  const phone = d.phone !== undefined ? canonicalPhone(d.phone) : undefined;
 
   if (email) {
     const taken = await db.query.users.findFirst({
@@ -51,7 +53,7 @@ export const PUT = apiHandler(async (
   }
   if (phone) {
     const taken = await db.query.users.findFirst({
-      where: and(eq(users.phone, phone), ne(users.id, userId)),
+      where: and(inArray(users.phone, phoneVariants(phone)), ne(users.id, userId)),
       columns: { id: true },
     });
     if (taken) {

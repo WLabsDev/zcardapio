@@ -1,10 +1,10 @@
 import { compare } from "bcryptjs";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { setSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
-import { normalizePhone } from "@/lib/phone";
+import { canonicalPhone, normalizePhone, phoneVariants } from "@/lib/phone";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { apiHandler } from "@/lib/api";
 
@@ -49,8 +49,10 @@ export const POST = apiHandler(async (request: Request) => {
       );
     }
 
+    // Aceita as duas grafias do celular (com e sem o nono dígito): a conta pode
+    // ter sido criada de um jeito e o login vir do outro.
     const user = await db.query.users.findFirst({
-      where: eq(users.phone, phone),
+      where: inArray(users.phone, phoneVariants(phone)),
     });
     if (!user) {
       return Response.json(
@@ -68,7 +70,10 @@ export const POST = apiHandler(async (request: Request) => {
     // cliente-only mesmo.
     if (!user.passwordHash) {
       if (user.role === "cliente") {
-        return Response.json({ needsPassword: true, phone });
+        // Devolve na forma canônica: é ela que o fluxo de definir senha usa a
+        // seguir, e não faz sentido carregar a grafia solta que o cliente
+        // digitou (com DDI, sem o nono dígito etc.).
+        return Response.json({ needsPassword: true, phone: canonicalPhone(phone) });
       }
       return Response.json(
         {

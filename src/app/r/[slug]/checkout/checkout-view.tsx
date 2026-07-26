@@ -41,7 +41,7 @@ import { isDarkTheme, restaurantThemeVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { copyText } from "@/lib/clipboard";
 import { findZoneForAddress } from "@/lib/delivery-zones";
-import { normalizePhone, whatsappLink } from "@/lib/phone";
+import { formatPhone, normalizePhone, whatsappLink } from "@/lib/phone";
 
 const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   pix: "Pix",
@@ -272,7 +272,7 @@ export function CheckoutView({
     const draft = readDraft(draftKey);
     if (draft) {
       if (draft.name) setName(draft.name);
-      if (draft.phone) setPhone(draft.phone);
+      if (draft.phone) setPhone(formatPhone(draft.phone));
       // Pedido de mesa tem o tipo decidido pelo QR — o rascunho não manda nisso.
       if (draft.deliveryType && !tableNumber) setDeliveryType(draft.deliveryType);
       if (draft.street) setStreet(draft.street);
@@ -306,7 +306,7 @@ export function CheckoutView({
       if (me?.user) {
         setLoggedIn(true);
         setName((prev) => prev || me.user.name || "");
-        setPhone((prev) => prev || me.user.phone || "");
+        setPhone((prev) => prev || formatPhone(me.user.phone ?? ""));
       }
       const addrRes = await fetch("/api/me/addresses").catch(() => null);
       const addr = addrRes?.ok ? await addrRes.json().catch(() => null) : null;
@@ -749,9 +749,11 @@ export function CheckoutView({
                 <Label htmlFor="telefone">Telefone / WhatsApp</Label>
                 <Input
                   id="telefone"
-                  placeholder="(11) 99999-9999"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  placeholder="(11) 99999-1234"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(formatPhone(e.target.value))}
                   aria-invalid={!!errors.phone}
                 />
                 {errors.phone ? (

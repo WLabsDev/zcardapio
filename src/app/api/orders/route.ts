@@ -23,7 +23,7 @@ import {
 import { findZoneForAddress } from "@/lib/delivery-zones";
 import { computeOpenState } from "@/lib/hours";
 import { formatBRL, isAvailable } from "@/lib/mock/types";
-import { normalizePhone } from "@/lib/phone";
+import { canonicalPhone, phoneVariants } from "@/lib/phone";
 import { generateOrderPix } from "@/lib/pix";
 import { getMonthlyOrderLimit, getPlanStatus } from "@/lib/plan-limits";
 import { publishOrderEvent } from "@/lib/realtime";
@@ -328,10 +328,15 @@ export const POST = apiHandler(async (request: Request) => {
         customerId = account?.id ?? null;
       }
       if (customerId === null) {
-        const phone = normalizePhone(data.customerPhone);
+        // Canônico na criação, mas a busca aceita as duas grafias do celular
+        // (com e sem o nono dígito) para não duplicar a conta do cliente.
+        const phone = canonicalPhone(data.customerPhone);
         if (phone.length >= 10) {
           let account = await tx.query.users.findFirst({
-            where: and(eq(users.phone, phone), eq(users.role, "cliente")),
+            where: and(
+              inArray(users.phone, phoneVariants(phone)),
+              eq(users.role, "cliente")
+            ),
             columns: { id: true },
           });
           if (!account) {

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getSession, setSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
-import { normalizePhone } from "@/lib/phone";
+import { canonicalPhone } from "@/lib/phone";
 import { apiHandler } from "@/lib/api";
 
 export const GET = apiHandler(async () => {
@@ -59,7 +59,8 @@ export const PUT = apiHandler(async (request: Request) => {
     .update(users)
     .set({
       name: parsed.data.name,
-      phone: normalizePhone(parsed.data.phone) || null,
+      // Canônico: o celular fica sempre com o nono dígito (ver lib/phone.ts).
+      phone: canonicalPhone(parsed.data.phone) || null,
       email: email || null,
     })
     .where(eq(users.id, Number(session.sub)))

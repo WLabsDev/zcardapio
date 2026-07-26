@@ -1,10 +1,10 @@
 import { hash } from "bcryptjs";
-import { eq } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 import { z } from "zod";
 import { setSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
-import { normalizePhone } from "@/lib/phone";
+import { canonicalPhone, phoneVariants } from "@/lib/phone";
 import { apiHandler } from "@/lib/api";
 
 const registerSchema = z.object({
@@ -25,11 +25,13 @@ export const POST = apiHandler(async (request: Request) => {
   }
 
   const { nome, senha, email } = parsed.data;
-  const phone = normalizePhone(parsed.data.telefone);
+  // Grava sempre na forma canônica (celular com o nono dígito) e procura pelas
+  // duas grafias, para o mesmo telefone não virar duas contas.
+  const phone = canonicalPhone(parsed.data.telefone);
   const normalizedEmail = email ? email.toLowerCase() : null;
 
   const existing = await db.query.users.findFirst({
-    where: eq(users.phone, phone),
+    where: inArray(users.phone, phoneVariants(phone)),
   });
   if (existing) {
     return Response.json(

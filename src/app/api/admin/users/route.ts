@@ -1,8 +1,9 @@
 import { hash } from "bcryptjs";
-import { eq, ilike, or } from "drizzle-orm";
+import { eq, ilike, inArray, or } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
+import { canonicalPhone, phoneVariants } from "@/lib/phone";
 import { requireAdmin } from "@/lib/admin";
 import { apiHandler } from "@/lib/api";
 
@@ -61,7 +62,8 @@ export const POST = apiHandler(async (request: Request) => {
   }
   const d = parsed.data;
   const email = d.email.trim().toLowerCase();
-  const phone = d.phone.trim();
+  // Canônico + busca pelas duas grafias: ver lib/phone.ts (nono dígito).
+  const phone = canonicalPhone(d.phone);
 
   if (email) {
     const taken = await db.query.users.findFirst({ where: eq(users.email, email) });
@@ -70,7 +72,9 @@ export const POST = apiHandler(async (request: Request) => {
     }
   }
   if (phone) {
-    const taken = await db.query.users.findFirst({ where: eq(users.phone, phone) });
+    const taken = await db.query.users.findFirst({
+      where: inArray(users.phone, phoneVariants(phone)),
+    });
     if (taken) {
       return Response.json({ message: "Este telefone já está em uso." }, { status: 409 });
     }

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  canonicalPhone,
   formatPhone,
   normalizePhone,
+  phoneVariants,
   toWhatsAppNumber,
   whatsappLink,
 } from "./phone";
@@ -38,6 +40,54 @@ describe("formatPhone", () => {
   it("limita a 11 dígitos e ignora não-dígitos", () => {
     expect(formatPhone("(11) 99999-12345678")).toBe("(11) 99999-1234");
     expect(formatPhone("abc")).toBe("");
+  });
+});
+
+describe("canonicalPhone", () => {
+  it("acrescenta o nono dígito no celular escrito à moda antiga", () => {
+    expect(canonicalPhone("(11) 8765-4321")).toBe("11987654321");
+    expect(canonicalPhone("1176543210")).toBe("11976543210");
+  });
+
+  it("mantém o celular que já veio com o nono dígito", () => {
+    expect(canonicalPhone("(11) 98765-4321")).toBe("11987654321");
+  });
+
+  it("não mexe em telefone fixo (começa em 2–5)", () => {
+    expect(canonicalPhone("(11) 3333-4444")).toBe("1133334444");
+    expect(canonicalPhone("(11) 2222-4444")).toBe("1122224444");
+  });
+
+  it("ignora o DDI 55 quando ele vem junto", () => {
+    expect(canonicalPhone("+55 11 98765-4321")).toBe("11987654321");
+    expect(canonicalPhone("+55 11 8765-4321")).toBe("11987654321");
+  });
+
+  it("deixa passar o que não reconhece, sem inventar dígito", () => {
+    expect(canonicalPhone("")).toBe("");
+    expect(canonicalPhone("123")).toBe("123");
+  });
+});
+
+describe("phoneVariants", () => {
+  it("aceita as duas grafias do mesmo celular", () => {
+    const comNove = phoneVariants("11987654321").sort();
+    const semNove = phoneVariants("1187654321").sort();
+    expect(comNove).toEqual(["1187654321", "11987654321"]);
+    // Quem digita sem o 9 tem que encontrar a conta salva com o 9, e vice-versa.
+    expect(semNove).toEqual(comNove);
+  });
+
+  it("aceita o número digitado com DDI", () => {
+    expect(phoneVariants("+55 11 98765-4321")).toContain("11987654321");
+  });
+
+  it("fixo tem uma grafia só", () => {
+    expect(phoneVariants("(11) 3333-4444")).toEqual(["1133334444"]);
+  });
+
+  it("não devolve variante vazia", () => {
+    expect(phoneVariants("")).toEqual([]);
   });
 });
 

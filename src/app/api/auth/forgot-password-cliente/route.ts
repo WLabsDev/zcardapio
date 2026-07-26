@@ -1,9 +1,9 @@
 import { createHash, randomInt } from "crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { phoneOtpCodes, users } from "@/lib/db/schema";
-import { normalizePhone } from "@/lib/phone";
+import { normalizePhone, phoneVariants } from "@/lib/phone";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
 import { apiHandler } from "@/lib/api";
@@ -36,7 +36,8 @@ export const POST = apiHandler(async (request: Request) => {
   const phone = normalizePhone(parsed.data.phone);
 
   const user = await db.query.users.findFirst({
-    where: and(eq(users.phone, phone), eq(users.role, "cliente")),
+    // Aceita o celular com e sem o nono dígito (ver lib/phone.ts).
+    where: and(inArray(users.phone, phoneVariants(phone)), eq(users.role, "cliente")),
     columns: { id: true, name: true, phone: true, passwordHash: true },
   });
   if (!user || !user.passwordHash) {

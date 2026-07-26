@@ -1,10 +1,10 @@
 import { hash } from "bcryptjs";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { setSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
-import { normalizePhone } from "@/lib/phone";
+import { normalizePhone, phoneVariants } from "@/lib/phone";
 import { apiHandler } from "@/lib/api";
 
 const schema = z.object({
@@ -32,8 +32,9 @@ export const POST = apiHandler(async (request: Request) => {
   const phone = normalizePhone(parsed.data.phone);
 
   const user = await db.query.users.findFirst({
+    // Aceita o celular com e sem o nono dígito (ver lib/phone.ts).
     where: and(
-      eq(users.phone, phone),
+      inArray(users.phone, phoneVariants(phone)),
       eq(users.role, "cliente"),
       isNull(users.passwordHash)
     ),
