@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { plans, restaurants } from "@/lib/db/schema";
 import { getRestaurantByOwnerMapped } from "@/lib/db/queries";
+import { deleteReplacedUpload } from "@/lib/upload-storage";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
 import { apiHandler } from "@/lib/api";
 
@@ -179,6 +180,10 @@ export const PUT = apiHandler(async (request: Request) => {
       }),
     })
     .where(eq(restaurants.id, restaurant.id));
+
+  // Logo/capa trocadas: o arquivo antigo não é mais referenciado por ninguém.
+  await deleteReplacedUpload(restaurant.logoUrl, d.logo);
+  await deleteReplacedUpload(restaurant.coverUrl, d.cover);
 
   return Response.json({ ok: true });
 });

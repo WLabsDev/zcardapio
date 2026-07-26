@@ -2,6 +2,10 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { categories, products } from "@/lib/db/schema";
+import {
+  deleteReplacedUpload,
+  deleteUploadedFile,
+} from "@/lib/upload-storage";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
 import { apiHandler } from "@/lib/api";
 
@@ -58,6 +62,15 @@ export const PUT = apiHandler(async (request: Request, { params }: Ctx) => {
     return Response.json({ message: "Categoria inválida." }, { status: 400 });
   }
 
+  // Guarda a foto atual para apagá-la do disco se for substituída.
+  const current = await db.query.products.findFirst({
+    where: and(
+      eq(products.id, productId),
+      eq(products.restaurantId, restaurant.id)
+    ),
+    columns: { imageUrl: true },
+  });
+
   const [updated] = await db
     .update(products)
     .set({
@@ -78,6 +91,7 @@ export const PUT = apiHandler(async (request: Request, { params }: Ctx) => {
   if (!updated) {
     return Response.json({ message: "Produto não encontrado." }, { status: 404 });
   }
+  await deleteReplacedUpload(current?.imageUrl, d.image);
   return Response.json({ ok: true });
 });
 
@@ -122,10 +136,12 @@ export const DELETE = apiHandler(async (_request: Request, { params }: Ctx) => {
     .where(
       and(eq(products.id, productId), eq(products.restaurantId, restaurant.id))
     )
-    .returning({ id: products.id });
+    .returning({ id: products.id, imageUrl: products.imageUrl });
 
   if (!deleted) {
     return Response.json({ message: "Produto não encontrado." }, { status: 404 });
   }
+  // Produto apagado: a foto dele não serve mais para nada.
+  await deleteUploadedFile(deleted.imageUrl);
   return Response.json({ ok: true });
 });

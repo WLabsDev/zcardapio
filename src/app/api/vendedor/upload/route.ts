@@ -1,13 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { optimizeUploadedImage } from "@/lib/image-optimize";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { apiHandler } from "@/lib/api";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 
-const EXT_BY_DETECTED: Record<"jpeg" | "png" | "webp", string> = {
+const EXT_BY_DETECTED: Record<"jpeg" | "png" | "webp", "jpg" | "png" | "webp"> = {
   jpeg: "jpg",
   png: "png",
   webp: "webp",
@@ -87,10 +88,13 @@ export const POST = apiHandler(async (request: Request) => {
     );
   }
 
+  // Reduz e converte para WebP antes de gravar — ver src/lib/image-optimize.ts.
+  const optimized = await optimizeUploadedImage(buffer, EXT_BY_DETECTED[detected]);
+
   const dir = path.join(process.cwd(), "public", "uploads");
   await mkdir(dir, { recursive: true });
-  const name = `${randomUUID()}.${EXT_BY_DETECTED[detected]}`;
-  await writeFile(path.join(dir, name), buffer);
+  const name = `${randomUUID()}.${optimized.ext}`;
+  await writeFile(path.join(dir, name), optimized.buffer);
 
   return Response.json({ url: `/uploads/${name}` }, { status: 201 });
 });
