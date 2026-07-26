@@ -190,6 +190,9 @@ export default async function LandingPage() {
             <a href="#duvidas" className="hover:text-primary">
               Dúvidas
             </a>
+            <Link href="/blog" className="hover:text-primary">
+              Blog
+            </Link>
           </nav>
           <div className="flex items-center gap-2">
             <Button variant="ghost" asChild>
@@ -600,6 +603,9 @@ export default async function LandingPage() {
           />
           <p>© 2026 zCardápio · zcardapio.com.br</p>
           <div className="flex gap-5">
+            <Link href="/blog" className="hover:text-background">
+              Blog
+            </Link>
             <Link href="/login" className="hover:text-background">
               Entrar
             </Link>

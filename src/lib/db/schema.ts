@@ -57,6 +57,22 @@ export const plans = pgTable("plans", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Posts do blog institucional (SEO / topo de funil). Geridos pelo admin em
+// /admin/blog; o conteúdo é markdown, renderizado como HTML semântico no front.
+// O slug é estável: gerado do título na criação e nunca alterado no edit, para
+// não quebrar links já indexados.
+export const posts = pgTable("posts", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 180 }).notNull(),
+  slug: varchar("slug", { length: 200 }).notNull().unique(),
+  excerpt: text("excerpt").notNull().default(""),
+  content: text("content").notNull().default(""),
+  published: boolean("published").notNull().default(false),
+  publishedAt: timestamp("published_at"),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 120 }).notNull(),
