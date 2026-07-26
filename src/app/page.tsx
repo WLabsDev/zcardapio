@@ -13,6 +13,7 @@ import {
   Gift,
   MapPin,
   Plus,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
@@ -45,21 +46,21 @@ const features = [
     icon: Smartphone,
     title: "Seu cardápio, seu endereço",
     description:
-      "Cadastre os produtos e ganhe um link com a cara do seu restaurante: seurestaurante.zcardapio.com.br. Sem app para o cliente baixar, sem enrolação.",
+      "Cadastre os produtos e ganhe um link com a cara do seu restaurante: seurestaurante.zcardapio.com.br. Sem app para o cliente baixar, sem ter que dar zoom em foto no celular.",
   },
   {
     n: "02",
     icon: QrCode,
-    title: "QR code na mesa, pedido na cozinha",
+    title: "QR code na mesa, pedido no painel",
     description:
       "Imprima o QR code, cole na mesa e pronto: o cliente abre, escolhe e pede. O estoque some do cardápio quando acaba e volta sozinho se o pedido for cancelado.",
   },
   {
     n: "03",
     icon: ShoppingBag,
-    title: "Carrinho de verdade, sem taxa por pedido",
+    title: "Carrinho de verdade, sem erros",
     description:
-      "Diferente dos marketplaces, aqui o cliente é seu. Nada de comissão de 25% — você paga uma mensalidade fixa e o resto é lucro. O cliente pode agendar o pedido para a hora que quiser.",
+      "Esqueça textos longos e confusos no WhatsApp. O cliente clica, marca as opções (ex.: “sem cebola”, “ponto da carne”) e o sistema organiza tudo. Você paga apenas uma mensalidade fixa e tem controle total.",
   },
   {
     n: "04",
@@ -80,94 +81,95 @@ const features = [
     icon: Bell,
     title: "Pedidos em tempo real",
     description:
-      "A fila atualiza sozinha, com aviso sonoro e cupom térmico (58 ou 80 mm) para a cozinha. O pedido novo também chega no seu WhatsApp. O cliente acompanha o status pelo celular.",
+      "A fila atualiza sozinha, com aviso sonoro e cupom térmico (58 ou 80 mm) pronto para a impressora da cozinha. O pedido novo também pode chegar direto no seu WhatsApp, organizado e fácil de ler.",
   },
   {
     n: "07",
     icon: Wallet,
-    title: "Pix, cartão e dinheiro",
+    title: "Pagamento direto na sua conta",
     description:
-      "O Pix já sai com QR code e copia-e-cola na tela do cliente. Você escolhe quais formas o seu restaurante aceita.",
+      "Sem taxas ocultas ou intermediários prendendo seu dinheiro. O Pix já sai com QR code e copia-e-cola na tela final do cliente. Ele paga no banco dele, te envia o comprovante (no balcão ou via WhatsApp), você valida e libera o pedido.",
   },
   {
     n: "08",
     icon: Gift,
     title: "Cupons e fidelidade",
     description:
-      "Crie cupons de desconto e um programa de fidelidade com pontos, carimbos ou cashback para o cliente voltar sem depender de anúncio.",
+      "Crie cupons de desconto e um programa de fidelidade com pontos ou carimbos para o cliente voltar sempre, sem precisar imprimir cartõezinhos de papel.",
   },
   {
     n: "09",
     icon: MapPin,
-    title: "Zonas e taxas de entrega",
+    title: "Zonas e taxas de entrega automáticas",
     description:
-      "Defina bairros, valores e tempo estimado. O cálculo aparece pronto no checkout, sem combinar frete no WhatsApp.",
+      "Defina bairros, valores de entrega e tempo estimado. O cálculo aparece pronto no checkout do cliente, eliminando a necessidade de ficar combinando frete pelo chat.",
   },
 ];
 
-// Cenário da comparação de comissão. Os 27% são uma média de mercado — a nota de
-// rodapé na seção deixa isso explícito.
-const SALES_EXAMPLE = 20000;
-const MARKETPLACE_RATE = 0.27;
+/** Os dois lados da seção "A conta": o processo de hoje contra o do zCardápio. */
+const oldFlow = [
+  "O cliente pede o cardápio.",
+  "Você envia um PDF pesado ou uma foto ruim de ler.",
+  "Ele digita o pedido (às vezes faltando informações).",
+  "Você calcula o valor total na calculadora.",
+  "Você pergunta o endereço para calcular a taxa de entrega.",
+  "Manda a chave Pix e fica esperando o comprovante.",
+];
+
+const newFlow = [
+  "O cliente clica no seu link ou lê o QR code.",
+  "Ele mesmo navega, escolhe os adicionais e monta o carrinho.",
+  "O sistema calcula o total e a taxa de entrega automaticamente.",
+  "A chave Pix (copia e cola) já aparece na tela dele.",
+  "O pedido chega 100% detalhado no seu painel e WhatsApp. Você só confere o comprovante e manda pra cozinha.",
+];
 
 const steps = [
   {
     n: "01",
     title: "Monte o cardápio",
     description:
-      "Categorias, produtos, fotos, adicionais e preços. Tudo por um painel simples, sem depender de agência.",
+      "Categorias, produtos, fotos, adicionais e preços. Tudo por um painel simples e intuitivo, sem depender de agência ou designer.",
   },
   {
     n: "02",
     title: "Espalhe o link e o QR",
     description:
-      "Cole o QR code na mesa, coloque o link na bio do Instagram e no WhatsApp. Pronto: você tem uma loja aberta 24 horas.",
+      "Cole o QR code na mesa, coloque o link na bio do Instagram e na resposta automática do WhatsApp. Pronto: você tem uma vitrine aberta 24 horas, muito mais leve que um PDF.",
   },
   {
     n: "03",
     title: "Receba e despache",
     description:
-      "Os pedidos caem em tempo real no painel, com cupom para a cozinha e status que o cliente acompanha pelo celular.",
+      "Os pedidos caem organizados no painel e no seu WhatsApp, já com o valor total e a taxa de entrega calculados. O cliente faz o Pix, você confere o comprovante e manda a via para a cozinha. O status de preparo ele acompanha pelo próprio celular.",
   },
 ];
 
 const faq = [
   {
     q: "Meu cliente precisa instalar algum aplicativo?",
-    a: "Não. O cardápio abre direto no navegador do celular, pelo link ou pelo QR code. Nada para baixar, nada para atualizar.",
-  },
-  {
-    q: "Vocês cobram comissão por pedido?",
-    a: "Não. Você paga uma mensalidade fixa e fica com 100% do valor de cada pedido, independentemente de quanto vender no mês.",
+    a: "Não. O cardápio abre direto no navegador do celular do cliente, seja lendo o QR code na mesa ou clicando no seu link do WhatsApp/Instagram. É leve e rápido.",
   },
   {
     q: "O cliente precisa criar conta para pedir?",
-    a: "Não. Ele pode fechar o pedido como visitante. Criar conta é opcional e serve para salvar endereços, acompanhar pedidos e juntar pontos de fidelidade.",
-  },
-  {
-    q: "Funciona para mesa, retirada e entrega?",
-    a: "Os três. Você escolhe quais modalidades aceita e o cardápio se adapta — pedido de mesa já vem com o número da mesa preenchido pelo QR code.",
+    a: "De forma alguma. Ele só preenche o nome e os dados de entrega no final do pedido, de forma super rápida, sem criar senhas.",
   },
   {
     q: "Como o cliente paga?",
-    a: "Pix com QR code gerado na hora, cartão na entrega ou dinheiro. Você define no painel o que o seu restaurante aceita.",
+    a: "O sistema automatiza a apresentação do valor. No checkout, ele exibe o total (já com taxa de entrega) e a sua chave Pix (QR code ou copia e cola). O cliente paga no aplicativo do banco dele e você só confere o comprovante antes de iniciar o preparo. Sem taxas de transação ou maquininhas virtuais cobrando porcentagens.",
+  },
+  {
+    q: "Funciona para mesa, balcão e delivery?",
+    a: "Sim! Você pode configurar opções para o cliente escolher se está na mesa (e pedir o número dela), se vai retirar no balcão ou se é para entrega no endereço dele.",
   },
   {
     q: "Posso cancelar quando quiser?",
-    a: "Sim. Sem fidelidade e sem multa. O plano inicial é gratuito, então dá para testar antes de assinar qualquer coisa.",
+    a: "Com certeza. Não temos fidelidade ou multas rescisórias.",
   },
 ];
 
 export default async function LandingPage() {
   const plans = await listPlans();
-
-  // A comparação de comissão usa o preço real do plano em destaque, para não
-  // inventar número nenhum na conta.
-  const refPlan =
-    plans.find((p) => p.highlighted && p.price > 0) ??
-    plans.find((p) => p.price > 0);
-  const commission = SALES_EXAMPLE * MARKETPLACE_RATE;
-  const savings = refPlan ? commission - refPlan.price : null;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -208,30 +210,31 @@ export default async function LandingPage() {
         />
         <div className="mx-auto grid max-w-6xl items-center gap-14 px-4 pb-20 pt-14 md:grid-cols-[1.1fr_0.9fr] md:pt-20">
           <div className="flex flex-col items-start gap-7">
-            <span className="inline-flex items-center gap-2 rounded-full border-2 border-foreground bg-accent px-4 py-1.5 text-sm font-semibold shadow-offset-sm">
-              <Flame className="size-4 text-primary" />
-              Sem comissão por pedido — o cliente é seu
+            <span className="inline-flex items-start gap-2 rounded-full border-2 border-foreground bg-accent px-4 py-1.5 text-sm font-semibold shadow-offset-sm">
+              <Flame className="mt-0.5 size-4 shrink-0 text-primary" />
+              Chega de enviar PDF no WhatsApp. O cliente é seu, o controle
+              também.
             </span>
-            <h1 className="font-display text-5xl font-bold leading-[1.02] tracking-tight md:text-[4.2rem]">
-              Cardápio de papel{" "}
-              <span className="relative inline-block text-muted-foreground/60 line-through decoration-primary decoration-4">
-                morreu
+            {/* Os destaques são inline (não inline-block) porque a frase é longa
+                e precisa quebrar em qualquer ponto: com inline-block o trecho
+                inteiro pulava de linha e o ponto final ficava órfão. */}
+            <h1 className="font-display text-4xl font-bold leading-[1.08] tracking-tight md:text-[3.1rem]">
+              O cardápio de papel e a foto na galeria{" "}
+              <span className="text-muted-foreground/60 line-through decoration-primary decoration-4">
+                ficaram no passado
               </span>
-              .<br />O seu agora é{" "}
-              <span className="relative inline-block">
-                <span className="relative z-10">online</span>
-                <span
-                  aria-hidden
-                  className="absolute inset-x-0 bottom-1 z-0 h-4 -rotate-1 rounded-sm bg-primary/25"
-                />
+              . O seu agora é{" "}
+              <span className="box-decoration-clone rounded-sm bg-primary/25 px-1">
+                profissional e interativo
               </span>
               .
             </h1>
             <p className="max-w-lg text-lg leading-relaxed text-muted-foreground">
-              Monte seu cardápio digital em uma noite, cole o QR code na mesa e
-              receba pedidos direto no seu painel.{" "}
+              Monte seu cardápio digital em uma noite, coloque o link na bio ou
+              o QR code na mesa, e receba pedidos já calculados direto no seu
+              painel.{" "}
               <strong className="text-foreground">
-                Sem comissão por venda.
+                Sem confusão no chat, sem calcular troco na mão.
               </strong>
             </p>
             <div className="flex flex-wrap items-center gap-4">
@@ -271,6 +274,9 @@ export default async function LandingPage() {
       </section>
 
       {/* Marquee */}
+      <p className="border-t-2 border-foreground/10 bg-secondary/50 px-4 py-4 text-center font-display text-sm font-bold uppercase tracking-widest text-muted-foreground">
+        QR na mesa, pedido mastigado no WhatsApp e na cozinha
+      </p>
       <div className="overflow-hidden border-y-2 border-foreground bg-foreground py-3 text-background">
         <div className="flex w-max animate-marquee gap-8 whitespace-nowrap font-display text-sm font-semibold uppercase tracking-widest">
           {[...marqueeItems, ...marqueeItems].map((item, i) => (
@@ -282,78 +288,36 @@ export default async function LandingPage() {
         </div>
       </div>
 
-      {/* A conta da comissão */}
+      {/* A conta — o processo de hoje contra o do zCardápio */}
       <section className="mx-auto w-full max-w-6xl px-4 py-20 md:py-28">
         <div className="mb-12 max-w-2xl">
           <p className="mb-3 font-display text-sm font-bold uppercase tracking-widest text-primary">
             A conta
           </p>
           <h2 className="font-display text-4xl font-bold tracking-tight md:text-5xl">
-            A comissão do marketplace é o prato mais caro do seu cardápio.
+            Atender por PDF e WhatsApp tira o seu tempo e a paciência do
+            cliente.
           </h2>
           <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-            Ela não aparece no menu, mas sai de todo pedido. Veja o mesmo mês
-            nas duas contas.
+            O tempo que você gasta calculando frete e anotando pedido na mão é o
+            tempo que seu pedido demora a sair. Veja a diferença na prática:
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border-2 border-foreground bg-card shadow-offset">
-          <div className="flex items-center gap-2.5 border-b-2 border-foreground/10 bg-accent px-6 py-4 md:px-8">
-            <Flame className="size-4 shrink-0 text-primary" />
-            <p className="text-sm">
-              Cenário:{" "}
-              <strong className="font-semibold">
-                {formatBRL(SALES_EXAMPLE)}
-              </strong>{" "}
-              em vendas no mês
-            </p>
-          </div>
-
-          <div className="grid divide-y-2 divide-foreground/10 md:grid-cols-2 md:divide-x-2 md:divide-y-0">
-            <CostPanel
-              label="Marketplace de delivery"
-              amount={`− ${formatBRL(commission)}`}
-              caption="27% de comissão sobre cada pedido"
-              barWidth={100}
-              tone="negative"
-            />
-            <CostPanel
-              label="zCardápio"
-              amount={
-                refPlan ? `− ${formatBRL(refPlan.price)}` : "0% de comissão"
-              }
-              caption={
-                refPlan
-                  ? `Mensalidade fixa do plano ${refPlan.name}. Zero por pedido.`
-                  : "Mensalidade fixa. Zero por pedido."
-              }
-              barWidth={
-                refPlan
-                  ? Math.max(1.2, (refPlan.price / commission) * 100)
-                  : 1.2
-              }
-              tone="positive"
-            />
-          </div>
-
-          {savings !== null && (
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t-2 border-foreground bg-foreground px-6 py-6 text-background md:px-8">
-              <span className="text-sm text-background/70">
-                Diferença no seu caixa:
-              </span>
-              <span className="font-display text-3xl font-bold tracking-tight md:text-4xl">
-                {formatBRL(savings)}
-              </span>
-              <span className="text-sm text-background/70">por mês</span>
-            </div>
-          )}
+        <div className="grid items-start gap-6 md:grid-cols-2">
+          <FlowPanel
+            label="O jeito antigo (WhatsApp + imagem/PDF)"
+            steps={oldFlow}
+            footer="Tempo perdido: 5 a 15 minutos por cliente. Chance de erro humano alta."
+            tone="negative"
+          />
+          <FlowPanel
+            label="O jeito zCardápio"
+            steps={newFlow}
+            footer="Tempo perdido: zero. Tudo automático."
+            tone="positive"
+          />
         </div>
-
-        <p className="mt-4 max-w-2xl text-xs leading-relaxed text-muted-foreground">
-          Valores ilustrativos. As comissões dos marketplaces variam conforme o
-          plano contratado e a modalidade de entrega — os 27% usados aqui são
-          uma média de mercado, não um número oficial de nenhuma plataforma.
-        </p>
       </section>
 
       {/* Como funciona */}
@@ -364,7 +328,7 @@ export default async function LandingPage() {
               Como funciona
             </p>
             <h2 className="font-display text-4xl font-bold tracking-tight md:text-5xl">
-              Três passos. Sua loja no ar em minutos.
+              Três passos. Seu restaurante moderno em minutos.
             </h2>
           </div>
 
@@ -403,12 +367,12 @@ export default async function LandingPage() {
               Recursos
             </p>
             <h2 className="font-display text-4xl font-bold tracking-tight md:text-5xl">
-              Feito para quem cozinha.
+              Feito para quem quer agilidade na cozinha e no atendimento.
             </h2>
           </div>
           <p className="max-w-xs text-muted-foreground">
-            Sem plugin, sem integração paga, sem &ldquo;fale com o
-            comercial&rdquo;.
+            Sem plugin complicado, sem mensalidades abusivas, sem &ldquo;fale
+            com o comercial&rdquo;.
           </p>
         </div>
         <div className="divide-y-2 divide-foreground/10 border-y-2 border-foreground/10">
@@ -452,7 +416,7 @@ export default async function LandingPage() {
               </h2>
             </div>
             <p className="max-w-xs text-muted-foreground">
-              Mensalidade fixa, zero comissão por pedido. Cancele quando quiser.
+              Mensalidade fixa. Cancele quando quiser.
             </p>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
@@ -530,8 +494,9 @@ export default async function LandingPage() {
               Ver vale mais que mil palavras.
             </h2>
             <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">
-              Abra um cardápio de exemplo e faça um pedido de teste — exatamente
-              como o seu cliente vai fazer. Sem cadastro, sem compromisso.
+              Abra um cardápio de exemplo e simule um pedido — exatamente como o
+              seu cliente vai fazer. Sem cadastro, sem compromisso. Descubra
+              como é mais fácil do que ler um PDF.
             </p>
             <Button
               size="lg"
@@ -563,10 +528,10 @@ export default async function LandingPage() {
                 Dúvidas
               </p>
               <h2 className="font-display text-4xl font-bold tracking-tight md:text-5xl">
-                Perguntas que todo dono faz.
+                Perguntas que todo dono de restaurante faz.
               </h2>
               <p className="mt-5 leading-relaxed text-muted-foreground">
-                Ficou faltando alguma? Cria a conta gratuita e testa — não
+                Ficou faltando alguma? Crie a conta gratuita e teste — não
                 pedimos cartão para isso.
               </p>
             </div>
@@ -606,10 +571,12 @@ export default async function LandingPage() {
       <section className="border-t-2 border-foreground bg-foreground text-background">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-7 px-4 py-20 text-center md:py-28">
           <h2 className="max-w-3xl font-display text-4xl font-bold tracking-tight text-background md:text-6xl">
-            Enquanto você lê isso, tem cliente com fome procurando seu cardápio.
+            Enquanto você lê isso, tem cliente tentando dar zoom no seu cardápio
+            em PDF.
           </h2>
           <p className="max-w-md text-lg text-background/70">
-            Leva menos de 10 minutos para colocar seu restaurante no ar.
+            Leva menos de 10 minutos para colocar seu restaurante no ar de forma
+            profissional.
           </p>
           <Button
             size="lg"
@@ -649,48 +616,74 @@ export default async function LandingPage() {
   );
 }
 
-/** Um lado da comparação de comissão: valor, legenda e barra proporcional. */
-function CostPanel({
+/** Um lado da comparação: o passo a passo do atendimento e o custo em tempo. */
+function FlowPanel({
   label,
-  amount,
-  caption,
-  barWidth,
+  steps: flow,
+  footer,
   tone,
 }: {
   label: string;
-  amount: string;
-  caption: string;
-  barWidth: number;
+  steps: string[];
+  footer: string;
   tone: "negative" | "positive";
 }) {
+  const negative = tone === "negative";
   return (
-    <div className="p-6 md:p-8">
-      <p className="text-sm font-semibold text-muted-foreground">{label}</p>
-      {/* O lado bom fica em `foreground`, não em `primary`: nesta paleta o
-          primary (laranja) e o destructive (vermelho) quase não se distinguem, e
-          o contraste é justamente o recado da seção. */}
-      <p
+    // O lado bom ganha a borda cheia e a sombra; o antigo fica apagado de
+    // propósito — o contraste é o recado da seção.
+    <div
+      className={cn(
+        "flex h-full flex-col overflow-hidden rounded-2xl border-2 bg-card",
+        negative ? "border-foreground/15" : "border-foreground shadow-offset",
+      )}
+    >
+      <div
         className={cn(
-          "mt-3 font-display text-4xl font-bold tracking-tight md:text-5xl",
-          tone === "negative" ? "text-destructive" : "text-foreground",
+          "flex items-center gap-2.5 border-b-2 border-foreground/10 px-6 py-4",
+          !negative && "bg-accent",
         )}
       >
-        {amount}
-      </p>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-        {caption}
-      </p>
-      <div className="mt-6 h-3 w-full overflow-hidden rounded-full border-2 border-foreground/15 bg-background">
-        <div
+        <span
           className={cn(
-            "h-full rounded-full",
-            tone === "negative" ? "bg-destructive" : "bg-primary",
+            "flex size-6 shrink-0 items-center justify-center rounded-full",
+            negative
+              ? "bg-destructive/10 text-destructive"
+              : "bg-primary/15 text-primary",
           )}
-          style={{ width: `${barWidth}%` }}
-        />
+        >
+          {negative ? <X className="size-3.5" /> : <Check className="size-3.5" />}
+        </span>
+        <p className="font-display font-bold">{label}</p>
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Quanto sai do seu caixa por mês
+
+      <ol className="flex-1 space-y-3.5 px-6 py-6">
+        {flow.map((item, i) => (
+          <li key={item} className="flex gap-3 text-sm leading-relaxed">
+            <span
+              className={cn(
+                "flex size-5 shrink-0 items-center justify-center rounded-full border text-[0.65rem] font-bold",
+                negative
+                  ? "border-foreground/15 text-muted-foreground"
+                  : "border-foreground bg-background text-primary",
+              )}
+            >
+              {i + 1}
+            </span>
+            <span className={negative ? "text-muted-foreground" : undefined}>
+              {item}
+            </span>
+          </li>
+        ))}
+      </ol>
+
+      <p
+        className={cn(
+          "border-t-2 border-foreground/10 px-6 py-4 text-sm font-semibold",
+          negative ? "text-destructive" : "bg-foreground text-background",
+        )}
+      >
+        {footer}
       </p>
     </div>
   );
