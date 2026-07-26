@@ -4,6 +4,7 @@ import { z } from "zod";
 import { setSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { restaurants, users } from "@/lib/db/schema";
+import { sendWelcomeEmail } from "@/lib/marketing-email";
 import { apiHandler } from "@/lib/api";
 
 const registerRestaurantSchema = z.object({
@@ -103,6 +104,13 @@ export const POST = apiHandler(async (request: Request) => {
   });
 
   await setSession(result.user);
+
+  // Boas-vindas por e-mail. Fire-and-forget: é um efeito colateral não crítico,
+  // então não pode atrasar nem derrubar o cadastro se o SMTP falhar.
+  sendWelcomeEmail(
+    { id: result.user.id, name: result.user.name, email: result.user.email },
+    { name: result.restaurant.name, slug: result.restaurant.slug }
+  ).catch((err) => console.error("[register] e-mail de boas-vindas falhou:", err));
 
   return Response.json(
     {

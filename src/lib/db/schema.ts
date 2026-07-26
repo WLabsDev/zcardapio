@@ -85,7 +85,25 @@ export const users = pgTable("users", {
   phone: varchar("phone", { length: 20 }).unique(),
   role: roleEnum("role").notNull().default("cliente"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  // Opt-out de e-mails de marketing/lifecycle (LGPD). O link de unsubscribe no
+  // rodapé dos e-mails marca isso como true.
+  emailOptOut: boolean("email_opt_out").notNull().default(false),
 });
+
+// E-mails de marketing/lifecycle enviados a cada vendedor — para não repetir o
+// mesmo e-mail (dedupe por userId+kind) e para medir os envios.
+export const emailEvents = pgTable(
+  "email_events",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: varchar("kind", { length: 40 }).notNull(),
+    sentAt: timestamp("sent_at").notNull().defaultNow(),
+  },
+  (t) => [index("email_events_user_kind_idx").on(t.userId, t.kind)]
+);
 
 export const restaurants = pgTable(
   "restaurants",
