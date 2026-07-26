@@ -1,4 +1,4 @@
-import { and, eq, gt, gte, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { getSession, setSession } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -14,12 +14,14 @@ import {
   users,
 } from "@/lib/db/schema";
 import {
+  countCouponUsage,
   getMonthlyOrderCount,
   getOrdersByCustomer,
   getOrdersByRestaurant,
   getRestaurantByOwner,
   orderCode,
 } from "@/lib/db/queries";
+import { checkCoupon } from "@/lib/coupons";
 import { findZoneForAddress } from "@/lib/delivery-zones";
 import { computeOpenState } from "@/lib/hours";
 import { formatBRL, isAvailable } from "@/lib/mock/types";
@@ -255,19 +257,10 @@ export const POST = apiHandler(async (request: Request) => {
   if (data.couponCode?.trim()) {
     const code = data.couponCode.trim().toUpperCase();
     const coupon = await db.query.coupons.findFirst({
-      where: and(
-        eq(coupons.restaurantId, restaurant.id),
-        eq(coupons.code, code),
-        eq(coupons.active, true),
-        isNull(coupons.usedAt),
-        or(isNull(coupons.expiresAt), gt(coupons.expiresAt, new Date()))
-      ),
+      where: and(eq(coupons.restaurantId, restaurant.id), eq(coupons.code, code)),
     });
     if (!coupon) {
-      return Response.json(
-        { message: "Cupom inválido, inativo ou já utilizado." },
-        { status: 400 }
-      );
+      return Response.json({ message: "Cupom inválido." }, { status: 400 });
     }
     // Cupom pessoal (fidelidade) só pode ser usado pelo dono. Cupons do vendedor
     // têm customerId null e valem para qualquer cliente.
@@ -280,6 +273,16 @@ export const POST = apiHandler(async (request: Request) => {
         { status: 403 }
       );
     }
+
+    // Limites de uso: validade, pedido mínimo, total e por cliente. O uso por
+    // cliente é contado pelo telefone do pedido (aceitando as duas grafias do
+    // celular), que existe mesmo quando o pedido é feito sem conta.
+    const usage = await countCouponUsage(coupon.id, data.customerPhone);
+    const verdict = checkCoupon(coupon, { subtotalCents, usage });
+    if (!verdict.ok) {
+      return Response.json({ message: verdict.message }, { status: 400 });
+    }
+
     discountCents =
       coupon.type === "percent"
         ? Math.round((subtotalCents * coupon.value) / 100)
@@ -365,6 +368,8 @@ export const POST = apiHandler(async (request: Request) => {
           deliveryFeeCents,
           discountCents,
           couponCode,
+          // Guarda o id: é por ele que os limites de uso são contados depois.
+          couponId: appliedCouponId,
           zoneName,
           scheduledFor,
           totalCents,

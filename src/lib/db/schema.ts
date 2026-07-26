@@ -233,6 +233,11 @@ export const orders = pgTable(
     deliveryFeeCents: integer("delivery_fee_cents").notNull().default(0),
     discountCents: integer("discount_cents").notNull().default(0),
     couponCode: varchar("coupon_code", { length: 40 }).notNull().default(""),
+    // Referência ao cupom aplicado: é por ela que os limites de uso são
+    // contados. O código sozinho não serve — ele pode ser recriado.
+    couponId: integer("coupon_id").references(() => coupons.id, {
+      onDelete: "set null",
+    }),
     zoneName: varchar("zone_name", { length: 80 }).notNull().default(""),
     scheduledFor: timestamp("scheduled_for"),
     totalCents: integer("total_cents").notNull(),
@@ -335,8 +340,15 @@ export const coupons = pgTable(
     // manualmente pelo vendedor ficam sempre singleUse=false/usedAt=null (reutilizáveis).
     singleUse: boolean("single_use").notNull().default(false),
     usedAt: timestamp("used_at"),
-    // Só preenchido em cupons de resgate (30 dias); cupons manuais não expiram.
+    // Validade: cupom de resgate nasce com 30 dias; no manual o vendedor decide
+    // (null = não expira).
     expiresAt: timestamp("expires_at"),
+    // Limites do cupom manual (null = sem limite). Sem eles o mesmo código
+    // rodava indefinidamente, inclusive pelo mesmo cliente.
+    maxUses: integer("max_uses"),
+    maxUsesPerCustomer: integer("max_uses_per_customer"),
+    /** Valor mínimo do pedido (em centavos) para o cupom valer. */
+    minOrderCents: integer("min_order_cents").notNull().default(0),
     // Dono do cupom — só preenchido em cupons gerados por resgate de fidelidade,
     // pra listar "meus cupons" em /cliente/fidelidade. Cupons manuais do vendedor
     // ficam sempre null (são de uso geral, não de um cliente específico).

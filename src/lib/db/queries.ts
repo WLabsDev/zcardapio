@@ -3,9 +3,11 @@
  * usados pelo frontend (ids como string, centavos → reais).
  * Use em Server Components e Route Handlers.
  */
-import { and, avg, count, desc, eq, gte, ne } from "drizzle-orm";
+import { and, avg, count, desc, eq, gte, inArray, ne } from "drizzle-orm";
 import { db } from "./index";
 import { deliveryZones, orders, restaurants, reviewHides, reviews } from "./schema";
+import type { CouponUsage } from "@/lib/coupons";
+import { phoneVariants } from "@/lib/phone";
 import { getPlanStatus, type PlanStatus } from "@/lib/plan-limits";
 import type {
   DeliveryZone,
@@ -448,6 +450,39 @@ export async function getMonthlyOrderCount(
       )
     );
   return row?.value ?? 0;
+}
+
+/**
+ * Quantas vezes o cupom já foi usado: no total e por quem tem este telefone.
+ *
+ * Conta pelo `couponId` do pedido (o código pode ser recriado) e pelo telefone
+ * do cliente, aceitando as duas grafias do celular — assim o limite por pessoa
+ * também vale para quem pediu sem criar conta. Pedido cancelado não conta:
+ * seria injusto queimar o cupom de quem não recebeu nada.
+ */
+export async function countCouponUsage(
+  couponId: number,
+  customerPhone: string
+): Promise<CouponUsage> {
+  const naoCancelado = and(
+    eq(orders.couponId, couponId),
+    ne(orders.status, "cancelado")
+  );
+  const variants = phoneVariants(customerPhone);
+
+  const [totalRow] = await db
+    .select({ value: count() })
+    .from(orders)
+    .where(naoCancelado);
+
+  const [customerRow] = variants.length
+    ? await db
+        .select({ value: count() })
+        .from(orders)
+        .where(and(naoCancelado, inArray(orders.customerPhone, variants)))
+    : [{ value: 0 }];
+
+  return { total: totalRow?.value ?? 0, byCustomer: customerRow?.value ?? 0 };
 }
 
 export async function getRestaurantByOwnerMapped(

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { formatBRL } from "@/lib/mock/types";
+import { cn } from "@/lib/utils";
 
 type Coupon = {
   id: string;
@@ -23,7 +24,40 @@ type Coupon = {
   type: "percent" | "fixed";
   value: number;
   active: boolean;
+  expiresAt: string | null;
+  maxUses: number | null;
+  maxUsesPerCustomer: number | null;
+  minOrder: number;
+  used: number;
 };
+
+/** Cupom novo já nasce com 1 uso por cliente — é o que o vendedor espera. */
+const DEFAULT_PER_CUSTOMER = "1";
+
+const shortDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+
+/** As condições do cupom em uma linha, do jeito que o vendedor lê. */
+function couponLimits(c: Coupon): string[] {
+  const parts: string[] = [];
+  parts.push(
+    c.maxUses === null ? `${c.used} usos` : `${c.used} de ${c.maxUses} usos`
+  );
+  if (c.maxUsesPerCustomer !== null) {
+    parts.push(
+      c.maxUsesPerCustomer === 1
+        ? "1 por cliente"
+        : `${c.maxUsesPerCustomer} por cliente`
+    );
+  }
+  if (c.minOrder > 0) parts.push(`mín. ${formatBRL(c.minOrder)}`);
+  if (c.expiresAt) parts.push(`até ${shortDate(c.expiresAt)}`);
+  return parts;
+}
+
+const isExpired = (c: Coupon) =>
+  c.expiresAt !== null && new Date(c.expiresAt) < new Date();
+const isExhausted = (c: Coupon) => c.maxUses !== null && c.used >= c.maxUses;
 
 export function CouponsManager() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -31,6 +65,10 @@ export function CouponsManager() {
   const [code, setCode] = useState("");
   const [type, setType] = useState<"percent" | "fixed">("percent");
   const [value, setValue] = useState("");
+  const [perCustomer, setPerCustomer] = useState(DEFAULT_PER_CUSTOMER);
+  const [maxUses, setMaxUses] = useState("");
+  const [minOrder, setMinOrder] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -44,6 +82,12 @@ export function CouponsManager() {
     load();
   }, [load]);
 
+  /** Campo vazio = sem limite; o backend guarda null. */
+  const optionalInt = (raw: string) => {
+    const n = Number(raw);
+    return raw.trim() && Number.isFinite(n) && n >= 1 ? Math.floor(n) : null;
+  };
+
   const add = async () => {
     const valueNum = Number(value.replace(",", "."));
     if (code.trim().length < 2 || Number.isNaN(valueNum) || valueNum <= 0) {
@@ -54,7 +98,15 @@ export function CouponsManager() {
     const res = await fetch("/api/vendedor/coupons", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: code.trim(), type, value: valueNum }),
+      body: JSON.stringify({
+        code: code.trim(),
+        type,
+        value: valueNum,
+        maxUsesPerCustomer: optionalInt(perCustomer),
+        maxUses: optionalInt(maxUses),
+        minOrder: Number(minOrder.replace(",", ".")) || 0,
+        expiresAt: expiresAt || undefined,
+      }),
     }).catch(() => null);
     const data = await res?.json().catch(() => null);
     setSaving(false);
@@ -64,6 +116,10 @@ export function CouponsManager() {
     }
     setCode("");
     setValue("");
+    setMaxUses("");
+    setMinOrder("");
+    setExpiresAt("");
+    setPerCustomer(DEFAULT_PER_CUSTOMER);
     toast.success("Cupom criado!");
     load();
   };
@@ -104,53 +160,81 @@ export function CouponsManager() {
         </p>
       ) : (
         <div className="space-y-1.5">
-          {coupons.map((c) => (
-            <div
-              key={c.id}
-              className="flex items-center justify-between gap-2 rounded-lg border px-3 py-2"
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-sm font-semibold">{c.code}</span>
-                <Badge variant="outline" className="text-[10px]">
-                  {c.type === "percent" ? `${c.value}%` : formatBRL(c.value)}
-                </Badge>
+          {coupons.map((c) => {
+            const esgotado = isExhausted(c);
+            const expirado = isExpired(c);
+            return (
+              <div
+                key={c.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-sm font-semibold">
+                      {c.code}
+                    </span>
+                    <Badge variant="outline" className="text-[10px]">
+                      {c.type === "percent"
+                        ? `${c.value}%`
+                        : formatBRL(c.value)}
+                    </Badge>
+                    {(esgotado || expirado) && (
+                      <Badge variant="secondary" className="text-[10px]">
+                        {esgotado ? "Esgotado" : "Expirado"}
+                      </Badge>
+                    )}
+                  </div>
+                  <p
+                    className={cn(
+                      "text-xs",
+                      esgotado || expirado
+                        ? "text-destructive"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    {couponLimits(c).join(" · ")}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={c.active}
+                    onCheckedChange={() => toggleActive(c)}
+                  />
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="ghost"
+                    className="text-destructive"
+                    onClick={() => remove(c.id)}
+                    aria-label="Remover cupom"
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={c.active}
-                  onCheckedChange={() => toggleActive(c)}
-                />
-                <Button
-                  type="button"
-                  size="icon-sm"
-                  variant="ghost"
-                  className="text-destructive"
-                  onClick={() => remove(c.id)}
-                  aria-label="Remover cupom"
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      <div className="flex flex-col gap-3 rounded-lg border border-dashed p-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-2 sm:border-0 sm:p-0">
-        <div className="grid gap-1.5 sm:flex-1">
-          <Label htmlFor="ccode">Código</Label>
-          <Input
-            id="ccode"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="BEMVINDO10"
-            className="uppercase"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3 sm:contents">
-          <div className="grid gap-1.5 sm:w-32">
+      <div className="grid gap-3 rounded-lg border border-dashed p-3">
+        <div className="grid gap-3 sm:grid-cols-[1fr_8rem_6rem]">
+          <div className="grid gap-1.5">
+            <Label htmlFor="ccode">Código</Label>
+            <Input
+              id="ccode"
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              placeholder="BEMVINDO10"
+              className="uppercase"
+            />
+          </div>
+          <div className="grid gap-1.5">
             <Label>Tipo</Label>
-            <Select value={type} onValueChange={(v: string) => setType(v as "percent" | "fixed")}>
+            <Select
+              value={type}
+              onValueChange={(v: string) => setType(v as "percent" | "fixed")}
+            >
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -160,7 +244,7 @@ export function CouponsManager() {
               </SelectContent>
             </Select>
           </div>
-          <div className="grid gap-1.5 sm:w-24">
+          <div className="grid gap-1.5">
             <Label htmlFor="cvalue">{type === "percent" ? "%" : "R$"}</Label>
             <Input
               id="cvalue"
@@ -173,14 +257,64 @@ export function CouponsManager() {
             />
           </div>
         </div>
-        <Button
-          type="button"
-          onClick={add}
-          disabled={saving}
-          className="w-full sm:mb-0.5 sm:w-auto"
-        >
+
+        {/* Limites: em branco = sem limite. Só "por cliente" já vem preenchido,
+            porque cupom sem esse limite é o que deixa o mesmo cliente usar
+            quantas vezes quiser. */}
+        <div className="grid gap-3 sm:grid-cols-4">
+          <div className="grid gap-1.5">
+            <Label htmlFor="cper">Usos por cliente</Label>
+            <Input
+              id="cper"
+              type="number"
+              min="1"
+              value={perCustomer}
+              onChange={(e) => setPerCustomer(e.target.value)}
+              placeholder="Sem limite"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="cmax">Usos no total</Label>
+            <Input
+              id="cmax"
+              type="number"
+              min="1"
+              value={maxUses}
+              onChange={(e) => setMaxUses(e.target.value)}
+              placeholder="Sem limite"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="cmin">Pedido mínimo (R$)</Label>
+            <Input
+              id="cmin"
+              type="number"
+              step="0.01"
+              min="0"
+              value={minOrder}
+              onChange={(e) => setMinOrder(e.target.value)}
+              placeholder="0"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="cexp">Válido até</Label>
+            <Input
+              id="cexp"
+              type="date"
+              value={expiresAt}
+              onChange={(e) => setExpiresAt(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          Campos de limite em branco significam sem limite. O uso por cliente é
+          contado pelo telefone do pedido, mesmo sem conta criada.
+        </p>
+
+        <Button type="button" onClick={add} disabled={saving} className="w-full sm:w-auto sm:justify-self-end">
           <Plus className="size-4" />
-          Criar
+          Criar cupom
         </Button>
       </div>
     </div>

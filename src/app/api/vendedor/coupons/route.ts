@@ -1,9 +1,20 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, count, eq, inArray, isNull, ne } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { coupons } from "@/lib/db/schema";
+import { coupons, orders } from "@/lib/db/schema";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
 import { apiHandler } from "@/lib/api";
+
+const reaisToCents = (v: number) => Math.round(v * 100);
+
+/** Campos de limite: null/ausente = sem limite (é o padrão histórico). */
+const limitsSchema = {
+  /** Data (YYYY-MM-DD) até quando o cupom vale; vazio = não expira. */
+  expiresAt: z.string().max(10).optional(),
+  maxUses: z.number().int().min(1).nullable().optional(),
+  maxUsesPerCustomer: z.number().int().min(1).nullable().optional(),
+  minOrder: z.number().min(0).optional(),
+};
 
 const postSchema = z.object({
   code: z
@@ -15,7 +26,15 @@ const postSchema = z.object({
   /** percentual (0-100) ou valor em reais (fixo) */
   value: z.number().positive("Informe um valor válido."),
   active: z.boolean().default(true),
+  ...limitsSchema,
 });
+
+/** Fim do dia da data informada — o cupom vale durante todo o último dia. */
+function parseExpiry(value: string | undefined): Date | null {
+  if (!value?.trim()) return null;
+  const date = new Date(`${value}T23:59:59`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
 
 export const GET = apiHandler(async () => {
   const { error, restaurant } = await requireVendedorRestaurant();
@@ -31,6 +50,18 @@ export const GET = apiHandler(async () => {
     ),
     orderBy: (c, { desc }) => [desc(c.id)],
   });
+
+  // Quantas vezes cada cupom já foi usado (pedido cancelado não conta).
+  const ids = rows.map((c) => c.id);
+  const usageRows = ids.length
+    ? await db
+        .select({ couponId: orders.couponId, value: count() })
+        .from(orders)
+        .where(and(inArray(orders.couponId, ids), ne(orders.status, "cancelado")))
+        .groupBy(orders.couponId)
+    : [];
+  const usedBy = new Map(usageRows.map((r) => [r.couponId, r.value]));
+
   return Response.json({
     coupons: rows.map((c) => ({
       id: String(c.id),
@@ -38,6 +69,11 @@ export const GET = apiHandler(async () => {
       type: c.type,
       value: c.type === "fixed" ? c.value / 100 : c.value,
       active: c.active,
+      expiresAt: c.expiresAt ? c.expiresAt.toISOString() : null,
+      maxUses: c.maxUses,
+      maxUsesPerCustomer: c.maxUsesPerCustomer,
+      minOrder: c.minOrderCents / 100,
+      used: usedBy.get(c.id) ?? 0,
     })),
   });
 });
@@ -86,6 +122,10 @@ export const POST = apiHandler(async (request: Request) => {
       type: d.type,
       value: valueStored,
       active: d.active,
+      expiresAt: parseExpiry(d.expiresAt),
+      maxUses: d.maxUses ?? null,
+      maxUsesPerCustomer: d.maxUsesPerCustomer ?? null,
+      minOrderCents: reaisToCents(d.minOrder ?? 0),
     })
     .returning({ id: coupons.id });
 

@@ -15,7 +15,19 @@ const putSchema = z.object({
   type: z.enum(["percent", "fixed"]).optional(),
   value: z.number().positive("Informe um valor válido.").optional(),
   active: z.boolean().optional(),
+  // Limites (null = remove o limite). Ver POST /api/vendedor/coupons.
+  expiresAt: z.string().max(10).nullable().optional(),
+  maxUses: z.number().int().min(1).nullable().optional(),
+  maxUsesPerCustomer: z.number().int().min(1).nullable().optional(),
+  minOrder: z.number().min(0).optional(),
 });
+
+/** Fim do dia da data informada — o cupom vale durante todo o último dia. */
+function parseExpiry(value: string | null | undefined): Date | null {
+  if (!value?.trim()) return null;
+  const date = new Date(`${value}T23:59:59`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -71,6 +83,14 @@ export const PUT = apiHandler(async (request: Request, { params }: Ctx) => {
       ...(d.type !== undefined && { type: d.type }),
       ...(d.value !== undefined && { value: valueStored }),
       ...(d.active !== undefined && { active: d.active }),
+      ...(d.expiresAt !== undefined && { expiresAt: parseExpiry(d.expiresAt) }),
+      ...(d.maxUses !== undefined && { maxUses: d.maxUses }),
+      ...(d.maxUsesPerCustomer !== undefined && {
+        maxUsesPerCustomer: d.maxUsesPerCustomer,
+      }),
+      ...(d.minOrder !== undefined && {
+        minOrderCents: Math.round(d.minOrder * 100),
+      }),
     })
     .where(eq(coupons.id, couponId));
 

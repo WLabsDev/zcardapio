@@ -450,13 +450,22 @@ export function CheckoutView({
     const res = await fetch("/api/coupons/validate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ restaurantId: restaurant.id, code }),
+      // Subtotal e telefone vão junto: o cupom pode ter pedido mínimo e limite
+      // de usos por cliente, e é melhor recusar aqui do que só no envio.
+      body: JSON.stringify({
+        restaurantId: restaurant.id,
+        code,
+        subtotal: cart.total,
+        phone: phone.trim(),
+      }),
     }).catch(() => null);
     const data = await res?.json().catch(() => null);
     setCheckingCoupon(false);
     if (!res?.ok || !data?.valid) {
       setCoupon(null);
-      toast.error("Cupom inválido ou inativo.");
+      // A API explica o motivo (expirado, mínimo, já usado…) — mostrar isso é
+      // o que evita o cliente tentar o mesmo código de novo.
+      toast.error(data?.message ?? "Cupom inválido ou inativo.");
       return;
     }
     setCoupon({ code: code.toUpperCase(), type: data.type, value: data.value });
