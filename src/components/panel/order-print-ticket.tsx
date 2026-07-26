@@ -1,5 +1,6 @@
 import { createPortal } from "react-dom";
 import { formatBRL, type Order } from "@/lib/mock/types";
+import { formatPhone } from "@/lib/phone";
 
 /**
  * Versão do pedido formatada como cupom de cozinha para impressão.
@@ -44,7 +45,7 @@ export function OrderPrintTicket({ order }: { order: Order }) {
         {/* Cliente e entrega */}
         <div className="space-y-0.5">
           <p className="text-[14px] font-bold uppercase">{order.customerName}</p>
-          {order.customerPhone && <p>{order.customerPhone}</p>}
+          {order.customerPhone && <p>{formatPhone(order.customerPhone)}</p>}
           {order.deliveryType === "mesa" && order.tableNumber ? (
             <p className="mt-1 border-2 border-black px-2 py-0.5 text-center text-[16px] font-extrabold">
               *** MESA {order.tableNumber} ***

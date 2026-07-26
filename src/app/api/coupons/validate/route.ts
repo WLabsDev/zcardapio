@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
+import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { coupons } from "@/lib/db/schema";
 import { countCouponUsage } from "@/lib/db/queries";
@@ -40,7 +41,12 @@ export const POST = apiHandler(async (request: Request) => {
     return Response.json({ valid: false, message: "Cupom inválido." });
   }
 
-  const usage = await countCouponUsage(coupon.id, phone ?? "");
+  // Mesma identidade da criação do pedido (telefone + conta logada), senão o
+  // checkout mostra um desconto que a criação do pedido recusa.
+  const session = await getSession();
+  const usage = await countCouponUsage(coupon.id, phone ?? "", {
+    customerId: session?.role === "cliente" ? Number(session.sub) : null,
+  });
   const verdict = checkCoupon(coupon, {
     subtotalCents: Math.round((subtotal ?? 0) * 100),
     usage,

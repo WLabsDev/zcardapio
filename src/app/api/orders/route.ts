@@ -36,6 +36,9 @@ import { apiHandler } from "@/lib/api";
 /** Lançado dentro da transação quando o estoque acabou entre a validação e o commit. */
 class OutOfStockError extends Error {}
 
+/** Lançado dentro da transação quando o cupom estourou o limite no meio do caminho. */
+class CouponRaceError extends Error {}
+
 const createOrderSchema = z.object({
   restaurantId: z.coerce.number().int().positive(),
   customerName: z.string().min(2, "Informe seu nome."),
@@ -249,6 +252,10 @@ export const POST = apiHandler(async (request: Request) => {
 
   // Sessão é buscada antes do cupom para validar a posse de cupons pessoais.
   const session = await getSession();
+  // Identidade de quem está pedindo, quando dá para saber: o limite por cliente
+  // conta por telefone e também por esta conta.
+  const sessionCustomerId =
+    session?.role === "cliente" ? Number(session.sub) : null;
 
   // Cupom de desconto — sempre recalculado no servidor.
   let discountCents = 0;
@@ -276,8 +283,12 @@ export const POST = apiHandler(async (request: Request) => {
 
     // Limites de uso: validade, pedido mínimo, total e por cliente. O uso por
     // cliente é contado pelo telefone do pedido (aceitando as duas grafias do
-    // celular), que existe mesmo quando o pedido é feito sem conta.
-    const usage = await countCouponUsage(coupon.id, data.customerPhone);
+    // celular), que existe mesmo quando o pedido é feito sem conta, e pela
+    // conta logada. Aqui é a checagem "bonita", que devolve o motivo ao
+    // cliente; a que vale é a de dentro da transação, com o cupom travado.
+    const usage = await countCouponUsage(coupon.id, data.customerPhone, {
+      customerId: sessionCustomerId,
+    });
     const verdict = checkCoupon(coupon, { subtotalCents, usage });
     if (!verdict.ok) {
       return Response.json({ message: verdict.message }, { status: 400 });
@@ -353,13 +364,42 @@ export const POST = apiHandler(async (request: Request) => {
         }
       }
 
+      // Cupom: reconfere com a linha travada (FOR UPDATE). Entre a validação
+      // acima e este insert cabe outro pedido — dois cliques, duas abas, dois
+      // aparelhos. Sem travar a linha, as duas transações leem a mesma
+      // contagem e as duas passam, estourando maxUses/maxUsesPerCustomer (e,
+      // no cupom de fidelidade, resgatando o mesmo prêmio duas vezes). Quem
+      // chegar depois espera aqui e só então conta os usos — agora com o
+      // pedido do outro já commitado.
+      if (appliedCouponId !== null) {
+        const [locked] = await tx
+          .select()
+          .from(coupons)
+          .where(eq(coupons.id, appliedCouponId))
+          .for("update");
+        const usage = await countCouponUsage(appliedCouponId, data.customerPhone, {
+          customerId,
+          executor: tx,
+        });
+        const verdict = locked
+          ? checkCoupon(locked, { subtotalCents, usage })
+          : { ok: false as const, message: "Cupom inválido." };
+        if (!verdict.ok) {
+          throw new CouponRaceError(verdict.message);
+        }
+      }
+
       const [created] = await tx
         .insert(orders)
         .values({
           restaurantId: restaurant.id,
           customerId,
           customerName: data.customerName,
-          customerPhone: data.customerPhone,
+          // Canônico (só dígitos, com o 9º dígito): é a forma que a contagem de
+          // usos do cupom compara (phoneVariants). Gravar o telefone formatado
+          // ("(11) 99999-1234") fazia o limite por cliente nunca casar e, na
+          // prática, maxUsesPerCustomer nunca era aplicado.
+          customerPhone: canonicalPhone(data.customerPhone),
           deliveryType: data.deliveryType,
           address: data.deliveryType === "entrega" ? data.address.trim() : "",
           tableNumber: data.deliveryType === "mesa" ? data.tableNumber ?? null : null,
@@ -449,7 +489,7 @@ export const POST = apiHandler(async (request: Request) => {
     order = result.order;
     createdAccountId = result.newlyCreatedId;
   } catch (e) {
-    if (e instanceof OutOfStockError) {
+    if (e instanceof OutOfStockError || e instanceof CouponRaceError) {
       return Response.json({ message: e.message }, { status: 409 });
     }
     throw e;

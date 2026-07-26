@@ -57,7 +57,7 @@ import {
   type Order,
   type OrderStatus,
 } from "@/lib/mock/types";
-import { normalizePhone } from "@/lib/phone";
+import { formatPhone, normalizePhone } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 
 const tabs: { value: string; label: string }[] = [
@@ -427,7 +427,7 @@ export default function PedidosPage() {
                       </p>
                       {selected.customerPhone && (
                         <p className="text-xs text-muted-foreground">
-                          {selected.customerPhone}
+                          {formatPhone(selected.customerPhone)}
                         </p>
                       )}
                     </div>

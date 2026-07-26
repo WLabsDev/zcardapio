@@ -3,7 +3,7 @@
  * usados pelo frontend (ids como string, centavos → reais).
  * Use em Server Components e Route Handlers.
  */
-import { and, avg, count, desc, eq, gte, inArray, ne } from "drizzle-orm";
+import { and, avg, count, desc, eq, gte, inArray, ne, or } from "drizzle-orm";
 import { db } from "./index";
 import { deliveryZones, orders, restaurants, reviewHides, reviews } from "./schema";
 import type { CouponUsage } from "@/lib/coupons";
@@ -452,34 +452,52 @@ export async function getMonthlyOrderCount(
   return row?.value ?? 0;
 }
 
+/** A conexão ou a transação em curso — as duas sabem fazer `select`. */
+type DbExecutor = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 /**
- * Quantas vezes o cupom já foi usado: no total e por quem tem este telefone.
+ * Quantas vezes o cupom já foi usado: no total e por este cliente.
  *
- * Conta pelo `couponId` do pedido (o código pode ser recriado) e pelo telefone
- * do cliente, aceitando as duas grafias do celular — assim o limite por pessoa
- * também vale para quem pediu sem criar conta. Pedido cancelado não conta:
- * seria injusto queimar o cupom de quem não recebeu nada.
+ * Conta pelo `couponId` do pedido (o código pode ser recriado). O "por cliente"
+ * casa por telefone — aceitando as duas grafias do celular, para valer também
+ * para quem pediu sem criar conta — e, quando o cliente está logado, também
+ * pelo `customerId`: só pelo telefone bastaria digitar outro número no checkout
+ * para zerar a contagem e usar de novo o cupom de "1 por cliente".
+ *
+ * Pedido cancelado não conta: seria injusto queimar o cupom de quem não recebeu
+ * nada.
+ *
+ * Passe `executor` com a transação para contar dentro dela (ver a checagem com
+ * o cupom travado na criação do pedido).
  */
 export async function countCouponUsage(
   couponId: number,
-  customerPhone: string
+  customerPhone: string,
+  opts?: { customerId?: number | null; executor?: DbExecutor }
 ): Promise<CouponUsage> {
+  const runner = opts?.executor ?? db;
   const naoCancelado = and(
     eq(orders.couponId, couponId),
     ne(orders.status, "cancelado")
   );
   const variants = phoneVariants(customerPhone);
+  const customerId = opts?.customerId ?? null;
 
-  const [totalRow] = await db
+  const mesmoCliente = or(
+    variants.length ? inArray(orders.customerPhone, variants) : undefined,
+    customerId !== null ? eq(orders.customerId, customerId) : undefined
+  );
+
+  const [totalRow] = await runner
     .select({ value: count() })
     .from(orders)
     .where(naoCancelado);
 
-  const [customerRow] = variants.length
-    ? await db
+  const [customerRow] = mesmoCliente
+    ? await runner
         .select({ value: count() })
         .from(orders)
-        .where(and(naoCancelado, inArray(orders.customerPhone, variants)))
+        .where(and(naoCancelado, mesmoCliente))
     : [{ value: 0 }];
 
   return { total: totalRow?.value ?? 0, byCustomer: customerRow?.value ?? 0 };
