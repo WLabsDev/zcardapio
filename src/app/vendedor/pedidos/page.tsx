@@ -399,15 +399,17 @@ export default function PedidosPage() {
                       )}
                     </SelectContent>
                   </Select>
+                  <Button
+                    size="icon-lg"
+                    variant="outline"
+                    className="shrink-0 border-2 border-foreground bg-background shadow-offset-sm transition-transform hover:-translate-y-0.5"
+                    onClick={() => window.print()}
+                    aria-label="Imprimir para cozinha"
+                    title="Imprimir para cozinha"
+                  >
+                    <Printer className="size-4" />
+                  </Button>
                 </div>
-                <Button
-                  size="lg"
-                  className="w-full rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
-                  onClick={() => window.print()}
-                >
-                  <Printer className="size-4" />
-                  Imprimir p/ cozinha
-                </Button>
               </div>
 
               <OrderStatusTimeline status={selected.status} />
