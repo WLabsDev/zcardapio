@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { MercadoPagoConfig, Payment, Preference } from "mercadopago";
 import { db } from "@/lib/db";
-import { planPayments, restaurants } from "@/lib/db/schema";
+import { planPayments, plans, restaurants } from "@/lib/db/schema";
 import { PLAN_PERIOD_DAYS } from "@/lib/plan-limits";
 
 let client: MercadoPagoConfig | null = null;
@@ -89,10 +89,20 @@ export async function getMercadoPagoPayment(paymentId: string) {
  * Confirma um pagamento aprovado e ativa o plano do restaurante.
  * Idempotente: o mesmo pagamento (mpPaymentId) ativa o plano uma única vez,
  * mesmo que o webhook/retorno chame mais de uma vez.
+ *
+ * `activated` responde "foi esta chamada que ativou"; `alreadyActivated`
+ * responde "o pagamento está aprovado, mas outra chamada chegou antes".
+ * Quem só olha `activated` conclui errado que o pagamento falhou — o que
+ * acontece toda vez que o webhook do MercadoPago vence a corrida contra o
+ * retorno do navegador.
  */
-export async function activatePlanFromPayment(
-  paymentId: string
-): Promise<{ activated: boolean; message?: string }> {
+export async function activatePlanFromPayment(paymentId: string): Promise<{
+  activated: boolean;
+  alreadyActivated?: boolean;
+  planName?: string;
+  amountCents?: number;
+  message?: string;
+}> {
   const mpPayment = await getMercadoPagoPayment(paymentId);
   if (!mpPayment) {
     return { activated: false, message: "Pagamento não encontrado." };
@@ -143,5 +153,18 @@ export async function activatePlanFromPayment(
     }
   });
 
-  return { activated };
+  // Nome do plano para a tela de retorno e para o relatório de receita no
+  // GA4. Falha aqui não invalida a ativação, que já foi commitada acima.
+  const plan = await db.query.plans
+    .findFirst({ where: eq(plans.id, planId), columns: { name: true } })
+    .catch(() => null);
+
+  return {
+    activated,
+    // Chegamos até aqui só com pagamento aprovado: se não foi esta chamada
+    // que ativou, é porque outra já tinha ativado.
+    alreadyActivated: !activated,
+    planName: plan?.name,
+    amountCents,
+  };
 }

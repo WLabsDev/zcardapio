@@ -29,6 +29,11 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useBackToClose } from "@/hooks/use-back-to-close";
+import {
+  CARDAPIO_MONTADO_MIN_PRODUTOS,
+  GA_EVENTS,
+  trackOnce,
+} from "@/lib/analytics-events";
 import { formatBRL, stockLevel, type Category, type Product } from "@/lib/mock/types";
 import { uploadImage } from "@/lib/upload";
 import { cn } from "@/lib/utils";
@@ -87,6 +92,19 @@ export default function CardapioPage() {
         if (data) {
           setItems(data.products);
           setCategories(data.categories);
+          // Marco de ativação: o cardápio passou a ter produtos suficientes
+          // para o cliente montar um pedido. Aqui em vez de dentro de `save`
+          // porque o marco é o estado do cardápio, não a ação de salvar — e
+          // assim também conta quem chegou ao número por outro caminho
+          // (importação, cadastro feito pelo suporte).
+          if (
+            data.restaurantId &&
+            data.products.length >= CARDAPIO_MONTADO_MIN_PRODUTOS
+          ) {
+            trackOnce(GA_EVENTS.cardapioMontado, data.restaurantId, {
+              total_produtos: data.products.length,
+            });
+          }
         }
       })
       .catch(() => {})

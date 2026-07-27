@@ -8,6 +8,7 @@ import { z } from "zod";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { AuthSplitShell } from "@/components/auth-split-shell";
+import { GA_EVENTS, trackEvent } from "@/lib/analytics-events";
 import { formatPhone } from "@/lib/phone";
 import { Button } from "@/components/ui/button";
 import {
@@ -131,6 +132,15 @@ export default function CadastroRestaurantePage() {
       toast.error(data?.message ?? "Não foi possível concluir o cadastro.");
       return;
     }
+
+    // Topo do funil do vendedor. Não passa por `trackOnce` porque o cadastro
+    // só acontece uma vez por definição — depois daqui a rota exige sessão.
+    trackEvent(GA_EVENTS.cadastroVendedor, {
+      plano_escolhido: selectedPlan,
+      segmento: values.segmento,
+      cidade: values.cidade,
+      estado: values.estado,
+    });
 
     toast.success("Restaurante cadastrado! Bem-vindo ao zCardápio 🎉");
     router.push("/vendedor");

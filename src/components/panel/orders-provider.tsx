@@ -11,6 +11,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { GA_EVENTS, trackOnce } from "@/lib/analytics-events";
 import { formatBRL, type Order, type OrderStatus } from "@/lib/mock/types";
 import { playOrderChime } from "@/lib/notification-sound";
 
@@ -34,6 +35,22 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
+    // O momento WOW do produto: o restaurante vendo o primeiro pedido de
+    // verdade cair na tela. Disparado aqui, no painel do vendedor, e não no
+    // checkout do cliente — no checkout quem está no navegador é o
+    // consumidor, numa sessão que não tem relação com a origem que trouxe o
+    // restaurante. Medido aqui, o marco fica na sessão de quem importa.
+    const trackFirstOrder = (list: Order[]) => {
+      if (list.length === 0) return;
+      // A lista vem do mais recente para o mais antigo — o primeiro pedido da
+      // vida do restaurante é o último item.
+      const first = list[list.length - 1];
+      trackOnce(GA_EVENTS.primeiroPedido, first.restaurantId, {
+        valor: first.total,
+        tipo_entrega: first.deliveryType,
+      });
+    };
+
     const load = async () => {
       const res = await fetch("/api/orders?scope=restaurant").catch(() => null);
       const data = await res?.json().catch(() => null);
@@ -55,6 +72,7 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
       }
       knownIds.current = new Set(incoming.map((o) => o.id));
       setOrders(incoming);
+      trackFirstOrder(incoming);
     };
 
     load();
@@ -76,6 +94,9 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
       const msg: { type: "order_created" | "order_updated"; order: Order } =
         JSON.parse(e.data);
       if (msg.type === "order_created" && !knownIds.current?.has(msg.order.id)) {
+        // `knownIds` já foi preenchido pelo load inicial com todos os pedidos
+        // da vida do restaurante: vazio aqui significa que este é o primeiro.
+        const isFirstEver = knownIds.current?.size === 0;
         playOrderChime();
         toast("🔔 Pedido novo!", {
           description: `${msg.order.code} · ${msg.order.customerName} · ${formatBRL(msg.order.total)}`,
@@ -85,6 +106,9 @@ export function OrdersProvider({ children }: { children: React.ReactNode }) {
           },
         });
         knownIds.current?.add(msg.order.id);
+        // Com o painel aberto, o marco é registrado na hora em que o pedido
+        // cai — sem esperar o backstop de 60s.
+        if (isFirstEver) trackFirstOrder([msg.order]);
       }
       setOrders((prev) => {
         const idx = prev.findIndex((o) => o.id === msg.order.id);

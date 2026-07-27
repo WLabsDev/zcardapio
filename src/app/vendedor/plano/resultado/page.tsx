@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Clock3, Loader2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { GA_EVENTS, trackOnce } from "@/lib/analytics-events";
 
 type State = "loading" | "activated" | "pending" | "failed";
 
@@ -35,8 +36,19 @@ function ResultContent() {
     })
       .then((res) => res.json().catch(() => null))
       .then((data) => {
-        if (data?.activated) {
+        // `alreadyActivated` cobre o caso comum de o webhook do MercadoPago
+        // confirmar o pagamento antes de o navegador voltar para cá: o plano
+        // está ativo, e mostrar "pagamento não concluído" seria mentira.
+        if (data?.activated || data?.alreadyActivated) {
           setState("activated");
+          // Fundo do funil. Escopo do `trackOnce` é o pagamento, então o
+          // evento sobrevive a F5 e ao botão "Verificar pagamento" sem
+          // contar a mesma assinatura duas vezes.
+          trackOnce(GA_EVENTS.assinatura, paymentId, {
+            value: (data.amountCents ?? 0) / 100,
+            currency: "BRL",
+            plano: data.planName ?? "",
+          });
           return;
         }
         const msg = data?.message ?? "";

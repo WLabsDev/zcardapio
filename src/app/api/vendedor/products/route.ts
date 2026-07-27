@@ -34,6 +34,9 @@ export const GET = apiHandler(async () => {
     }),
   ]);
   return Response.json({
+    // Identifica de quem é este cardápio. O painel usa para não misturar os
+    // marcos de ativação (GA4) entre restaurantes abertos no mesmo navegador.
+    restaurantId: String(restaurant.id),
     products: items,
     categories: cats.map((c) => ({ id: String(c.id), name: c.name })),
   });
