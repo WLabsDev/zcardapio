@@ -47,3 +47,6 @@ next-env.d.ts
 
 # uploads locais (dev)
 /public/uploads/
+
+# biblioteca de referência de UI (não faz parte do app)
+/codervent-ui-blocks-shadcn/

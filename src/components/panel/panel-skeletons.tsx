@@ -15,7 +15,7 @@ export function StatsSkeleton({ count = 4 }: { count?: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="rounded-2xl border-2 border-foreground/15 bg-card p-4"
+          className="rounded-xl border bg-card p-5 shadow-xs"
         >
           <div className="flex items-center justify-between">
             <Skeleton className="h-4 w-24" />
@@ -37,7 +37,7 @@ export function TableSkeleton({
   cols?: number;
 }) {
   return (
-    <div className="rounded-2xl border bg-card">
+    <div className="rounded-xl border bg-card shadow-xs">
       <div className="border-b px-4 py-3">
         <div className="flex gap-6">
           {Array.from({ length: cols }).map((_, i) => (
@@ -63,7 +63,7 @@ export function TableSkeleton({
 
 export function FormSkeleton({ fields = 4 }: { fields?: number }) {
   return (
-    <div className="rounded-2xl border bg-card p-6">
+    <div className="rounded-xl border bg-card p-6 shadow-xs">
       <Skeleton className="h-5 w-40" />
       <div className="mt-5 space-y-4">
         {Array.from({ length: fields }).map((_, i) => (
@@ -90,7 +90,7 @@ export function DashboardSkeleton() {
       <StatsSkeleton />
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
         <TableSkeleton rows={4} />
-        <div className="rounded-2xl border bg-card p-5">
+        <div className="rounded-xl border bg-card p-5 shadow-xs">
           <Skeleton className="h-5 w-32" />
           <div className="mt-4 space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -113,7 +113,7 @@ export function CardListSkeleton({ items = 3 }: { items?: number }) {
   return (
     <div className="space-y-4">
       {Array.from({ length: items }).map((_, i) => (
-        <div key={i} className="rounded-2xl border bg-card p-5">
+        <div key={i} className="rounded-xl border bg-card p-5 shadow-xs">
           <div className="flex items-center justify-between">
             <Skeleton className="h-5 w-52 max-w-full" />
             <Skeleton className="h-5 w-20 rounded-full" />

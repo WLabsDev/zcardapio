@@ -119,7 +119,7 @@ export default function QrcodePage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
-        <h2 className="font-display text-xl font-bold">QR code</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight">QR code</h2>
         <p className="text-sm text-muted-foreground">
           Imprima e cole nas mesas: o cliente aponta o celular e o cardápio
           abre na hora.
@@ -128,7 +128,7 @@ export default function QrcodePage() {
 
       <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
         {/* QR card */}
-        <Card className="h-fit border-2 border-foreground shadow-offset">
+        <Card className="h-fit">
           <CardHeader>
             <CardTitle className="text-base">{restaurant.name}</CardTitle>
             <CardDescription className="break-all">
@@ -138,7 +138,7 @@ export default function QrcodePage() {
           <CardContent className="space-y-4">
             <div
               ref={qrWrapRef}
-              className="flex justify-center rounded-xl border-2 border-foreground/10 bg-white p-6"
+              className="flex justify-center rounded-xl border bg-white p-6"
             >
               <QRCode
                 value={menuUrl}
@@ -179,7 +179,7 @@ export default function QrcodePage() {
             <CardContent className="divide-y">
               {steps.map((s, i) => (
                 <div key={s.title} className="flex gap-4 py-4 first:pt-0 last:pb-0">
-                  <span className="flex size-9 shrink-0 -rotate-3 items-center justify-center rounded-lg border-2 border-foreground bg-accent font-display text-sm font-bold">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 font-display text-sm font-bold text-primary">
                     {i + 1}
                   </span>
                   <div>
@@ -204,9 +204,9 @@ export default function QrcodePage() {
             </CardContent>
           </Card>
 
-          <div className="flex items-center gap-3 rounded-2xl border-2 border-dashed border-foreground/20 bg-card/60 p-4">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border-2 border-foreground/15 bg-accent">
-              <QrCodeIcon className="size-4.5" />
+          <div className="flex items-center gap-3 rounded-xl border border-dashed bg-card/60 p-4">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <QrCodeIcon className="size-4.5 text-primary" />
             </span>
             <p className="text-sm text-muted-foreground">
               O QR code aponta para{" "}
@@ -276,7 +276,7 @@ export default function QrcodePage() {
             {tableNumbers.map((n) => (
               <div
                 key={n}
-                className="flex flex-col items-center gap-2 rounded-xl border-2 border-foreground/10 bg-white p-3"
+                className="flex flex-col items-center gap-2 rounded-lg border bg-white p-3"
               >
                 <QRCode
                   value={tableUrl(n)}

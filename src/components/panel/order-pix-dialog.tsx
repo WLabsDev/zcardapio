@@ -61,7 +61,7 @@ export function OrderPixDialog({
       <Button
         type="button"
         size="sm"
-        className="rounded-full font-semibold shadow-offset-sm"
+        className="rounded-full font-semibold"
         onClick={openDialog}
       >
         <QrCode className="size-3.5" />
@@ -87,7 +87,7 @@ export function OrderPixDialog({
               <img
                 src={pix.qrImage}
                 alt={`QR Code Pix do pedido ${orderCode}`}
-                className="size-48 rounded-lg border-2 border-foreground/10"
+                className="size-48 rounded-lg border"
               />
               <Button
                 type="button"
@@ -105,7 +105,7 @@ export function OrderPixDialog({
               </Button>
               {restaurantPhone?.trim() && (
                 <Button
-                  className="w-full rounded-full font-semibold shadow-offset-sm"
+                  className="w-full rounded-full font-semibold"
                   asChild
                 >
                   <a

@@ -7,7 +7,7 @@ export default function AdminPlanosLoading() {
       <PageHeaderSkeleton />
       <div className="grid gap-6 md:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="rounded-2xl border-2 bg-card p-7">
+          <div key={i} className="rounded-xl border bg-card p-7">
             <Skeleton className="h-6 w-24" />
             <Skeleton className="mt-2 h-4 w-40" />
             <Skeleton className="mt-4 h-9 w-28" />

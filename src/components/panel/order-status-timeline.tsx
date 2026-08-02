@@ -44,7 +44,7 @@ export function OrderStatusTimeline({
     return (
       <div
         className={cn(
-          "flex items-center gap-2 rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-800 dark:bg-red-950 dark:text-red-300",
+          "flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400",
           className
         )}
       >
@@ -75,12 +75,12 @@ export function OrderStatusTimeline({
             <div className="flex flex-col items-center gap-1.5 px-0.5">
               <span
                 className={cn(
-                  "relative flex size-8 items-center justify-center rounded-full border-2 transition-all",
+                  "relative flex size-8 items-center justify-center rounded-full border transition-all",
                   active
-                    ? "border-foreground bg-accent text-foreground"
+                    ? "bg-muted text-foreground"
                     : done
-                      ? "border-foreground bg-primary text-primary-foreground"
-                      : "border-foreground/15 bg-muted text-muted-foreground/50"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground/50"
                 )}
               >
                 {active && (

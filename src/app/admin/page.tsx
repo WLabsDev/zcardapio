@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { StatCard } from "@/components/panel/panel-shell";
 import { formatBRL } from "@/lib/mock/types";
+import { cn } from "@/lib/utils";
 
 type Metrics = {
   activeRestaurants: number;
@@ -35,9 +36,9 @@ type RecentRestaurant = {
 };
 
 const statusVariant = {
-  ativo: "default",
-  pendente: "secondary",
-  bloqueado: "destructive",
+  ativo: "bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400",
+  pendente: "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400",
+  bloqueado: "bg-red-500/10 text-red-600 border-red-500/20 dark:text-red-400",
 } as const;
 
 export default function AdminDashboard() {
@@ -83,7 +84,7 @@ export default function AdminDashboard() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-bold">Visão geral da plataforma</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight">Visão geral da plataforma</h2>
           <p className="text-sm text-muted-foreground">
             Acompanhe o crescimento do zCardápio.
           </p>
@@ -100,7 +101,7 @@ export default function AdminDashboard() {
       </div>
 
       {!whatsappConfigured && (
-        <div className="flex items-start gap-3 rounded-xl border-2 border-amber-500/60 bg-amber-500/10 p-4 text-sm">
+        <div className="flex items-start gap-3 rounded-xl border border-amber-500/60 bg-amber-500/10 p-4 text-sm">
           <AlertTriangle className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400" />
           <div className="space-y-0.5">
             <p className="font-semibold">WhatsApp não configurado</p>
@@ -108,15 +109,15 @@ export default function AdminDashboard() {
               Códigos de recuperação de senha e avisos de novo pedido não estão
               sendo enviados — as mensagens aparecem apenas no log do servidor.
               Configure{" "}
-              <code className="rounded bg-foreground/10 px-1 font-mono text-xs">
+              <code className="rounded bg-muted px-1 font-mono text-xs">
                 EVOLUTION_API_URL
               </code>
               ,{" "}
-              <code className="rounded bg-foreground/10 px-1 font-mono text-xs">
+              <code className="rounded bg-muted px-1 font-mono text-xs">
                 EVOLUTION_API_KEY
               </code>{" "}
               e{" "}
-              <code className="rounded bg-foreground/10 px-1 font-mono text-xs">
+              <code className="rounded bg-muted px-1 font-mono text-xs">
                 EVOLUTION_INSTANCE
               </code>{" "}
               no servidor.
@@ -158,7 +159,7 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent>
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead>Restaurante</TableHead>
                 <TableHead className="hidden sm:table-cell">Segmento</TableHead>
@@ -179,7 +180,10 @@ export default function AdminDashboard() {
                     {new Date(r.createdAt).toLocaleDateString("pt-BR")}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={statusVariant[r.status]} className="capitalize">
+                    <Badge
+                      variant="outline"
+                      className={cn(statusVariant[r.status], "capitalize")}
+                    >
                       {r.status}
                     </Badge>
                   </TableCell>

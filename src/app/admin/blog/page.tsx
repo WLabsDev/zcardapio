@@ -137,7 +137,7 @@ export default function AdminBlogPage() {
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-bold">Blog</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight">Blog</h2>
           <p className="text-sm text-muted-foreground">
             Artigos do blog público (zcardapio.com.br/blog) — foco em SEO.
           </p>
@@ -158,12 +158,19 @@ export default function AdminBlogPage() {
           {posts.map((post) => (
             <div
               key={post.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 border-foreground/15 px-4 py-3 transition-colors hover:border-foreground"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3 transition-colors hover:bg-muted/60"
             >
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="font-display font-bold">{post.title}</h3>
-                  <Badge variant={post.published ? "default" : "secondary"}>
+                  <Badge
+                    variant="outline"
+                    className={
+                      post.published
+                        ? "bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400"
+                        : "bg-muted text-muted-foreground"
+                    }
+                  >
                     {post.published ? "Publicado" : "Rascunho"}
                   </Badge>
                 </div>

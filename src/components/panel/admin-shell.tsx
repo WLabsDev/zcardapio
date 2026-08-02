@@ -8,6 +8,7 @@ import {
   Newspaper,
 } from "lucide-react";
 import { PanelShell, type NavItem } from "@/components/panel/panel-shell";
+import { PanelThemeProvider } from "@/components/panel-theme-provider";
 
 const nav: NavItem[] = [
   { href: "/admin", label: "Visão geral", icon: LayoutDashboard },
@@ -25,13 +26,17 @@ export function AdminShell({
   children: React.ReactNode;
 }) {
   return (
-    <PanelShell
-      title="Administração"
-      nav={nav}
-      userName={userName}
-      userRole="Administrador"
-    >
-      {children}
-    </PanelShell>
+    <>
+      <PanelThemeProvider />
+      <PanelShell
+        title="Administração"
+        nav={nav}
+        userName={userName}
+        userRole="Administrador"
+        variant="clean"
+      >
+        {children}
+      </PanelShell>
+    </>
   );
 }

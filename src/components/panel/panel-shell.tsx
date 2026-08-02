@@ -27,7 +27,12 @@ export type NavItem = {
   badge?: React.ReactNode;
 };
 
+/** "default" mantém o visual atual; "clean" aplica o painel limpo (referência
+   codervent-ui-blocks) usado em /vendedor. */
+export type PanelVariant = "default" | "clean";
+
 const PanelUserContext = createContext<{ name: string } | null>(null);
+const PanelVariantContext = createContext<PanelVariant>("default");
 
 /** Nome do usuário logado (vindo da sessão no layout server). */
 export function usePanelUser() {
@@ -38,12 +43,18 @@ export function usePanelUser() {
   return ctx;
 }
 
+/** Variante visual do painel atual, para componentes filhos adaptarem o estilo. */
+export function usePanelVariant() {
+  return useContext(PanelVariantContext);
+}
+
 export function PanelShell({
   title,
   nav,
   userName,
   userRole,
   impersonating = false,
+  variant = "default",
   banner,
   children,
 }: {
@@ -53,9 +64,11 @@ export function PanelShell({
   userRole: string;
   /** true quando um admin está visualizando este painel como "ver como". */
   impersonating?: boolean;
+  variant?: PanelVariant;
   banner?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const clean = variant === "clean";
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -144,13 +157,19 @@ export function PanelShell({
               }
             }}
             className={cn(
-              "flex items-center gap-3 rounded-xl border-2 px-3 py-2 text-sm font-semibold transition-all",
+              clean
+                ? "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+                : "flex items-center gap-3 rounded-xl border-2 px-3 py-2 text-sm font-semibold transition-all",
               active
-                ? "border-foreground bg-accent text-foreground shadow-offset-sm"
-                : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? clean
+                  ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
+                  : "border-foreground bg-accent text-foreground shadow-offset-sm"
+                : clean
+                  ? "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
-            <item.icon className="size-4.5" />
+            <item.icon className={cn("size-4.5", clean && "size-4")} />
             {item.label}
             {item.badge}
           </Link>
@@ -160,6 +179,7 @@ export function PanelShell({
   );
 
   return (
+    <PanelVariantContext.Provider value={variant}>
     <div
       className="flex min-h-screen"
       onTouchStart={onTouchStart}
@@ -216,8 +236,14 @@ export function PanelShell({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 rounded-full">
-                <Avatar className="border-2 border-foreground">
-                  <AvatarFallback className="bg-accent font-display font-bold">
+                <Avatar className={cn(!clean && "border-2 border-foreground")}>
+                  <AvatarFallback
+                    className={cn(
+                      clean
+                        ? "bg-primary/10 font-semibold text-primary"
+                        : "bg-accent font-display font-bold"
+                    )}
+                  >
                     {initials}
                   </AvatarFallback>
                 </Avatar>
@@ -253,6 +279,7 @@ export function PanelShell({
         </main>
       </div>
     </div>
+    </PanelVariantContext.Provider>
   );
 }
 
@@ -267,15 +294,39 @@ export function StatCard({
   hint?: string;
   icon: LucideIcon;
 }) {
+  const variant = usePanelVariant();
+  const clean = variant === "clean";
+
   return (
-    <div className="rounded-2xl border-2 border-foreground/15 bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-foreground hover:shadow-offset-sm">
+    <div
+      className={cn(
+        clean
+          ? "rounded-xl border bg-card p-5 shadow-xs"
+          : "rounded-2xl border-2 border-foreground/15 bg-card p-4 transition-all hover:-translate-y-0.5 hover:border-foreground hover:shadow-offset-sm"
+      )}
+    >
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        <span className="flex size-8 items-center justify-center rounded-lg bg-accent">
-          <Icon className="size-4" />
+        <span
+          className={cn(
+            "flex items-center justify-center rounded-lg",
+            clean ? "size-9 bg-primary/10" : "size-8 bg-accent"
+          )}
+        >
+          <Icon
+            className={cn("size-4", clean && "size-4.5 text-primary")}
+          />
         </span>
       </div>
-      <p className="mt-2 font-display text-2xl font-bold">{value}</p>
+      <p
+        className={cn(
+          clean
+            ? "mt-2 text-2xl font-bold tracking-tight"
+            : "mt-2 font-display text-2xl font-bold"
+        )}
+      >
+        {value}
+      </p>
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
     </div>
   );

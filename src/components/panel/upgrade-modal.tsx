@@ -75,12 +75,7 @@ export function UpgradeModal({
             {plans.map((plan) => (
               <Card
                 key={plan.id}
-                className={cn(
-                  "border-2",
-                  plan.highlighted
-                    ? "border-foreground shadow-offset-sm"
-                    : "border-foreground/15"
-                )}
+                className={cn(plan.highlighted && "border-primary ring-1 ring-primary")}
               >
                 <CardContent className="flex h-full flex-col gap-3">
                   <h3 className="font-display text-lg font-bold">

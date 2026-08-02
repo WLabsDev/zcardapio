@@ -89,7 +89,7 @@ export function OnboardingChecklist() {
 
   if (!status) {
     return (
-      <div className="rounded-2xl border-2 border-foreground bg-card p-5 shadow-offset">
+      <div className="rounded-xl border bg-card p-5 shadow-xs">
         <p className="text-sm text-muted-foreground">
           Carregando seu progresso...
         </p>
@@ -139,7 +139,7 @@ export function OnboardingChecklist() {
   const pct = Math.round((doneCount / steps.length) * 100);
 
   return (
-    <div className="rounded-2xl border-2 border-foreground bg-card p-5 shadow-offset">
+    <div className="rounded-xl border bg-card p-5 shadow-xs">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-display text-base font-bold">
@@ -162,9 +162,9 @@ export function OnboardingChecklist() {
         </button>
       </div>
 
-      <div className="mt-3 h-2 overflow-hidden rounded-full border border-foreground/20 bg-muted">
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
         <div
-          className="h-full bg-primary transition-all"
+          className="h-full rounded-full bg-primary transition-all"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -175,14 +175,16 @@ export function OnboardingChecklist() {
             key={s.title}
             href={s.href}
             className={cn(
-              "group flex items-start gap-3 rounded-xl border-2 border-foreground/15 p-3 transition-all hover:-translate-y-0.5 hover:border-foreground hover:shadow-offset-sm",
+              "group flex items-start gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/60",
               s.done && "bg-muted/40"
             )}
           >
             <span
               className={cn(
-                "flex size-8 shrink-0 items-center justify-center rounded-lg border-2 border-foreground",
-                s.done ? "bg-primary text-primary-foreground" : "bg-accent"
+                "flex size-8 shrink-0 items-center justify-center rounded-lg",
+                s.done
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
               )}
             >
               {s.done ? <Check className="size-4" /> : <s.icon className="size-4" />}

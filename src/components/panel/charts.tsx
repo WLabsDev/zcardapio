@@ -38,7 +38,7 @@ export function BarsChart({
             )}
             <div
               className={cn(
-                "w-full max-w-10 rounded-t-md border-2 border-b-0 border-foreground bg-chart-1 transition-all group-hover:-translate-y-0.5 group-hover:bg-primary",
+                "w-full max-w-10 rounded-t-md bg-chart-1 transition-colors group-hover:bg-primary",
                 barClassName
               )}
               style={{ height: `${pct}%` }}
@@ -77,7 +77,7 @@ export function RankList({
                 <img
                   src={item.image}
                   alt=""
-                  className="size-6 shrink-0 rounded-md border border-foreground/15 object-cover"
+                  className="size-6 shrink-0 rounded-md border object-cover"
                 />
               )}
               <span className="truncate font-medium">{item.name}</span>
@@ -86,9 +86,9 @@ export function RankList({
               {item.value} {unit}
             </span>
           </div>
-          <div className="h-3.5 overflow-hidden rounded-full border-2 border-foreground/15 bg-muted">
+          <div className="h-2 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full border-r-2 border-foreground bg-chart-4 transition-all"
+              className="h-full rounded-full bg-chart-4 transition-all"
               style={{ width: `${(item.value / max) * 100}%` }}
             />
           </div>

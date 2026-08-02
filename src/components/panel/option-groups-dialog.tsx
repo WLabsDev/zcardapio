@@ -288,7 +288,7 @@ export function OptionGroupsDialog({
               groups.map((g) => (
                 <div
                   key={g.id}
-                  className="space-y-2 rounded-xl border-2 border-foreground/10 bg-accent/40 p-3"
+                  className="space-y-2 rounded-xl border bg-muted/40 p-3"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 space-y-1">
@@ -336,7 +336,7 @@ export function OptionGroupsDialog({
                       optionForm?.optionId === o.id ? (
                         <div
                           key={o.id}
-                          className="space-y-2 rounded-lg border-2 border-foreground/20 bg-background p-2"
+                          className="space-y-2 rounded-lg border bg-background p-2"
                         >
                           <div className="flex items-center gap-2">
                             <Input
@@ -419,7 +419,7 @@ export function OptionGroupsDialog({
                       ) : (
                         <div
                           key={o.id}
-                          className="flex items-center justify-between gap-2 rounded-lg border border-foreground/10 bg-background px-2.5 py-1.5"
+                          className="flex items-center justify-between gap-2 rounded-lg border bg-background px-2.5 py-1.5"
                         >
                           <span className="min-w-0 truncate text-sm">
                             {o.name}
@@ -477,7 +477,7 @@ export function OptionGroupsDialog({
                     )}
 
                     {optionForm && !optionForm.optionId && optionForm.groupId === g.id ? (
-                      <div className="space-y-2 rounded-lg border-2 border-foreground/20 bg-background p-2">
+                      <div className="space-y-2 rounded-lg border bg-background p-2">
                         <div className="flex items-center gap-2">
                           <Input
                             className="h-8 text-sm"
@@ -568,7 +568,7 @@ export function OptionGroupsDialog({
                               stock: "",
                             })
                           }
-                          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-foreground/25 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/50 hover:text-foreground"
+                          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
                         >
                           <Plus className="size-3.5" />
                           Adicionar opção

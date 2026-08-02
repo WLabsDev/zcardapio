@@ -61,9 +61,9 @@ type AdminRestaurant = {
 type AdminPlan = { id: string; name: string };
 
 const statusVariant = {
-  ativo: "default",
-  pendente: "secondary",
-  bloqueado: "destructive",
+  ativo: "bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400",
+  pendente: "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400",
+  bloqueado: "bg-red-500/10 text-red-600 border-red-500/20 dark:text-red-400",
 } as const;
 
 type RestaurantForm = {
@@ -257,7 +257,7 @@ export default function AdminRestaurantesPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
-        <h2 className="font-display text-xl font-bold">Restaurantes</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight">Restaurantes</h2>
         <p className="text-sm text-muted-foreground">
           Aprove, bloqueie e gerencie os restaurantes da plataforma.
         </p>
@@ -284,7 +284,7 @@ export default function AdminRestaurantesPage() {
       <Card>
         <CardContent>
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead className="w-10">
                   <Checkbox
@@ -348,8 +348,8 @@ export default function AdminRestaurantesPage() {
                   <TableCell className="hidden sm:table-cell">{r.plan}</TableCell>
                   <TableCell>
                     <Badge
-                      variant={statusVariant[r.status]}
-                      className="capitalize"
+                      variant="outline"
+                      className={cn(statusVariant[r.status], "capitalize")}
                     >
                       {r.status}
                     </Badge>

@@ -26,7 +26,9 @@ export default function FidelidadePage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h2 className="font-display text-xl font-bold">Fidelidade</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight">
+          Fidelidade
+        </h2>
         <p className="text-sm text-muted-foreground">
           Escolha uma mecânica para recompensar clientes que voltam a pedir.
         </p>

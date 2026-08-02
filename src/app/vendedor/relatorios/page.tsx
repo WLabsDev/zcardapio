@@ -74,7 +74,9 @@ export default function RelatoriosPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-bold">Relatórios</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight">
+            Relatórios
+          </h2>
           <p className="text-sm text-muted-foreground">
             Números para ajustar o cardápio com base em dados, não em achismo.
           </p>
@@ -144,7 +146,7 @@ export default function RelatoriosPage() {
                 <CardTitle className="flex items-center gap-2 text-base">
                   Horários de pico
                   {peakHour && (
-                    <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
                       <Clock className="mr-1 inline size-3" />
                       pico às {peakHour.label}
                     </span>

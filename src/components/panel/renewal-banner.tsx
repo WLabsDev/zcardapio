@@ -33,8 +33,8 @@ export function RenewalBanner({
       <div
         className={
           expired
-            ? "mb-4 flex flex-col gap-3 rounded-2xl border-2 border-destructive/40 bg-destructive/10 p-4 sm:flex-row sm:items-center sm:justify-between"
-            : "mb-4 flex flex-col gap-3 rounded-2xl border-2 border-amber-500/50 bg-amber-500/10 p-4 sm:flex-row sm:items-center sm:justify-between"
+            ? "mb-4 flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between"
+            : "mb-4 flex flex-col gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 sm:flex-row sm:items-center sm:justify-between"
         }
       >
         <div className="flex items-start gap-3">

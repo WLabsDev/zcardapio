@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Biblioteca de referência de UI (não faz parte do app):
+    "codervent-ui-blocks-shadcn/**",
   ]),
 ]);
 

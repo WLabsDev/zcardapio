@@ -58,7 +58,7 @@ export default function VendedorDashboard() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-bold">
+          <h2 className="font-display text-2xl font-bold tracking-tight">
             Olá, {name.split(" ")[0]} 👋
           </h2>
           <p className="text-sm text-muted-foreground">

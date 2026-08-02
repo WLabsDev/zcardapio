@@ -83,7 +83,9 @@ export default function AvaliacoesPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h2 className="font-display text-xl font-bold">Avaliações</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight">
+          Avaliações
+        </h2>
         <p className="text-sm text-muted-foreground">
           O que os clientes acharam dos pedidos.
         </p>

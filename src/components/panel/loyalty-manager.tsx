@@ -82,10 +82,10 @@ export function LoyaltyManager({
             type="button"
             onClick={() => setForm((f) => ({ ...f, mechanic: m.value }))}
             className={cn(
-              "flex flex-col gap-1.5 rounded-xl border-2 p-4 text-left transition-all",
+              "flex flex-col gap-1.5 rounded-xl border p-4 text-left transition-colors",
               form.mechanic === m.value
-                ? "border-foreground bg-accent shadow-offset-sm"
-                : "border-foreground/15 hover:border-foreground/40"
+                ? "border-primary bg-primary/5"
+                : "hover:bg-muted/60"
             )}
           >
             <span className="font-semibold">{m.label}</span>

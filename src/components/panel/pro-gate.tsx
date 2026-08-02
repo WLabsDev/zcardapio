@@ -27,8 +27,8 @@ export function ProGate({
       >
         {children}
       </div>
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-2xl bg-background/70 p-6 text-center">
-        <span className="flex size-10 items-center justify-center rounded-full bg-accent">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-xl bg-background/70 p-6 text-center">
+        <span className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Lock className="size-5" />
         </span>
         <p className="max-w-xs text-sm font-semibold">{message}</p>

@@ -160,7 +160,9 @@ export default function PedidosPage() {
       onTouchEnd={onTouchEnd}
     >
       <div>
-        <h2 className="font-display text-xl font-bold">Pedidos</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight">
+          Pedidos
+        </h2>
         <p className="text-sm text-muted-foreground">
           Acompanhe e atualize o status dos pedidos recebidos.
           {pendingCount > 0 && (
@@ -212,10 +214,10 @@ export default function PedidosPage() {
                   key={o.id}
                   onClick={() => setSelectedId(o.id)}
                   className={cn(
-                    "w-full rounded-xl border-2 border-l-[6px] border-foreground/10 bg-card p-3.5 text-left shadow-offset-sm transition-all hover:-translate-y-0.5 hover:border-foreground/30 active:translate-y-0 active:scale-[0.99]",
+                    "w-full rounded-xl border border-l-4 bg-card p-3.5 text-left transition-colors hover:bg-muted/60",
                     statusAccent[o.status],
                     o.status === "pendente" &&
-                      "bg-amber-50/70 dark:bg-amber-950/20"
+                      "bg-amber-50/70 hover:bg-amber-50 dark:bg-amber-950/20 dark:hover:bg-amber-950/30"
                   )}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -274,7 +276,7 @@ export default function PedidosPage() {
           <Card className="hidden md:block">
             <CardContent>
               <Table>
-                <TableHeader>
+                <TableHeader className="bg-muted/50">
                   <TableRow>
                     <TableHead>Pedido</TableHead>
                     <TableHead>Cliente</TableHead>
@@ -375,9 +377,9 @@ export default function PedidosPage() {
               </DialogHeader>
 
               {/* Ações rápidas — status e impressão no topo, sem rolar */}
-              <div className="space-y-2 rounded-xl border-2 border-foreground bg-accent p-3 shadow-offset-sm">
+              <div className="space-y-2 rounded-xl border bg-muted p-3">
                 <div className="flex items-center gap-3">
-                  <span className="shrink-0 text-xs font-bold uppercase tracking-wide text-accent-foreground/70">
+                  <span className="shrink-0 text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     Status
                   </span>
                   <Select
@@ -386,7 +388,7 @@ export default function PedidosPage() {
                       handleChangeStatus(selected, v as OrderStatus)
                     }
                   >
-                    <SelectTrigger className="h-10 flex-1 border-2 border-foreground bg-background font-semibold shadow-none">
+                    <SelectTrigger className="h-10 flex-1 border bg-background font-semibold shadow-none">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -402,7 +404,7 @@ export default function PedidosPage() {
                   <Button
                     size="icon-lg"
                     variant="outline"
-                    className="shrink-0 border-2 border-foreground bg-background shadow-offset-sm transition-transform hover:-translate-y-0.5"
+                    className="shrink-0 border bg-background"
                     onClick={() => window.print()}
                     aria-label="Imprimir para cozinha"
                     title="Imprimir para cozinha"
@@ -415,10 +417,10 @@ export default function PedidosPage() {
               <OrderStatusTimeline status={selected.status} />
 
               {/* Cliente e entrega */}
-              <div className="min-w-0 space-y-2.5 rounded-xl border-2 border-foreground/15 bg-muted/40 p-3.5">
+              <div className="min-w-0 space-y-2.5 rounded-xl border bg-muted/40 p-3.5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-accent font-display text-sm font-bold">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted font-display text-sm font-bold">
                       {selected.customerName.trim().charAt(0).toUpperCase()}
                     </span>
                     <div className="min-w-0">
@@ -437,7 +439,7 @@ export default function PedidosPage() {
                       asChild
                       size="sm"
                       variant="outline"
-                      className="shrink-0 rounded-full border-2 border-foreground font-semibold"
+                      className="shrink-0 rounded-full border font-semibold"
                     >
                       <a
                         href={`https://wa.me/55${normalizePhone(selected.customerPhone)}`}

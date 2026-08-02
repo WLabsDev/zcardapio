@@ -127,6 +127,100 @@
   }
 }
 
+/* Tema limpo dos painéis vendedor/admin (referência: codervent-ui-blocks).
+   Ativado só em /vendedor e /admin via PanelThemeProvider (classe no <html>),
+   para os portais (Dialog, Sheet, Select, DropdownMenu, toasts) herdarem
+   também. Paleta neutra shadcn com o laranja da marca como primária. */
+html.panel-theme {
+  --background: oklch(0.985 0 0);
+  --foreground: oklch(0.145 0 0);
+  --heading: oklch(0.145 0 0);
+  --product-title: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.6 0.19 34);
+  --primary-foreground: oklch(0.985 0.01 80);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.6 0.19 34);
+  --badge: var(--secondary);
+  --badge-foreground: var(--secondary-foreground);
+  --chart-1: oklch(0.64 0.21 255);
+  --chart-2: oklch(0.74 0.17 160);
+  --chart-3: oklch(0.82 0.17 82);
+  --chart-4: oklch(0.67 0.22 22);
+  --chart-5: oklch(0.6 0.23 305);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.6 0.19 34);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.96 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.6 0.19 34);
+}
+
+html.panel-theme.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --heading: oklch(0.985 0 0);
+  --product-title: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.7 0.19 42);
+  --primary-foreground: oklch(0.15 0.02 40);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.7 0.19 42);
+  --badge: var(--secondary);
+  --badge-foreground: var(--secondary-foreground);
+  --chart-1: oklch(0.74 0.24 255);
+  --chart-2: oklch(0.82 0.21 160);
+  --chart-3: oklch(0.88 0.19 82);
+  --chart-4: oklch(0.76 0.25 22);
+  --chart-5: oklch(0.7 0.27 305);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.7 0.19 42);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.7 0.19 42);
+}
+
+/* O Card shadcn é compartilhado com áreas que mantêm o visual atual e tem o
+   estilo neo-brutalist fixo no componente; neutraliza só dentro do painel.
+   Fora de layer de propósito: precisa vencer o border-2/rounded-2xl fixos do
+   componente. Efeito colateral aceito: utilities de borda/sombra em Cards
+   dentro do painel não se aplicam (destaques usam bg-* no lugar). */
+html.panel-theme [data-slot="card"] {
+  border-width: 1px;
+  border-color: var(--border);
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

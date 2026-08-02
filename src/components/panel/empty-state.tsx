@@ -23,13 +23,13 @@ export function EmptyState({
         "flex flex-col items-center justify-center gap-3 text-center",
         compact
           ? "py-10"
-          : "rounded-2xl border-2 border-dashed border-foreground/20 bg-card/60 px-6 py-14",
+          : "rounded-xl border border-dashed bg-card/60 px-6 py-14",
         className
       )}
     >
       <span
         className={cn(
-          "flex -rotate-3 items-center justify-center rounded-2xl border-2 border-foreground/15 bg-accent",
+          "flex items-center justify-center rounded-xl border bg-muted text-muted-foreground",
           compact ? "size-10" : "size-14"
         )}
       >

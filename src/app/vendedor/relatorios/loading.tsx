@@ -8,7 +8,7 @@ const barHeights = [45, 70, 55, 90, 65, 82, 50];
 
 function ChartSkeleton() {
   return (
-    <div className="rounded-2xl border bg-card p-5">
+    <div className="rounded-xl border bg-card p-5 shadow-xs">
       <Skeleton className="h-5 w-44" />
       <Skeleton className="mt-2 h-3.5 w-56" />
       <div className="mt-6 flex h-44 items-end gap-2.5">

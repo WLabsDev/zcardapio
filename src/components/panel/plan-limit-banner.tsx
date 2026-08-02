@@ -16,7 +16,7 @@ export function PlanLimitBanner({
 
   return (
     <>
-      <div className="mb-4 flex flex-col gap-3 rounded-2xl border-2 border-destructive/40 bg-destructive/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-4 flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <TriangleAlert className="mt-0.5 size-5 shrink-0 text-destructive" />
           <div>

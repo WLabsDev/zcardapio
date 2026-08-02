@@ -226,7 +226,7 @@ export default function AdminUsuariosPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-bold">Usuários</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight">Usuários</h2>
           <p className="text-sm text-muted-foreground">
             Todos os usuários cadastrados na plataforma.
           </p>
@@ -258,7 +258,7 @@ export default function AdminUsuariosPage() {
       <Card>
         <CardContent>
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead className="w-10">
                   <Checkbox
@@ -302,7 +302,14 @@ export default function AdminUsuariosPage() {
                     {u.email ?? u.phone ?? "—"}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={u.role === "admin" ? "default" : "secondary"}>
+                    <Badge
+                      variant="outline"
+                      className={
+                        u.role === "admin"
+                          ? "bg-primary/10 text-primary border-primary/20"
+                          : "bg-muted text-muted-foreground"
+                      }
+                    >
                       {roleLabel[u.role]}
                     </Badge>
                   </TableCell>

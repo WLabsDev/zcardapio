@@ -141,7 +141,7 @@ export default function AdminPlanosPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-bold">Planos</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight">Planos</h2>
           <p className="text-sm text-muted-foreground">
             Planos disponíveis e distribuição de assinantes.
           </p>
@@ -156,12 +156,7 @@ export default function AdminPlanosPage() {
         {plans.map((plan) => (
           <Card
             key={plan.id}
-            className={cn(
-              "border-2 transition-all hover:-translate-y-0.5",
-              plan.highlighted
-                ? "border-foreground shadow-offset-sm"
-                : "border-foreground/15 hover:border-foreground hover:shadow-offset-sm"
-            )}
+            className={cn("transition-colors", plan.highlighted && "bg-primary/5")}
           >
             <CardContent className="flex h-full flex-col gap-4">
               <div className="flex items-center justify-between">

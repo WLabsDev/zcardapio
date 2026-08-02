@@ -229,7 +229,7 @@ export default function AparenciaPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
-        <h2 className="font-display text-xl font-bold">Aparência</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight">Aparência</h2>
         <p className="text-sm text-muted-foreground">
           Personalize como o seu cardápio aparece para os clientes.
         </p>
@@ -320,10 +320,9 @@ export default function AparenciaPage() {
                     key={c.id}
                     onClick={() => set("primaryColor", c.value)}
                     className={cn(
-                      "size-10 rounded-full border-2 transition-transform",
-                      color === c.value
-                        ? "scale-110 border-foreground"
-                        : "border-transparent"
+                      "size-10 rounded-full transition-all",
+                      color === c.value &&
+                        "ring-2 ring-primary ring-offset-2 ring-offset-background"
                     )}
                     style={{ backgroundColor: c.value }}
                     aria-label={c.id}
@@ -377,9 +376,9 @@ export default function AparenciaPage() {
                       set("badgeTextColor", p.colors.badgeText);
                       set("theme", p.dark ? "escuro" : "claro");
                     }}
-                    className="group flex items-center gap-2 rounded-lg border-2 border-foreground/15 px-2.5 py-1.5 transition-all hover:border-foreground"
+                    className="group flex items-center gap-2 rounded-lg border px-2.5 py-1.5 transition-colors hover:bg-muted/60"
                   >
-                    <span className="flex overflow-hidden rounded-md border border-foreground/10">
+                    <span className="flex overflow-hidden rounded-md border">
                       <span className="h-6 w-3" style={{ backgroundColor: p.colors.bg }} />
                       <span className="h-6 w-3" style={{ backgroundColor: p.colors.card }} />
                       <span className="h-6 w-3" style={{ backgroundColor: p.colors.heading }} />
@@ -459,9 +458,9 @@ export default function AparenciaPage() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-[2rem] border-4 border-foreground/15 bg-background shadow-xl">
-            <div className="flex items-center justify-center border-b border-foreground/10 bg-foreground/5 py-2">
-              <div className="h-1.5 w-16 rounded-full bg-foreground/20" />
+          <div className="overflow-hidden rounded-xl border bg-background shadow-sm">
+            <div className="flex items-center justify-center border-b bg-muted py-2">
+              <div className="h-1.5 w-16 rounded-full bg-muted-foreground/25" />
             </div>
             {slug ? (
               <iframe

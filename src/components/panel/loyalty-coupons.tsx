@@ -79,14 +79,20 @@ export function LoyaltyCoupons() {
         </div>
         {summary && summary.total > 0 && (
           <div className="flex flex-wrap gap-1.5">
-            <Badge variant="default" className="text-[10px]">
+            <Badge
+              variant="outline"
+              className="border-emerald-500/20 bg-emerald-500/10 text-emerald-600 text-[10px]"
+            >
               {summary.available} disponíveis
             </Badge>
             <Badge variant="secondary" className="text-[10px]">
               {summary.used} usados
             </Badge>
             {summary.expired > 0 && (
-              <Badge variant="destructive" className="text-[10px]">
+              <Badge
+                variant="outline"
+                className="border-red-500/20 bg-red-500/10 text-red-600 text-[10px]"
+              >
                 {summary.expired} expirados
               </Badge>
             )}

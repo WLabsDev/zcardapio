@@ -62,8 +62,8 @@ function SettingsSection({
             type="button"
             className="group flex w-full items-center gap-3 px-4 py-4 text-left sm:px-6 sm:py-5"
           >
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border-2 border-foreground/15 bg-accent">
-              <Icon className="size-4" />
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <Icon className="size-4.5 text-primary" />
             </span>
             <CardHeader className="min-w-0 flex-1 gap-1 p-0">
               <CardTitle className="text-base leading-snug">{title}</CardTitle>
@@ -80,9 +80,9 @@ function SettingsSection({
                   badge.tone === "positive" &&
                     "border-primary/30 bg-primary/10 text-primary",
                   badge.tone === "muted" &&
-                    "border-foreground/15 bg-muted text-muted-foreground",
+                    "border-transparent bg-muted text-muted-foreground",
                   (!badge.tone || badge.tone === "neutral") &&
-                    "border-foreground/15 bg-muted text-foreground"
+                    "border-transparent bg-muted text-foreground"
                 )}
               >
                 {badge.label}
@@ -99,7 +99,7 @@ function SettingsSection({
           )}
           <CardContent
             className={cn(
-              "grid gap-4 border-t border-foreground/10 px-4 pt-4 pb-5 sm:px-6 sm:pb-6",
+              "grid gap-4 border-t px-4 pt-4 pb-5 sm:px-6 sm:pb-6",
               contentClassName
             )}
           >
@@ -262,7 +262,7 @@ export default function ConfiguracoesPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h2 className="font-display text-xl font-bold">Configurações</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight">Configurações</h2>
         <p className="text-sm text-muted-foreground">
           Dados do restaurante, funcionamento, entrega e comunicação.
         </p>
@@ -464,7 +464,7 @@ export default function ConfiguracoesPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 border-t border-foreground/10 pt-4">
+          <div className="grid gap-3 border-t pt-4">
             <div className="flex items-center gap-2">
               <MapPin className="size-4 shrink-0 text-muted-foreground" />
               <p className="text-sm font-medium">Entrega por região</p>
@@ -570,7 +570,7 @@ export default function ConfiguracoesPage() {
         </div>
       </SettingsSection>
 
-      <div className="sticky bottom-0 -mx-4 flex justify-end border-t bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:mx-0 sm:rounded-xl sm:border sm:border-foreground/15 sm:px-4">
+      <div className="sticky bottom-0 -mx-4 flex justify-end border-t bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:mx-0 sm:rounded-xl sm:border sm:px-4">
         <Button type="submit" disabled={saving} className="w-full sm:w-auto">
           {saving ? "Salvando..." : "Salvar alterações"}
         </Button>

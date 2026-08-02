@@ -341,7 +341,9 @@ export default function CardapioPage() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-bold">Cardápio</h2>
+          <h2 className="font-display text-2xl font-bold tracking-tight">
+            Cardápio
+          </h2>
           <p className="text-sm text-muted-foreground">
             Gerencie categorias e produtos do seu cardápio.
           </p>
@@ -557,10 +559,7 @@ export default function CardapioPage() {
           title="Seu cardápio está vazio"
           description="Adicione seu primeiro produto para começar a receber pedidos pelo QR code e pelo link."
           action={
-            <Button
-              className="rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
-              onClick={() => openDialog(null)}
-            >
+            <Button className="font-semibold" onClick={() => openDialog(null)}>
               <Plus className="size-4" />
               Adicionar produto
             </Button>
@@ -628,10 +627,8 @@ export default function CardapioPage() {
                 <div
                   key={p.id}
                   className={cn(
-                    "rounded-xl border-2 p-3.5 transition-colors md:flex md:items-center md:gap-3",
-                    p.available
-                      ? "border-foreground/10 bg-card"
-                      : "border-foreground/10 bg-muted/40"
+                    "rounded-xl border p-3.5 transition-colors hover:bg-muted/60 md:flex md:items-center md:gap-3",
+                    p.available ? "bg-card" : "bg-muted/40"
                   )}
                 >
                   {/* Produto: imagem + infos + disponibilidade */}
@@ -662,12 +659,12 @@ export default function CardapioPage() {
                         src={p.image}
                         alt={p.name}
                         className={cn(
-                          "size-14 shrink-0 rounded-lg border-2 border-foreground/10 object-cover",
+                          "size-14 shrink-0 rounded-lg border object-cover",
                           !p.available && "opacity-50 grayscale"
                         )}
                       />
                     ) : (
-                      <div className="size-14 shrink-0 rounded-lg border-2 border-foreground/10 bg-muted" />
+                      <div className="size-14 shrink-0 rounded-lg border bg-muted" />
                     )}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -718,7 +715,7 @@ export default function CardapioPage() {
 
                   {/* Ações: no mobile, Complementos em linha cheia + Editar/Excluir
                       abaixo; no desktop, os três ícones inline. */}
-                  <div className="mt-3 grid grid-cols-2 gap-2 border-t-2 border-dashed border-foreground/10 pt-3 md:mt-0 md:flex md:items-center md:gap-1.5 md:border-0 md:pt-0">
+                  <div className="mt-3 grid grid-cols-2 gap-2 border-t border-dashed pt-3 md:mt-0 md:flex md:items-center md:gap-1.5 md:border-0 md:pt-0">
                     <Button
                       variant="outline"
                       className="relative col-span-2 h-10 justify-start gap-2 md:col-span-1 md:h-9 md:w-9 md:justify-center md:p-0"

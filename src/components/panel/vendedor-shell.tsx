@@ -15,6 +15,7 @@ import { OrdersProvider, useOrders } from "@/components/panel/orders-provider";
 import { PanelShell, type NavItem } from "@/components/panel/panel-shell";
 import { PlanLimitBanner } from "@/components/panel/plan-limit-banner";
 import { RenewalBanner } from "@/components/panel/renewal-banner";
+import { PanelThemeProvider } from "@/components/panel-theme-provider";
 import type { PlanStatus } from "@/lib/plan-limits";
 
 type OrderLimitBanner = {
@@ -72,6 +73,7 @@ function Shell({
       userName={userName}
       userRole={planName ? `Restaurante · Plano ${planName}` : "Restaurante"}
       impersonating={impersonating}
+      variant="clean"
       banner={
         <>
           {orderLimitBanner && (
@@ -110,6 +112,7 @@ export function VendedorShell({
 }) {
   return (
     <OrdersProvider>
+      <PanelThemeProvider />
       <Shell
         userName={userName}
         restaurantName={restaurantName}

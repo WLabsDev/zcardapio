@@ -66,7 +66,7 @@ export function OrderReview({
   };
 
   return (
-    <div className="space-y-2 rounded-xl border-2 border-foreground/10 bg-muted/30 p-3">
+    <div className="space-y-2 rounded-xl border bg-muted/30 p-3">
       <p className="text-sm font-medium">Como foi seu pedido?</p>
       <div
         className="flex items-center gap-1"

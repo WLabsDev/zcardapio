@@ -70,12 +70,12 @@ function ResultContent() {
 
   return (
     <div className="mx-auto flex max-w-md flex-col items-center gap-6 py-10">
-      <Card className="w-full border-2">
+      <Card className="w-full">
         <CardContent className="flex flex-col items-center gap-4 text-center">
           {state === "loading" && (
             <>
               <Loader2 className="size-10 animate-spin text-primary" />
-              <h2 className="font-display text-xl font-bold">
+              <h2 className="font-display text-xl font-bold tracking-tight">
                 Confirmando pagamento...
               </h2>
               <p className="text-sm text-muted-foreground">
@@ -87,7 +87,7 @@ function ResultContent() {
           {state === "activated" && (
             <>
               <CheckCircle2 className="size-10 text-emerald-500" />
-              <h2 className="font-display text-xl font-bold">Plano ativado! 🎉</h2>
+              <h2 className="font-display text-xl font-bold tracking-tight">Plano ativado! 🎉</h2>
               <p className="text-sm text-muted-foreground">
                 Seu pagamento foi confirmado e os recursos do plano já estão
                 liberados por 30 dias.
@@ -98,7 +98,7 @@ function ResultContent() {
           {state === "pending" && (
             <>
               <Clock3 className="size-10 text-amber-500" />
-              <h2 className="font-display text-xl font-bold">
+              <h2 className="font-display text-xl font-bold tracking-tight">
                 Pagamento pendente
               </h2>
               <p className="text-sm text-muted-foreground">
@@ -121,7 +121,7 @@ function ResultContent() {
           {state === "failed" && (
             <>
               <XCircle className="size-10 text-destructive" />
-              <h2 className="font-display text-xl font-bold">
+              <h2 className="font-display text-xl font-bold tracking-tight">
                 Pagamento não concluído
               </h2>
               <p className="text-sm text-muted-foreground">
