@@ -240,7 +240,7 @@ export default function ConfiguracoesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       <div>
         <h2 className="font-display text-2xl font-bold tracking-tight">Configurações</h2>
         <p className="text-sm text-muted-foreground">
@@ -255,32 +255,32 @@ export default function ConfiguracoesPage() {
         }}
       >
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="max-w-full justify-start overflow-x-auto">
-            <TabsTrigger value="dados">
+          <TabsList className="group-data-[orientation=horizontal]/tabs:h-auto max-w-full flex-wrap justify-start">
+            <TabsTrigger value="dados" className="px-3 py-2.5">
               <Store className="size-4" />
               Dados
             </TabsTrigger>
-            <TabsTrigger value="funcionamento">
+            <TabsTrigger value="funcionamento" className="px-3 py-2.5">
               <Clock className="size-4" />
               Funcionamento
             </TabsTrigger>
-            <TabsTrigger value="entrega">
+            <TabsTrigger value="entrega" className="px-3 py-2.5">
               <Bike className="size-4" />
               Entrega
             </TabsTrigger>
-            <TabsTrigger value="pagamentos">
+            <TabsTrigger value="pagamentos" className="px-3 py-2.5">
               <CreditCard className="size-4" />
               Pagamentos
             </TabsTrigger>
-            <TabsTrigger value="comunicacao">
+            <TabsTrigger value="comunicacao" className="px-3 py-2.5">
               <MessageCircle className="size-4" />
               Comunicação
             </TabsTrigger>
-            <TabsTrigger value="cupons">
+            <TabsTrigger value="cupons" className="px-3 py-2.5">
               <Ticket className="size-4" />
               Cupons
             </TabsTrigger>
-            <TabsTrigger value="agendados">
+            <TabsTrigger value="agendados" className="px-3 py-2.5">
               <CalendarClock className="size-4" />
               Agendados
             </TabsTrigger>
