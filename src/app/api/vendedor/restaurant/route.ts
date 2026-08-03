@@ -11,8 +11,13 @@ import { apiHandler } from "@/lib/api";
 
 const reaisToCents = (v: number) => Math.round(v * 100);
 
-// Aceita URL completa ou caminho local gerado pelo upload (/uploads/...)
-const imageUrl = z.union([z.url(), z.string().regex(/^\/uploads\/[\w.-]+$/)]);
+// Aceita URL completa, caminho local gerado pelo upload (/uploads/...) ou
+// vazio ("" = sem imagem; restaurantes sem logo/capa salvavam com 400 antes).
+const imageUrl = z.union([
+  z.url(),
+  z.string().regex(/^\/uploads\/[\w.-]+$/),
+  z.literal(""),
+]);
 
 const timeStr = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Horário inválido.");
 

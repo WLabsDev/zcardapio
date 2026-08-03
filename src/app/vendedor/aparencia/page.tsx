@@ -258,12 +258,20 @@ export default function AparenciaPage() {
               <div className="grid gap-2">
                 <Label>Logo</Label>
                 <div className="flex items-center gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={form.logo}
-                    alt="Logo"
-                    className="size-16 rounded-xl border object-cover"
-                  />
+                  {form.logo ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={form.logo}
+                        alt="Logo"
+                        className="size-16 rounded-xl border object-cover"
+                      />
+                    </>
+                  ) : (
+                    <span className="flex size-16 items-center justify-center rounded-xl border bg-muted text-[10px] text-muted-foreground">
+                      sem logo
+                    </span>
+                  )}
                   <input
                     ref={logoInputRef}
                     type="file"
