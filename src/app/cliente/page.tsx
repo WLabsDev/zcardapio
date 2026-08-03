@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSession } from "@/lib/auth";
 import { getOrdersByCustomer, listActiveRestaurants } from "@/lib/db/queries";
 import { formatBRL, type Restaurant } from "@/lib/mock/types";
+import { cn } from "@/lib/utils";
 import { ActiveOrderLive } from "./active-order-live";
 
 export default async function ClienteHome() {
@@ -86,7 +87,7 @@ export default async function ClienteHome() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <h2 className="font-display text-xl font-bold">
+        <h2 className="font-display text-2xl font-bold tracking-tight">
           Olá, {name.split(" ")[0]} 👋
         </h2>
         <p className="text-sm text-muted-foreground">
@@ -99,8 +100,8 @@ export default async function ClienteHome() {
       {validOrders.length > 0 && (
         <Card>
           <CardContent className="grid gap-3 pt-5 sm:grid-cols-3">
-            <div className="flex items-center gap-3 rounded-xl border-2 border-foreground/10 bg-accent/40 p-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border-2 border-foreground/15 bg-background">
+            <div className="flex items-center gap-3 rounded-xl border bg-muted/40 p-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                 <ShoppingBag className="size-4 text-primary" />
               </span>
               <div className="min-w-0">
@@ -112,8 +113,8 @@ export default async function ClienteHome() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 rounded-xl border-2 border-foreground/10 bg-accent/40 p-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border-2 border-foreground/15 bg-background">
+            <div className="flex items-center gap-3 rounded-xl border bg-muted/40 p-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                 <Store className="size-4 text-primary" />
               </span>
               <div className="min-w-0">
@@ -127,8 +128,8 @@ export default async function ClienteHome() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 rounded-xl border-2 border-foreground/10 bg-accent/40 p-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border-2 border-foreground/15 bg-background">
+            <div className="flex items-center gap-3 rounded-xl border bg-muted/40 p-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                 <UtensilsCrossed className="size-4 text-primary" />
               </span>
               <div className="min-w-0">
@@ -146,15 +147,15 @@ export default async function ClienteHome() {
                 href={
                   favoriteRestaurant.slug ? `/r/${favoriteRestaurant.slug}` : "#"
                 }
-                className="group flex items-center gap-3 rounded-xl border-2 border-primary/30 bg-primary/5 p-3 transition-colors hover:border-primary/60 sm:col-span-3"
+                className="group flex items-center gap-3 rounded-xl border bg-primary/5 p-3 transition-colors hover:bg-primary/10 sm:col-span-3"
               >
                 {favoriteRestaurant.cover ? (
                   <div
-                    className="size-10 shrink-0 rounded-lg border-2 border-foreground/15 bg-cover bg-center"
+                    className="size-10 shrink-0 rounded-lg border bg-cover bg-center"
                     style={{ backgroundImage: `url(${favoriteRestaurant.cover})` }}
                   />
                 ) : (
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border-2 border-foreground/15 bg-background">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                     <Heart className="size-4 text-primary" />
                   </span>
                 )}
@@ -197,7 +198,14 @@ export default async function ClienteHome() {
               <div className="space-y-1 p-3">
                 <div className="flex items-center justify-between">
                   <p className="font-semibold">{r.name}</p>
-                  <Badge variant={r.isOpen ? "default" : "secondary"} className="text-[10px]">
+                  <Badge
+                    variant={r.isOpen ? "outline" : "secondary"}
+                    className={cn(
+                      "text-[10px]",
+                      r.isOpen &&
+                        "border-green-500/20 bg-green-500/10 text-green-600 dark:text-green-400"
+                    )}
+                  >
                     {r.isOpen ? "Aberto" : "Fechado"}
                   </Badge>
                 </div>

@@ -18,7 +18,7 @@ export function ActiveOrderLive({ initialOrders }: { initialOrders: Order[] }) {
   if (!activeOrder) return null;
 
   return (
-    <Card className="border-primary/40 bg-primary/5">
+    <Card className="bg-primary/5">
       <CardContent className="space-y-3 pt-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
@@ -73,7 +73,7 @@ export function ActiveOrderLive({ initialOrders }: { initialOrders: Order[] }) {
 
         <Button
           size="sm"
-          className="w-full rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5 sm:w-auto"
+          className="w-full rounded-full font-semibold sm:w-auto"
           asChild
         >
           <Link href="/cliente/pedidos">

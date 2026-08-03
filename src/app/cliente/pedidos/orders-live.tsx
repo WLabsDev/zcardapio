@@ -18,10 +18,7 @@ export function OrdersLive({ initialOrders }: { initialOrders: Order[] }) {
         title="Você ainda não fez pedidos"
         description="Quando você pedir em um restaurante, o acompanhamento aparece aqui em tempo real."
         action={
-          <Button
-            className="rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
-            asChild
-          >
+          <Button className="rounded-full font-semibold" asChild>
             <Link href="/cliente">Ver restaurantes</Link>
           </Button>
         }

@@ -8,7 +8,9 @@ export default async function ClientePedidosPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h2 className="font-display text-xl font-bold">Meus pedidos</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight">
+          Meus pedidos
+        </h2>
         <p className="text-sm text-muted-foreground">
           Histórico de pedidos feitos pelo zCardápio.
         </p>

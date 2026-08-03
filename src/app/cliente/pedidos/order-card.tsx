@@ -76,7 +76,7 @@ export function OrderCard({ order: o }: { order: Order }) {
   );
 
   return (
-    <Card className={cn(active && "border-primary/40 bg-primary/5")}>
+    <Card className={cn(active && "bg-primary/5")}>
       <CardContent>
         {/* Cabeçalho — sempre visível */}
         <div className="flex flex-wrap items-start justify-between gap-2">
@@ -102,7 +102,7 @@ export function OrderCard({ order: o }: { order: Order }) {
             {o.scheduledFor && (
               <Badge
                 variant="outline"
-                className="mt-1.5 gap-1 border-primary/40 text-primary"
+                className="mt-1.5 gap-1 border-blue-500/20 bg-blue-500/10 text-blue-600 dark:text-blue-400"
               >
                 <CalendarClock className="size-3" />
                 Agendado para{" "}
@@ -127,7 +127,7 @@ export function OrderCard({ order: o }: { order: Order }) {
                 aria-label={
                   expanded ? "Recolher detalhes" : "Ver detalhes do pedido"
                 }
-                className="flex size-7 items-center justify-center rounded-full border border-foreground/15 text-muted-foreground transition-all hover:border-foreground hover:text-foreground"
+                className="flex size-7 items-center justify-center rounded-full border text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
               >
                 <ChevronDown
                   className={cn(
@@ -152,7 +152,7 @@ export function OrderCard({ order: o }: { order: Order }) {
               <OrderStatusTimeline status={o.status} className="py-1" />
 
               {aguardandoPix && (
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border-2 border-primary/30 bg-primary/10 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/10 p-3">
                   <p className="min-w-0 text-xs font-medium text-heading">
                     Aguardando o pagamento no Pix para o restaurante confirmar.
                   </p>

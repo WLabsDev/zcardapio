@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatBRL } from "@/lib/mock/types";
 import { copyText } from "@/lib/clipboard";
+import { cn } from "@/lib/utils";
 
 type LoyaltyItem = {
   restaurantId: string;
@@ -92,7 +93,9 @@ export default function FidelidadePage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h2 className="font-display text-xl font-bold">Fidelidade</h2>
+        <h2 className="font-display text-2xl font-bold tracking-tight">
+          Fidelidade
+        </h2>
         <p className="text-sm text-muted-foreground">
           Acompanhe seu progresso e resgate recompensas nos restaurantes que
           você pediu.
@@ -100,7 +103,7 @@ export default function FidelidadePage() {
       </div>
 
       {redeemedCode && (
-        <Card className="border-2 border-primary">
+        <Card className="bg-primary/5">
           <CardContent className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold">Cupom gerado!</p>
@@ -152,14 +155,17 @@ export default function FidelidadePage() {
                           className="size-9 shrink-0 rounded-lg border object-cover"
                         />
                       ) : (
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                           <Icon className="size-4" />
                         </span>
                       )}
                       <p className="truncate font-semibold">{item.restaurantName}</p>
                     </div>
                     {item.eligible && (
-                      <Badge className="shrink-0">
+                      <Badge
+                        variant="outline"
+                        className="shrink-0 border-green-500/20 bg-green-500/10 text-green-600 dark:text-green-400"
+                      >
                         <Check className="size-3" />
                         Resgatável
                       </Badge>
@@ -236,14 +242,14 @@ export default function FidelidadePage() {
                       <div className="flex items-center gap-2">
                         <p className="font-mono font-bold">{c.code}</p>
                         <Badge
-                          variant={
-                            status.tone === "positive"
-                              ? "default"
-                              : status.tone === "negative"
-                                ? "destructive"
-                                : "secondary"
-                          }
-                          className="text-[10px]"
+                          variant={status.tone === "muted" ? "secondary" : "outline"}
+                          className={cn(
+                            "text-[10px]",
+                            status.tone === "positive" &&
+                              "border-green-500/20 bg-green-500/10 text-green-600 dark:text-green-400",
+                            status.tone === "negative" &&
+                              "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400"
+                          )}
                         >
                           {status.label}
                         </Badge>
