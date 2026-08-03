@@ -7,6 +7,7 @@ import { and, avg, count, desc, eq, gte, inArray, ne, or } from "drizzle-orm";
 import { db } from "./index";
 import { deliveryZones, orders, restaurants, reviewHides, reviews } from "./schema";
 import type { CouponUsage } from "@/lib/coupons";
+import { isMenuTheme } from "@/lib/menu-themes";
 import { phoneVariants } from "@/lib/phone";
 import { getPlanStatus, type PlanStatus } from "@/lib/plan-limits";
 import type {
@@ -57,6 +58,7 @@ function mapRestaurant(
     theme: r.theme as Restaurant["theme"],
     font: r.font as Restaurant["font"],
     buttonStyle: r.buttonStyle as Restaurant["buttonStyle"],
+    menuTheme: isMenuTheme(r.menuTheme) ? r.menuTheme : "classico",
     headingColor: r.headingColor,
     productTitleColor: r.productTitleColor,
     bodyColor: r.bodyColor,

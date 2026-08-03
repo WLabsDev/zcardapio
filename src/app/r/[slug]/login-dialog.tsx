@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { SetPasswordForm } from "@/components/set-password-form";
+import { useMenuTheme } from "@/components/restaurant-theme-provider";
 import type { Restaurant } from "@/lib/mock/types";
 import { normalizePhone, formatPhone } from "@/lib/phone";
 import { isDarkTheme, restaurantThemeVars } from "@/lib/theme";
@@ -58,6 +59,7 @@ export function LoginDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const router = useRouter();
+  const clean = useMenuTheme() === "clean";
   const [step, setStep] = useState<"login" | "register" | "set-password">(
     "login"
   );
@@ -247,7 +249,10 @@ export function LoginDialog({
                 <Button
                   type="submit"
                   disabled={registering}
-                  className="rounded-full font-semibold shadow-offset-sm"
+                  className={cn(
+                    "rounded-full font-semibold",
+                    !clean && "shadow-offset-sm"
+                  )}
                 >
                   {registering ? "Criando conta..." : "Criar conta"}
                 </Button>
@@ -326,7 +331,10 @@ export function LoginDialog({
                 <Button
                   type="submit"
                   disabled={loggingIn}
-                  className="rounded-full font-semibold shadow-offset-sm"
+                  className={cn(
+                    "rounded-full font-semibold",
+                    !clean && "shadow-offset-sm"
+                  )}
                 >
                   {loggingIn ? "Entrando..." : "Entrar"}
                 </Button>

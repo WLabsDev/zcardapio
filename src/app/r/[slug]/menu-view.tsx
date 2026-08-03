@@ -22,6 +22,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { EmptyState } from "@/components/panel/empty-state";
+import { useMenuTheme } from "@/components/restaurant-theme-provider";
 import { LoginDialog } from "./login-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -80,6 +81,7 @@ function AccountButton({
 }) {
   const router = useRouter();
   const [loginOpen, setLoginOpen] = useState(false);
+  const clean = useMenuTheme() === "clean";
 
   if (!user) {
     return (
@@ -87,7 +89,10 @@ function AccountButton({
         <Button
           size="sm"
           variant="secondary"
-          className="rounded-full border-2 border-foreground font-semibold shadow-offset-sm"
+          className={cn(
+            "rounded-full font-semibold",
+            clean ? "border" : "border-2 border-foreground shadow-offset-sm"
+          )}
           onClick={() => setLoginOpen(true)}
         >
           <CircleUserRound className="size-4" />
@@ -113,7 +118,10 @@ function AccountButton({
         <Button
           size="sm"
           variant="secondary"
-          className="rounded-full border-2 border-foreground font-semibold shadow-offset-sm"
+          className={cn(
+            "rounded-full font-semibold",
+            clean ? "border" : "border-2 border-foreground shadow-offset-sm"
+          )}
         >
           <CircleUserRound className="size-4" />
           {user.name.split(" ")[0]}
@@ -166,6 +174,7 @@ export function MenuView({
   showBranding?: boolean;
 }) {
   const closed = !initiallyOpen;
+  const clean = useMenuTheme() === "clean";
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState(
     restaurant.categories[0]?.id ?? ""
@@ -282,7 +291,14 @@ export function MenuView({
 
         {/* Restaurant header */}
         <div className="relative mx-auto -mt-12 max-w-3xl px-4">
-          <div className="animate-in fade-in slide-in-from-bottom-4 rounded-2xl border-2 border-foreground bg-card p-5 shadow-offset duration-500">
+          <div
+            className={cn(
+              "animate-in fade-in slide-in-from-bottom-4 bg-card p-5 duration-500",
+              clean
+                ? "rounded-xl border shadow-xs"
+                : "rounded-2xl border-2 border-foreground shadow-offset"
+            )}
+          >
             <div className="flex items-start gap-4">
               {restaurant.logo && !logoFailed ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
@@ -290,10 +306,22 @@ export function MenuView({
                   src={restaurant.logo}
                   alt={restaurant.name}
                   onError={() => setLogoFailed(true)}
-                  className="size-20 shrink-0 rounded-2xl border-2 border-foreground bg-background object-cover shadow-offset-sm"
+                  className={cn(
+                    "size-20 shrink-0 bg-background object-cover",
+                    clean
+                      ? "rounded-xl border"
+                      : "rounded-2xl border-2 border-foreground shadow-offset-sm"
+                  )}
                 />
               ) : (
-                <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl border-2 border-foreground bg-primary font-display text-2xl font-bold text-primary-foreground shadow-offset-sm">
+                <div
+                  className={cn(
+                    "flex size-20 shrink-0 items-center justify-center bg-primary font-display text-2xl font-bold text-primary-foreground",
+                    clean
+                      ? "rounded-xl border"
+                      : "rounded-2xl border-2 border-foreground shadow-offset-sm"
+                  )}
+                >
                   {initials || <UtensilsCrossed className="size-8" />}
                 </div>
               )}
@@ -392,9 +420,13 @@ export function MenuView({
                     .getElementById(`cat-${c.id}`)
                     ?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }}
-                className={`whitespace-nowrap rounded-full border-2 px-4 py-1.5 font-display text-sm font-semibold transition-all ${
+                className={`whitespace-nowrap rounded-full px-4 py-1.5 font-display text-sm font-semibold transition-all ${
+                  clean ? "border" : "border-2"
+                } ${
                   activeCategory === c.id
-                    ? "border-foreground bg-primary text-primary-foreground shadow-offset-sm"
+                    ? clean
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-foreground bg-primary text-primary-foreground shadow-offset-sm"
                     : "border-foreground/20 bg-background text-heading hover:border-foreground"
                 }`}
               >
@@ -420,9 +452,13 @@ export function MenuView({
                   <button
                     key={p.id}
                     onClick={() => canOrder && openProduct(p)}
-                    className={`flex gap-3 rounded-xl border-2 border-foreground/15 bg-card p-3 text-left transition-all ${
+                    className={`flex gap-3 rounded-xl bg-card p-3 text-left transition-all ${
+                      clean ? "border" : "border-2 border-foreground/15"
+                    } ${
                       canOrder
-                        ? "hover:-translate-y-0.5 hover:border-foreground hover:shadow-offset-sm"
+                        ? clean
+                          ? "hover:bg-muted/60"
+                          : "hover:-translate-y-0.5 hover:border-foreground hover:shadow-offset-sm"
                         : "cursor-not-allowed opacity-50"
                     }`}
                   >
@@ -492,7 +528,10 @@ export function MenuView({
               {reviews.slice(0, 5).map((r) => (
                 <div
                   key={r.id}
-                  className="rounded-xl border-2 border-foreground/10 bg-card p-3"
+                  className={cn(
+                    "rounded-xl bg-card p-3",
+                    clean ? "border" : "border-2 border-foreground/10"
+                  )}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-semibold">{r.customerName}</p>
@@ -596,7 +635,8 @@ export function MenuView({
                             optionAvailable && toggleChoice(g.id, o.id, g.max)
                           }
                           className={cn(
-                            "flex w-full items-center justify-between rounded-lg border-2 px-3 py-2 text-sm transition-all",
+                            "flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-all",
+                            clean ? "border" : "border-2",
                             !optionAvailable
                               ? "cursor-not-allowed border-foreground/15 opacity-50"
                               : checked
@@ -607,7 +647,8 @@ export function MenuView({
                           <span className="flex items-center gap-2">
                             <span
                               className={cn(
-                                "flex size-4 shrink-0 items-center justify-center rounded border-2 transition-colors",
+                                "flex size-4 shrink-0 items-center justify-center rounded transition-colors",
+                                clean ? "border" : "border-2",
                                 g.max === 1 ? "rounded-full" : "rounded",
                                 checked
                                   ? "border-foreground bg-foreground text-background"
@@ -680,12 +721,22 @@ export function MenuView({
 
       {/* Cart bar + sheet */}
       {cart.count > 0 && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t-2 border-foreground/10 bg-background/95 p-3 backdrop-blur">
+        <div
+          className={cn(
+            "fixed inset-x-0 bottom-0 z-40 bg-background/95 p-3 backdrop-blur",
+            clean ? "border-t" : "border-t-2 border-foreground/10"
+          )}
+        >
           <div className="mx-auto max-w-3xl">
             <Sheet open={cartOpen} onOpenChange={setCartOpen}>
               <SheetTrigger asChild>
                 <Button
-                  className="w-full justify-between rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
+                  className={cn(
+                    "w-full justify-between rounded-full font-semibold",
+                    clean
+                      ? "hover:shadow-md"
+                      : "shadow-offset-sm transition-transform hover:-translate-y-0.5"
+                  )}
                   size="lg"
                 >
                   <span className="flex items-center gap-2">
@@ -799,7 +850,12 @@ export function MenuView({
                   </div>
                   <Button
                     size="lg"
-                    className="rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
+                    className={cn(
+                      "rounded-full font-semibold",
+                      clean
+                        ? "hover:shadow-md"
+                        : "shadow-offset-sm transition-transform hover:-translate-y-0.5"
+                    )}
                     asChild
                   >
                     <Link

@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { itemUnitPrice, useCart } from "@/components/cart/cart-context";
+import { useMenuTheme } from "@/components/restaurant-theme-provider";
 import { formatBRL, type DeliveryZone, type PaymentMethod, type Restaurant } from "@/lib/mock/types";
 import { isDarkTheme, restaurantThemeVars } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -218,6 +219,7 @@ export function CheckoutView({
   tableNumber?: number | null;
 }) {
   const closed = !initiallyOpen;
+  const clean = useMenuTheme() === "clean";
   const acceptedPayments: PaymentMethod[] = PAYMENT_ORDER.filter((m) =>
     restaurant.paymentMethods?.length
       ? restaurant.paymentMethods.includes(m)
@@ -539,7 +541,14 @@ export function CheckoutView({
     return (
       <div className={cn(dark && "dark")} style={themeStyle}>
         <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-muted/30 px-4 text-center">
-          <span className="flex size-20 -rotate-6 items-center justify-center rounded-2xl border-2 border-foreground bg-accent shadow-offset-sm">
+          <span
+            className={cn(
+              "flex size-20 items-center justify-center",
+              clean
+                ? "rounded-xl border bg-muted"
+                : "-rotate-6 rounded-2xl border-2 border-foreground bg-accent shadow-offset-sm"
+            )}
+          >
             <CheckCircle2 className="size-10 text-primary" />
           </span>
           <h1 className="font-display text-3xl font-bold">Pedido enviado! 🎉</h1>
@@ -558,7 +567,10 @@ export function CheckoutView({
                 <img
                   src={orderResult.pix.qrImage}
                   alt="QR Code Pix"
-                  className="size-48 rounded-lg border-2 border-foreground/10"
+                  className={cn(
+                    "size-48 rounded-lg",
+                    clean ? "border" : "border-2 border-foreground/10"
+                  )}
                 />
                 <Button
                   type="button"
@@ -573,7 +585,13 @@ export function CheckoutView({
                   Pix copia e cola
                 </Button>
                 {restaurant.phone?.trim() && (
-                  <Button className="w-full rounded-full font-semibold shadow-offset-sm" asChild>
+                  <Button
+                    className={cn(
+                      "w-full rounded-full font-semibold",
+                      !clean && "shadow-offset-sm"
+                    )}
+                    asChild
+                  >
                     <a
                       href={whatsappLink(
                         restaurant.phone,
@@ -593,7 +611,13 @@ export function CheckoutView({
 
           <div className="flex flex-wrap justify-center gap-3">
             {!orderResult?.pix && restaurant.phone?.trim() && (
-              <Button className="rounded-full font-semibold shadow-offset-sm" asChild>
+              <Button
+                className={cn(
+                  "rounded-full font-semibold",
+                  !clean && "shadow-offset-sm"
+                )}
+                asChild
+              >
                 <a
                   href={whatsappLink(restaurant.phone)}
                   target="_blank"
@@ -604,10 +628,24 @@ export function CheckoutView({
                 </a>
               </Button>
             )}
-            <Button variant="outline" className="rounded-full border-2 border-foreground font-semibold" asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "rounded-full font-semibold",
+                clean ? "border" : "border-2 border-foreground"
+              )}
+              asChild
+            >
               <Link href={`/r/${restaurant.slug}`}>Voltar ao cardápio</Link>
             </Button>
-            <Button variant="outline" className="rounded-full border-2 border-foreground font-semibold" asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "rounded-full font-semibold",
+                clean ? "border" : "border-2 border-foreground"
+              )}
+              asChild
+            >
               <Link href="/cliente/pedidos">Acompanhar pedido</Link>
             </Button>
           </div>
@@ -640,8 +678,22 @@ export function CheckoutView({
       {/* Carrinho vazio: não faz sentido percorrer as etapas sem itens. */}
       {cart.items.length === 0 ? (
         <div className="mx-auto max-w-3xl px-4 py-16">
-          <div className="flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-foreground/20 bg-card/60 px-6 py-14 text-center">
-            <span className="flex size-14 -rotate-3 items-center justify-center rounded-2xl border-2 border-foreground/15 bg-accent">
+          <div
+            className={cn(
+              "flex flex-col items-center gap-3 border-dashed bg-card/60 px-6 py-14 text-center",
+              clean
+                ? "rounded-xl border border-foreground/20"
+                : "rounded-2xl border-2 border-foreground/20"
+            )}
+          >
+            <span
+              className={cn(
+                "flex size-14 items-center justify-center",
+                clean
+                  ? "rounded-xl border bg-muted"
+                  : "-rotate-3 rounded-2xl border-2 border-foreground/15 bg-accent"
+              )}
+            >
               <ShoppingBag className="size-6" />
             </span>
             <p className="font-display text-lg font-bold text-heading">
@@ -650,7 +702,13 @@ export function CheckoutView({
             <p className="max-w-sm text-sm text-muted-foreground">
               Escolha o que você quer comer e volte aqui para finalizar.
             </p>
-            <Button asChild className="mt-1 rounded-full font-semibold shadow-offset-sm">
+            <Button
+              asChild
+              className={cn(
+                "mt-1 rounded-full font-semibold",
+                !clean && "shadow-offset-sm"
+              )}
+            >
               <Link href={`/r/${restaurant.slug}`}>Ver o cardápio</Link>
             </Button>
           </div>
@@ -683,10 +741,16 @@ export function CheckoutView({
               <button
                 type="button"
                 onClick={() => setDeliveryType("entrega")}
-                className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-sm font-semibold transition-all ${
+                className={`flex flex-col items-center gap-2 rounded-xl p-4 text-sm font-semibold transition-all ${
+                  clean ? "border" : "border-2"
+                } ${
                   deliveryType === "entrega"
-                    ? "border-foreground bg-primary text-primary-foreground shadow-offset-sm"
-                    : "border-foreground/15 text-heading hover:border-foreground"
+                    ? clean
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-foreground bg-primary text-primary-foreground shadow-offset-sm"
+                    : clean
+                      ? "text-heading hover:border-foreground"
+                      : "border-foreground/15 text-heading hover:border-foreground"
                 }`}
               >
                 <Bike className="size-5" />
@@ -704,10 +768,16 @@ export function CheckoutView({
               <button
                 type="button"
                 onClick={() => setDeliveryType("retirada")}
-                className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-sm font-semibold transition-all ${
+                className={`flex flex-col items-center gap-2 rounded-xl p-4 text-sm font-semibold transition-all ${
+                  clean ? "border" : "border-2"
+                } ${
                   deliveryType === "retirada"
-                    ? "border-foreground bg-primary text-primary-foreground shadow-offset-sm"
-                    : "border-foreground/15 text-heading hover:border-foreground"
+                    ? clean
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-foreground bg-primary text-primary-foreground shadow-offset-sm"
+                    : clean
+                      ? "text-heading hover:border-foreground"
+                      : "border-foreground/15 text-heading hover:border-foreground"
                 }`}
               >
                 <Store className="size-5" />
@@ -728,8 +798,20 @@ export function CheckoutView({
           {currentStep === "contato" && (
             <CardContent className="grid gap-4">
               {tableNumber && (
-                <div className="flex items-center gap-3 rounded-xl border-2 border-foreground/15 bg-accent/50 p-3">
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border-2 border-foreground bg-primary text-primary-foreground">
+                <div
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl p-3",
+                    clean
+                      ? "border bg-muted/50"
+                      : "border-2 border-foreground/15 bg-accent/50"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground",
+                      clean ? "border" : "border-2 border-foreground"
+                    )}
+                  >
                     <UtensilsCrossed className="size-4" />
                   </span>
                   <p className="text-sm text-muted-foreground">
@@ -797,10 +879,15 @@ export function CheckoutView({
                                 setUseNewAddress(false);
                               }}
                               className={cn(
-                                "flex items-start gap-2.5 rounded-xl border-2 p-3 text-left text-sm transition-all",
+                                "flex items-start gap-2.5 rounded-xl p-3 text-left text-sm transition-all",
+                                clean ? "border" : "border-2",
                                 active
-                                  ? "border-primary bg-primary/10 shadow-offset-sm"
-                                  : "border-foreground/15 hover:border-foreground"
+                                  ? clean
+                                    ? "border-primary bg-primary/10"
+                                    : "border-primary bg-primary/10 shadow-offset-sm"
+                                  : clean
+                                    ? "hover:border-foreground"
+                                    : "border-foreground/15 hover:border-foreground"
                               )}
                             >
                               <MapPin
@@ -832,10 +919,13 @@ export function CheckoutView({
                           type="button"
                           onClick={() => setUseNewAddress(true)}
                           className={cn(
-                            "flex items-center gap-2 rounded-xl border-2 border-dashed p-3 text-left text-sm font-medium transition-all",
+                            "flex items-center gap-2 rounded-xl border-dashed p-3 text-left text-sm font-medium transition-all",
+                            clean ? "border" : "border-2",
                             useNewAddress
                               ? "border-primary bg-primary/10 text-primary"
-                              : "border-foreground/15 text-heading hover:border-foreground"
+                              : clean
+                                ? "text-heading hover:border-foreground"
+                                : "border-foreground/15 text-heading hover:border-foreground"
                           )}
                         >
                           <Plus className="size-4" />
@@ -907,7 +997,14 @@ export function CheckoutView({
 
                         {/* Salvar no perfil (cadastro rápido, sem sair do checkout) */}
                         {loggedIn && (
-                          <div className="grid gap-2 rounded-xl border-2 border-foreground/10 bg-muted/40 p-3">
+                          <div
+                            className={cn(
+                              "grid gap-2 rounded-xl bg-muted/40 p-3",
+                              clean
+                                ? "border"
+                                : "border-2 border-foreground/10"
+                            )}
+                          >
                             <label className="flex cursor-pointer items-center gap-2.5 text-sm font-medium">
                               <input
                                 type="checkbox"
@@ -1101,7 +1198,10 @@ export function CheckoutView({
               <Button
                 type="button"
                 variant="outline"
-                className="w-full rounded-full border-2 border-foreground font-semibold sm:w-auto"
+                className={cn(
+                  "w-full rounded-full font-semibold sm:w-auto",
+                  clean ? "border" : "border-2 border-foreground"
+                )}
                 onClick={() => goToStep(stepIndex - 1)}
               >
                 <ArrowLeft className="size-4" />
@@ -1118,7 +1218,12 @@ export function CheckoutView({
                 key="enviar"
                 type="button"
                 size="lg"
-                className="w-full rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5 sm:flex-1"
+                className={cn(
+                  "w-full rounded-full font-semibold sm:flex-1",
+                  clean
+                    ? "hover:shadow-md"
+                    : "shadow-offset-sm transition-transform hover:-translate-y-0.5"
+                )}
                 disabled={sending || closed}
                 onClick={submitOrder}
               >
@@ -1133,7 +1238,12 @@ export function CheckoutView({
                 key="continuar"
                 type="button"
                 size="lg"
-                className="w-full rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5 sm:flex-1"
+                className={cn(
+                  "w-full rounded-full font-semibold sm:flex-1",
+                  clean
+                    ? "hover:shadow-md"
+                    : "shadow-offset-sm transition-transform hover:-translate-y-0.5"
+                )}
                 onClick={advance}
               >
                 Continuar
@@ -1145,7 +1255,12 @@ export function CheckoutView({
         </div>
 
         {/* Summary */}
-        <Card className="h-fit border-2 border-foreground shadow-offset">
+        <Card
+          className={cn(
+            "h-fit",
+            clean ? "border shadow-xs" : "border-2 border-foreground shadow-offset"
+          )}
+        >
           <CardHeader>
             <CardTitle className="text-base text-heading">Resumo do pedido</CardTitle>
           </CardHeader>

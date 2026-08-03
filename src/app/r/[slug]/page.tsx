@@ -45,8 +45,7 @@ export default async function RestaurantMenuPage({
   const showBranding = !isProUnlocked(planStatus);
 
   return (
-    <>
-      <RestaurantThemeProvider restaurant={restaurant} />
+    <RestaurantThemeProvider restaurant={restaurant}>
       <MenuView
         restaurant={restaurant}
         products={products}
@@ -61,6 +60,6 @@ export default async function RestaurantMenuPage({
         }
         reviews={reviews}
       />
-    </>
+    </RestaurantThemeProvider>
   );
 }

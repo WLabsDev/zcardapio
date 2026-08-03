@@ -22,14 +22,13 @@ export default async function CheckoutPage({
   const zones = await getDeliveryZonesDb(Number(restaurant.id));
 
   return (
-    <>
-      <RestaurantThemeProvider restaurant={restaurant} />
+    <RestaurantThemeProvider restaurant={restaurant}>
       <CheckoutView
         restaurant={restaurant}
         initiallyOpen={openState.open}
         zones={zones}
         tableNumber={tableNumber}
       />
-    </>
+    </RestaurantThemeProvider>
   );
 }

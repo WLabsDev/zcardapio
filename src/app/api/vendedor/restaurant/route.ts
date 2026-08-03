@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { plans, restaurants } from "@/lib/db/schema";
 import { getRestaurantByOwnerMapped } from "@/lib/db/queries";
+import { MENU_THEME_IDS, type MenuThemeId } from "@/lib/menu-themes";
 import { deleteReplacedUpload } from "@/lib/upload-storage";
 import { requireVendedorRestaurant } from "@/lib/vendedor";
 import { apiHandler } from "@/lib/api";
@@ -69,6 +70,9 @@ const putSchema = z.object({
   theme: z.enum(["claro", "escuro"]).optional(),
   font: z.enum(["bricolage", "jakarta", "mono"]).optional(),
   buttonStyle: z.enum(["arredondado", "reto"]).optional(),
+  menuTheme: z
+    .enum(MENU_THEME_IDS as [MenuThemeId, ...MenuThemeId[]])
+    .optional(),
   // Pedidos
   acceptsScheduled: z.boolean().optional(),
   // Desativar avaliações de clientes é recurso do plano pro+.
@@ -162,6 +166,7 @@ export const PUT = apiHandler(async (request: Request) => {
       ...(d.theme !== undefined && { theme: d.theme }),
       ...(d.font !== undefined && { font: d.font }),
       ...(d.buttonStyle !== undefined && { buttonStyle: d.buttonStyle }),
+      ...(d.menuTheme !== undefined && { menuTheme: d.menuTheme }),
       ...(d.headingColor !== undefined && { headingColor: d.headingColor }),
       ...(d.productTitleColor !== undefined && {
         productTitleColor: d.productTitleColor,

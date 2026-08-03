@@ -5,6 +5,7 @@ import { ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { uploadImage } from "@/lib/upload";
+import { MENU_THEMES, isMenuTheme, type MenuThemeId } from "@/lib/menu-themes";
 import {
   Card,
   CardContent,
@@ -121,6 +122,7 @@ type Appearance = {
   theme: "claro" | "escuro";
   font: "bricolage" | "jakarta" | "mono";
   buttonStyle: "arredondado" | "reto";
+  menuTheme: MenuThemeId;
   headingColor: string;
   productTitleColor: string;
   bodyColor: string;
@@ -169,6 +171,7 @@ export default function AparenciaPage() {
           theme: r.theme ?? "claro",
           font: r.font ?? "bricolage",
           buttonStyle: r.buttonStyle ?? "arredondado",
+          menuTheme: isMenuTheme(r.menuTheme) ? r.menuTheme : "classico",
           headingColor: r.headingColor ?? "",
           productTitleColor: r.productTitleColor ?? "",
           bodyColor: r.bodyColor ?? "",
@@ -200,6 +203,7 @@ export default function AparenciaPage() {
         theme: form.theme,
         font: form.font,
         buttonStyle: form.buttonStyle,
+        menuTheme: form.menuTheme,
         headingColor: form.headingColor,
         productTitleColor: form.productTitleColor,
         bodyColor: form.bodyColor,
@@ -301,6 +305,49 @@ export default function AparenciaPage() {
                 >
                   {uploading === "cover" ? "Enviando..." : "Trocar capa"}
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Tema do cardápio</CardTitle>
+              <CardDescription>
+                O estilo visual da página que o cliente vê. As cores abaixo são
+                aplicadas por cima do tema escolhido.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {MENU_THEMES.map((t) => (
+                  <button
+                    type="button"
+                    key={t.id}
+                    onClick={() => set("menuTheme", t.id)}
+                    className={cn(
+                      "flex items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-muted/60",
+                      form.menuTheme === t.id &&
+                        "border-primary bg-primary/5 ring-1 ring-primary"
+                    )}
+                    aria-pressed={form.menuTheme === t.id}
+                  >
+                    <span className="flex h-12 w-16 shrink-0 items-center justify-center rounded-md border bg-muted/50">
+                      {t.id === "classico" ? (
+                        <span className="h-6 w-9 rounded-lg border-2 border-foreground bg-card shadow-offset-sm" />
+                      ) : (
+                        <span className="h-6 w-9 rounded-lg border bg-card shadow-xs" />
+                      )}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold">
+                        {t.label}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                        {t.description}
+                      </span>
+                    </span>
+                  </button>
+                ))}
               </div>
             </CardContent>
           </Card>

@@ -149,6 +149,8 @@ export const restaurants = pgTable(
     theme: varchar("theme", { length: 10 }).notNull().default("claro"),
     font: varchar("font", { length: 20 }).notNull().default("bricolage"),
     buttonStyle: varchar("button_style", { length: 12 }).notNull().default("arredondado"),
+    // Tema estrutural do cardápio público (ver src/lib/menu-themes.ts)
+    menuTheme: varchar("menu_theme", { length: 16 }).notNull().default("classico"),
     // Paleta de cores personalizada (vazio = usa o padrão do tema)
     headingColor: varchar("heading_color", { length: 9 }).notNull().default(""),
     productTitleColor: varchar("product_title_color", { length: 9 }).notNull().default(""),

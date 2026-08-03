@@ -1,3 +1,5 @@
+import type { MenuThemeId } from "@/lib/menu-themes";
+
 export type Plan = {
   id: string;
   name: string;
@@ -125,6 +127,8 @@ export type Restaurant = {
   paymentMethods?: PaymentMethod[];
   /** tema do cardápio */
   theme?: "claro" | "escuro";
+  /** tema estrutural do cardápio público (ver src/lib/menu-themes.ts) */
+  menuTheme?: MenuThemeId;
   /** fonte de destaque do cardápio */
   font?: "bricolage" | "jakarta" | "mono";
   /** estilo dos botões */
