@@ -159,8 +159,8 @@ export default function CadastroRestaurantePage() {
                   i < step
                     ? "bg-primary text-primary-foreground"
                     : i === step
-                      ? "border-2 border-primary text-primary"
-                      : "border text-muted-foreground",
+                      ? "border border-primary bg-primary/10 text-primary"
+                      : "border bg-card text-muted-foreground",
                 )}
               >
                 {i < step ? <Check className="size-4" /> : i + 1}
@@ -180,9 +180,9 @@ export default function CadastroRestaurantePage() {
           ))}
         </div>
 
-        <Card className="border-2 border-foreground shadow-offset">
+        <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">
+            <CardTitle className="text-xl">
               Cadastre seu restaurante 🍕
             </CardTitle>
             <CardDescription>
@@ -432,10 +432,10 @@ export default function CadastroRestaurantePage() {
                         type="button"
                         onClick={() => setSelectedPlan(plan.id)}
                         className={cn(
-                          "flex flex-col gap-2 rounded-xl border p-4 text-left",
+                          "flex flex-col gap-2 rounded-xl border p-4 text-left transition-colors",
                           selectedPlan === plan.id
-                            ? "border-primary bg-primary/5 ring-2 ring-primary"
-                            : "hover:bg-muted",
+                            ? "border-primary bg-primary/5 shadow-xs"
+                            : "bg-card hover:bg-muted",
                         )}
                       >
                         <span className="font-semibold">{plan.name}</span>
@@ -465,20 +465,11 @@ export default function CadastroRestaurantePage() {
                     Voltar
                   </Button>
                   {step < steps.length - 1 ? (
-                    <Button
-                      type="button"
-                      className="rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
-                      onClick={nextStep}
-                    >
+                    <Button type="button" onClick={nextStep}>
                       Continuar
                     </Button>
                   ) : (
-                    <Button
-                      type="submit"
-                      className="rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
-                    >
-                      Concluir cadastro
-                    </Button>
+                    <Button type="submit">Concluir cadastro</Button>
                   )}
                 </div>
               </form>

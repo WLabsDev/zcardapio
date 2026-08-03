@@ -10,6 +10,13 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   Form,
   FormControl,
   FormField,
@@ -70,97 +77,94 @@ export function LoginForm() {
 
   return (
     <div className="w-full max-w-sm animate-in fade-in-0 slide-in-from-bottom-4 duration-300">
-      <h1 className="font-display text-2xl font-bold tracking-tight">
-        Que bom ter você aqui!
-      </h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Entre com seu e-mail para acessar o painel.
+      <Card>
+        <CardHeader className="text-center">
+          <CardTitle className="text-xl">Que bom ter você aqui!</CardTitle>
+          <CardDescription>
+            Entre com seu e-mail para acessar o painel.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="grid gap-4"
+              noValidate
+            >
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>E-mail *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="voce@email.com"
+                        autoComplete="email"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="senha"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Senha *</FormLabel>
+                    <div className="relative">
+                      <FormControl>
+                        <Input
+                          type={showSenha ? "text" : "password"}
+                          placeholder="Sua senha"
+                          autoComplete="current-password"
+                          className="pr-10"
+                          {...field}
+                        />
+                      </FormControl>
+                      <button
+                        type="button"
+                        onClick={() => setShowSenha((v) => !v)}
+                        aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        {showSenha ? (
+                          <EyeOff className="size-4" />
+                        ) : (
+                          <Eye className="size-4" />
+                        )}
+                      </button>
+                    </div>
+                    <FormMessage />
+                    <Link
+                      href="/recuperar-senha"
+                      className="text-xs text-primary underline-offset-4 hover:underline"
+                    >
+                      Esqueci minha senha
+                    </Link>
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" disabled={loggingIn} className="mt-2 w-full">
+                {loggingIn ? "Entrando..." : "Entrar"}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        Não tem conta ainda?{" "}
+        <Link
+          href="/cadastro-restaurante"
+          className="font-medium text-primary underline-offset-4 hover:underline"
+        >
+          Criar conta
+        </Link>
       </p>
-
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="mt-6 grid gap-4"
-          noValidate
-        >
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>E-mail *</FormLabel>
-                <FormControl>
-                  <Input
-                    type="email"
-                    placeholder="voce@email.com"
-                    autoComplete="email"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="senha"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Senha *</FormLabel>
-                <div className="relative">
-                  <FormControl>
-                    <Input
-                      type={showSenha ? "text" : "password"}
-                      placeholder="Sua senha"
-                      autoComplete="current-password"
-                      className="pr-10"
-                      {...field}
-                    />
-                  </FormControl>
-                  <button
-                    type="button"
-                    onClick={() => setShowSenha((v) => !v)}
-                    aria-label={showSenha ? "Ocultar senha" : "Mostrar senha"}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    {showSenha ? (
-                      <EyeOff className="size-4" />
-                    ) : (
-                      <Eye className="size-4" />
-                    )}
-                  </button>
-                </div>
-                <FormMessage />
-                <Link
-                  href="/recuperar-senha"
-                  className="justify-self-end text-xs text-primary hover:underline"
-                >
-                  Esqueci a senha
-                </Link>
-              </FormItem>
-            )}
-          />
-          <Button
-            type="submit"
-            size="lg"
-            disabled={loggingIn}
-            className="mt-2 rounded-full font-semibold shadow-offset-sm transition-transform hover:-translate-y-0.5"
-          >
-            {loggingIn ? "Entrando..." : "Entrar"}
-          </Button>
-        </form>
-      </Form>
-
-      <div className="mt-6 border-t border-foreground/10 pt-5 text-center">
-        <p className="text-sm text-muted-foreground">Não tem conta ainda?</p>
-        <Button
-          variant="outline"
-          className="mt-3 w-full rounded-full border-2 border-foreground font-semibold"
-          asChild
-        >
-          <Link href="/cadastro-restaurante">Criar conta</Link>
-        </Button>
-      </div>
     </div>
   );
 }
